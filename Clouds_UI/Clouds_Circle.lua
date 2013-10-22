@@ -7,7 +7,7 @@ Clouds_Circle = {
 		if clear then
 			shadow:ClearTriangleFanPoint()
 		end
-		shadow:AppendPoint(tar.type,tar.dwID,false,r,g,b,a,0,data.scheme,data.text,0,1)
+		shadow:AppendPoint(tar.type,tar.dwID,data.top,r,g,b,a,0,data.scheme,data.text,0,1)
 	end,
 	drawcircle = function(tar,data,shadow)
 		local r,g,b,a=unpack(data.edgecolor)
@@ -16,6 +16,18 @@ Clouds_Circle = {
 		shadow:AppendPoint(tar.type,tar.dwID,false,unpack(data.centercolor))
 		for i=0,data.precision do
 			local theta=2*i*math.pi/data.precision
+			shadow:AppendPoint(tar.type,tar.dwID,false,r,g,b,a,
+				{data.radius*math.cos(theta),0,data.radius*math.sin(theta),0,0})
+		end
+	end,
+	drawcake = function(tar,data,shadow)
+		local r,g,b,a=unpack(data.edgecolor)
+		shadow:SetTriangleFan(GEOMETRY_TYPE.TRIANGLE)
+		shadow:ClearTriangleFanPoint()
+		shadow:AppendPoint(tar.type,tar.dwID,false,unpack(data.centercolor))
+		for i=-data.precision,data.precision do
+			tar.face=GetPlayer(tar.dwID).nFaceDirection/128*math.pi
+			local theta=tar.face+i*data.angle/(2*data.precision)
 			shadow:AppendPoint(tar.type,tar.dwID,false,r,g,b,a,
 				{data.radius*math.cos(theta),0,data.radius*math.sin(theta),0,0})
 		end
@@ -38,12 +50,8 @@ Clouds_Circle.UpdateFrame = function(name, enable, events)
 		if not frame then
 			frame = Wnd.OpenWindow(Clouds_Circle.szIni, "Clouds_Circle_"..name)
 			frame.szName = name
-			for i,v in pairs(circle) do
-				frame[i]=v
-			end
-			for i,v in pairs(events or {}) do
-				frame[i]=v
-			end
+			algo.table.update(frame,circle)
+			algo.table.update(frame,events)
 			frame.OnFrameBreathe = circle.OnFrameBreathe
 			local _this = this
 			this = frame
@@ -60,8 +68,7 @@ end
 circle.OnFrameCreate = function()
 	local handle = this:Lookup("","")
 	Clouds_UI.newPool(handle, Clouds_Circle.szIni, "Handle_Instance")
-	handle:Lookup(0):Lookup("Shadow_Circle").AppendPoint=Clouds_UI.AppendPoint
-	handle:Lookup(0):Lookup("Shadow_Text").AppendPoint=Clouds_UI.AppendPoint
+	circle.initinstance(handle:Lookup(0))
 end
 
 circle.OnFrameBreathe = function()
@@ -70,6 +77,11 @@ circle.OnFrameBreathe = function()
 end
 
 circle.OnEvent = function(event)
+end
+
+circle.initinstance = function(handle)
+	Clouds_UI.newPool(handle, Clouds_Circle.szIni, "Shadow_Text")
+	handle:Lookup("Shadow_Text").AppendPoint=Clouds_UI.AppendPoint
 end
 
 circle.clear = function(self)
@@ -81,13 +93,12 @@ circle.add = function(self, name, data)
 	text = text or name
 	local handle=self:Lookup("","")
 	if self.list[name] then
-		for i,v in pairs(data) do
-			self.list[name][i]=v
-		end
+		algo.table.update(self.list[name],data,true)
 	else
 		self.list[name]=data
 	end
 	self:update()
+	return self.list[name]
 end
 
 circle.remove = function(self, name)
@@ -101,8 +112,7 @@ circle.update = function(self)
 		local item=handle:Lookup(i)
 		if not item then
 			item=handle.new()
-			item:Lookup("Shadow_Circle").AppendPoint=Clouds_UI.AppendPoint
-			item:Lookup("Shadow_Text").AppendPoint=Clouds_UI.AppendPoint
+			self.initinstance(item)
 		end
 		v:draw(item)
 		i=i+1
@@ -141,30 +151,40 @@ end
 
 circle.new = function(self, name, type, src)
 	local d={dwID=src,type=type,draw=circle.draw,frame=self}
-	for i,v in pairs(app) do
-		d[i]=v
-	end
-	self:add(name,d)
-	return d
+	algo.table.update(d,app)
+	return self:add(name,d)
 end
 
-app.updatetext = function(self, text, color, scheme)
-	if not self.Text then
-		self.Text={
+app.updatetext = function(self, ...)
+	return self:addtext("Text",...)
+end
+
+app.addtext = function(self, name, text, color, scheme, top)
+	name = name or "Text"
+	if not self[name] then
+		self[name]={
 			enable = true,
+			type = "text",
 			text = "",
 			color = self.frame.text_color,
 			scheme = 40,
+			top = false
 		}
 	end
-	algo.table.updatem(self.Text,{text=text,color=color,scheme=scheme})
+	algo.table.updatem(self[name],{text=text,color=color,scheme=scheme,top=top})
 	return self
 end
 
-app.updatecircle = function(self, radius, color, color2, precision)
-	if not self.Circle then
-		self.Circle={
+app.updatecircle = function(self, ...)
+	return self:addcircle("Circle",...)
+end
+
+app.addcircle = function(self, name, radius, color, color2, precision)
+	name = name or "Circle"
+	if not self[name] then
+		self[name]={
 			enable = true,
+			type = "circle",
 			radius = 64,
 			centercolor = self.frame.cir_color,
 			edgecolor = self.frame.cir_color,
@@ -175,20 +195,21 @@ app.updatecircle = function(self, radius, color, color2, precision)
 	return self
 end
 
-app.addcake = function(self, ...)
-	return self:addcakes("Cake",...)
+app.updatecake = function(self, ...)
+	return self:addcake("Cake",...)
 end
 
-app.addcakes = function(self, name, radius, angle, color, color2, precision)
+app.addcake = function(self, name, radius, angle, color, color2, precision)
 	name = name or "Cake"
 	if not self[name] then
 		self[name]={
 			enable = true,
-			radius = 64,
+			type = "cake",
+			radius = 160,
 			angle = math.pi / 3,
 			centercolor = self.frame.cake_color,
 			edgecolor = self.frame.cake_color,
-			precision = 7,
+			precision = 3,
 		}
 	end
 	algo.table.updatem(self[name],{radius=radius,angle=angle,centercolor=color,edgecolor=color2 or color,precision=precision})
@@ -199,10 +220,26 @@ app.draw = function(self, item)
 	if self.Text then
 		local data,text=self.Text,item:Lookup("Shadow_Text")
 		Clouds_Circle.drawtext(self,data,text,true)
+		text:Show()
 	end
-	if self.Circle then
-		local data,circle=self.Circle,item:Lookup("Shadow_Circle")
-		Clouds_Circle.drawcircle(self,data,circle)
+	local index=1
+	for i,v in pairs(self) do
+		if type(v)=="table" and i~="Text" then
+			while index>=item.nIndex do
+				local shadow=item.new()
+				shadow.AppendPoint = Clouds_UI.AppendPoint
+			end
+			local shadow=item:Lookup(index)
+			if v.type == "cake" then
+				Clouds_Circle.drawcake(self,v,shadow)
+			elseif v.type == "circle" then
+				Clouds_Circle.drawcircle(self,v,shadow)
+			elseif v.type == "text" then
+				Clouds_Circle.drawtext(self,v,shadow)
+			end
+			shadow:Show()
+			index = index + 1
+		end
 	end
 	item:Show()
 end
