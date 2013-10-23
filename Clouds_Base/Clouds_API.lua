@@ -1,5 +1,14 @@
 Clouds_API={}
 
+function Clouds_API.hook()
+	if not MAP_TYPE.PLAYER then
+		MAP_TYPE.PLAYER = -1
+		MAP_TYPE.CITY = 5
+	end
+end
+
+Clouds_API.hook()
+
 function Clouds_API.GetPNDByID(dwID)
 	dwID=dwID or 0
 	return GetPlayer(dwID) or GetNpc(dwID) or GetDoodad(dwID) or nil
@@ -111,6 +120,13 @@ function Clouds_API.EncodingNameString(player)
 	return ""
 end
 
+function Clouds_API.GetItemPathName(item)
+	if item==item:GetRoot() then
+		return item:GetTreePath():sub(1,-2)
+	end
+	return item:GetTreePath()..item:GetName()
+end
+
 function Clouds_API.OutputName(channel, name)
   OutputMessage(channel, string.format('<text>text="[%s]\n" name="namelink" eventid=515</text>',name),true)
 end
@@ -138,6 +154,27 @@ function Clouds_API.EncodingSkillString(id,level)
 		return "("..id..","..level..")"
 	end
 	return name.."("..id..","..level..")"
+end
+
+function Clouds_API.EncodingMapName(id)
+	if not id then
+		return ""
+	elseif id == -1 then
+		return "»ùÈý(-1)"
+	else
+		return ("%s(%d)"):format(Table_GetMapName(id),id)
+	end
+end
+
+function Clouds_API.GetMapType(id)
+	if not id then
+		return
+	elseif id == -1 then
+		return MAP_TYPE.PLAYER
+	else
+		local _,tp = GetMapParams(id)
+		return tp
+	end
 end
 
 function Clouds_API.GetSkillName(id,level)
@@ -213,6 +250,30 @@ function Clouds_API.MessageBoxSure(szWindow, i)
 			CloseMessageBox(szName)
 		end
 	end
+end
+
+function Clouds_API.GetUserInputNumber(szMsg, fnSure, szDefault, fnCancel, nCount)
+	local t={}
+	GetUserInput(szMsg,function(str)
+		i=1
+		for v in (str..","):gmatch("(%S-)%s*,") do
+			t[i]=tonumber(v)
+			i=i+1
+		end
+		fnSure(unpack(t))
+	end,fnCancel,nil,nil,szDefault,nil,nil,nil)
+end
+
+function Clouds_API.GetUserInputText(szMsg, fnSure, szDefault, fnCancel, nCount)
+	local t={}
+	GetUserInput(szMsg,function(str)
+		i=1
+		for v in (str..","):gmatch("(%S-)%s*,") do
+			t[i]=v
+			i=i+1
+		end
+		fnSure(unpack(t))
+	end,fnCancel,nil,nil,szDefault,nil,nil,nil)
 end
 
 function Clouds_API.QuestSure(szNpcName)

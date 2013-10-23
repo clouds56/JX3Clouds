@@ -2,18 +2,39 @@ Clouds_Algorithm={}
 algo=Clouds_Algorithm
 
 algo["nil"]={}
+algo.arg={}
 algo.table={}
 algo.object={}
 algo["function"]={}
 algo.string={}
+algo.userdata={}
 
 NIL={"NIL"}
 algo["nil"].id=NIL
 
+algo.arg.select = function(x,...)
+	local t={...}
+	if x=='#' then
+		return #t
+	end
+	for i=1,x-1 do
+		table.remove(t,1)
+	end
+	return unpack(t)
+end
+select = select or algo.arg.select
+
+algo.table.is=function(tSrc)
+	if type(tSrc)=="table" and not tSrc.___id and not tSrc._type then
+		return true
+	end
+	return false
+end
+
 algo.table.copy=function(tSrc,bShallow)
 	local tDst={}
 	for i,v in pairs(tSrc or {}) do
-		if not bShallow and type(v)=="table" then
+		if not bShallow and algo.table.is(v) then
 			tDst[i]=algo.table.copy(v,bShallow)
 		else
 			tDst[i]=v
@@ -23,31 +44,31 @@ algo.table.copy=function(tSrc,bShallow)
 end
 
 algo.table.update=function(tDst,tSrc,bShallow)
-	if type(tSrc)=="userdata" then
+	if algo.userdata.is(tSrc) then
 		for i,v in pairs(tDst) do
 			if tSrc[i]==NIL then
 				tDst[i]=nil
-			elseif not bShallow and type(tSrc[i])=="table" then
-				if type(v)~="table" then
+			elseif not bShallow and algo.table.is(tSrc[i]) then
+				if not algo.table.is(v) then
 					tDst[i]={}
 				end
 				algo.table.update(tDst[i],tSrc[i],bShallow)
-			elseif type(tSrc[i])=="userdata" and type(v)=="table" then
+			elseif algo.userdata.is(tSrc[i]) and algo.table.is(v) then
 				algo.table.update(v,tSrc[i],bShallow)
 			else
 				tDst[i]=tSrc[i]
 			end
 		end
-	elseif type(tSrc)=="table" then
+	elseif algo.table.is(tSrc) then
 		for i,v in pairs(tSrc) do
 			if v==NIL then
 				tDst[i]=nil
-			elseif not bShallow and type(v)=="table" then
-				if type(tDst[i])~="table" then
+			elseif not bShallow and algo.table.is(v) then
+				if not algo.table.is(tDst[i]) then
 					tDst[i]={}
 				end
 				algo.table.update(tDst[i],v,bShallow)
-			elseif type(v)=="userdata" and type(tDst[i])=="table" then
+			elseif algo.userdata.is(v) and algo.table.is(tDst[i]) then
 				algo.table.update(tDst[i],v,bShallow)
 			else
 				tDst[i]=v
@@ -58,27 +79,27 @@ algo.table.update=function(tDst,tSrc,bShallow)
 end
 
 algo.table.updatem=function(tDst,tSrc)
-	if type(tSrc)=="userdata" then
+	if algo.userdata.is(tSrc) then
 		for i,v in pairs(tDst) do
-			if not bShallow and type(tSrc[i])=="table" then
-				if type(v)~="table" then
+			if not bShallow and algo.table.is(tSrc[i]) then
+				if not algo.table.is(v) then
 					tDst[i]={}
 				end
 				tDst[i]=algo.table.merge(tDst[i],tSrc[i])
-			elseif type(tSrc[i])=="userdata" and type(v)=="table" then
+			elseif algo.userdata.is(tSrc[i]) and algo.table.is(v) then
 				tDst[i]=algo.table.merge(v,tSrc[i])
 			else
 				tDst[i]=tSrc[i]
 			end
 		end
-	elseif type(tSrc)=="table" then
+	elseif algo.table.is(tSrc) then
 		for i,v in pairs(tSrc) do
-			if not bShallow and type(v)=="table" then
-				if type(tDst[i])~="table" then
+			if not bShallow and algo.table.is(v) then
+				if not algo.table.is(tDst[i]) then
 					tDst[i]={}
 				end
 				tDst[i]=algo.table.merge(tDst[i],v)
-			elseif type(v)=="userdata" and type(tDst[i])=="table" then
+			elseif algo.userdata.is(v) and algo.table.is(tDst[i]) then
 				tDst[i]=algo.table.merge(tDst[i],v)
 			else
 				tDst[i]=v
@@ -90,6 +111,44 @@ end
 
 algo.table.merge=function(tDst,tSrc,bShallow)
 	return algo.table.update(algo.table.copy(tDst,bShallow),tSrc,bShallow)
+end
+
+algo.table.select=function(tSrc,func,nIndex)
+	nIndex = nIndex or 1
+	for i=#tSrc,1,-1 do
+		if nIndex == 1 then
+			if not func(tSrc[i]) then
+				table.remove(tSrc,i)
+			end
+		else
+			algo.table.select(tSrc,func,nIndex-1)
+		end
+	end
+	for i,v in pairs(tSrc) do
+		if type(i)~="number" or i>#tSrc then
+			if nIndex == 1 then
+				if not func(v) then
+					tSrc[i]=nil
+				end
+			else
+				algo.table.select(tSrc,func,nIndex-1)
+			end
+		end
+	end
+	--Output(tSrc)
+	return tSrc
+end
+
+algo.table.map=function(tSrc,func,nIndex)
+	nIndex=nIndex or 1
+	for i,v in pairs(tSrc) do
+		if nIndex == 1 then
+			tSrc[i] = func(v)
+		else
+			algo.table.map(v,func,nIndex - 1)
+		end
+	end
+	return tSrc
 end
 
 algo.table.to_s=function(t,mode)
@@ -246,3 +305,12 @@ function algo.string.asub(str,l,r,append)
 	return str
 end
 string.asub=algo.string.asub
+
+algo.userdata.is=function(uSrc)
+	if type(uSrc)=="userdata" then
+		return true
+	elseif type(uSrc)=="table" and (uSrc.___id or uSrc._type) then
+		return true
+	end
+	return false
+end
