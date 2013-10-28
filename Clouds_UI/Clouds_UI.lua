@@ -1,15 +1,14 @@
 Clouds_UI = {}
 
-TARGET_CHARACTER = TARGET_CHARACTER or {"TARGET.CHARACTER"}
-
-function Clouds_UI.newPool(handle, ini, section)
-	local item=handle:Lookup(0)
+function Clouds_UI.newPool(handle, ini, section, from)
+	from = from or 0
+	local item=handle:Lookup(from)
 	if not item then
 		item=handle:AppendItemFromIni(ini,section)
 	end
-	item.nIndex=0
+	item.nIndex=from
 	item:Hide()
-	handle.nIndex = handle.nIndex or 1
+	handle.nIndex = handle.nIndex or from + 1
 	--handle.nUsed = handle.nUsed or 0
 	function handle.new()
 		local item = handle:AppendItemFromIni(ini, section, section..handle.nIndex)
@@ -80,7 +79,7 @@ function Clouds_UI.newPool(handle, ini, section)
 end
 
 Clouds_UI.AppendPoint = function(self,t,...)
-	if t==TARGET_CHARACTER or t==TARGET.NPC or t==TARGET.PLAYER then
+	if t==TARGET.CHARACTER or t==TARGET.NPC or t==TARGET.PLAYER then
 		self:AppendCharacterID(...)
 	elseif t==TARGET.DOODAD then
 		self:AppendDoodadID(...)

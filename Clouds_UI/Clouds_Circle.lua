@@ -140,7 +140,7 @@ circle.simpleadd = function(self, src, radius, color)
 	self:add(tostring(src),{
 		name=tostring(src),
 		text="",
-		type=TARGET_CHARACTER,
+		type=TARGET.CHARACTER,
 		dwID=src,
 		radius=radius,
 		precision=40,

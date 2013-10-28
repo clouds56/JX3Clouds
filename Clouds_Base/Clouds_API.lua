@@ -1,13 +1,25 @@
 Clouds_API={}
 
-function Clouds_API.hook()
-	if not MAP_TYPE.PLAYER then
-		MAP_TYPE.PLAYER = -1
-		MAP_TYPE.CITY = 5
-	end
-end
+MAP_TYPE={
+	NORMAL_MAP = 0,
+	DUNGEON = 1,
+	BATTLE_FIELD = 2,
+	BIRTH_MAP = 3,
+	TONG_DUNGEON = 4,
+	CITY = 5,
+	PLAYER = 1000,
+}
 
-Clouds_API.hook()
+TARGET={
+	NO_TARGET = 0,
+	COORDINATION = 1,
+	NPC = 2,
+	DOODAD = 3,
+	PLAYER = 4,
+	ITEM = 5,
+	ITEM_POS = 6,
+	CHARACTER = 7
+}
 
 function Clouds_API.GetPNDByID(dwID)
 	dwID=dwID or 0
