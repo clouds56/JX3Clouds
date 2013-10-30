@@ -258,6 +258,63 @@ function Clouds_Debug.ItemMenu(list)
 	PopupMenu(menu)
 end
 
+local hooklist={}
+local cpuusage={}
+local hookused={}
+Clouds_Debug.hooklist = hooklist
+Clouds_Debug.hookused = hookused
+Clouds_Debug.hookused = cpuusage
+
+function Clouds_Debug.SetTable(t,name,value)
+	t=t or _G
+	for i in name:gmatch("(%S+)%.") do
+		t=t[i]
+	end
+	t[("."..name):match("%.([^.]*)$")]=value
+end
+
+function Clouds_Debug.SetGlobal(name,value)
+	Clouds_Debug.SetTable(_G,name,value)
+end
+
+function Clouds_Debug.hookfun(name,old)
+	local tabname=name:match("^(.-)%.")
+	cpuusage[tabname]=cpuusage[tabname] or {name=tabname,nfun=0,ncall=0,ntop=0,topname=""}
+	local t,tt={name=name,old=old,called=0},cpuusage[tabname]
+	local new=function(...)
+		tt.ncall = tt.ncall+1
+		t.called=t.called+1
+		if t.called>tt.ntop then
+			tt.ntop = t.called
+			tt.topname = t.name
+		end
+		pcall(old,...)
+	end
+	t.new=new
+	hookused[old]=name.."_old@"..GetLogicFrameCount()
+	hookused[new]=name.."_new@"..GetLogicFrameCount()
+	Clouds_Debug.SetGlobal(name,new)
+	tt.nfun=tt.nfun+1
+	table.insert(hooklist,t)
+end
+
+function Clouds_Debug.hookall(head)
+	head = head or "^Clouds"
+	for i,v in pairs(_G) do
+		if i:find(head) and i~="Clouds_Debug" and not hookused[i] and not hookused[v] then
+			if type(v)=="function" then
+				Clouds_Debug.hookfun(i,v)
+			elseif type(v)=="table" then
+				for ii,vv in pairs(v) do
+					if type(vv)=="function" and not hookused[ii] and not hookused[vv] then
+						Clouds_Debug.hookfun(i.."."..ii,vv)
+					end
+				end
+			end
+		end
+	end
+end
+
 RegisterEvent("PLAYER_ENTER_GAME",Clouds_Debug.init)
 RegisterEvent("CALL_LUA_ERROR", Clouds_Debug.Error)
 
