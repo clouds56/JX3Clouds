@@ -8,6 +8,7 @@ algo.object={}
 algo["function"]={}
 algo.string={}
 algo.userdata={}
+algo.ini={}
 
 NIL={"NIL"}
 algo["nil"].id=NIL
@@ -151,38 +152,171 @@ algo.table.map=function(tSrc,func,nIndex)
 	return tSrc
 end
 
-algo.table.to_s=function(t,mode)
-	if mode and mode.table then
+algo.var2str = function(t,suffix,index,first,tab,fun,multi)
+	index =  index or 0
+	suffix = suffix or "\t"
+	if type(t)=="function" then
+		return fun and "[[\n"..xxd(string.dump(t)).."]]" or tostring(t)
+	elseif type(t)=="string" then
+		return '"'..t:gsub("\n",multi and "\\\n" or "\\n")..'"'
+	elseif type(t)=="number" then
+		return tostring(t)
+	elseif type(t)=="nil" or type(t)=="boolean" then
+		return tostring(t)
+	elseif type(t)=="userdata" then
+		return tostring(t)
+	elseif type(t)=="table" then
+		if tab then
+			return tostring(t)
+		end
+		local s=(first and suffix:rep(index) or "").."{"
+		local used=false
+		for i=1,#t do
+			local v,key=t[i]
+			used=true
+			s=s.."\n"..suffix:rep(index+1)..var2str(v,suffix,index+1,false,tab,fun,multi)..","
+		end
+		for i,v in pairs(t) do
+			local key
+			if type(i)=="number" then
+				if i>#t then
+					key=("[%d]"):format(i)
+				end
+			elseif type(i)=="string" then
+				key=i
+			else
+				key=("[%s]"):format(i)
+			end
+			if key then
+				used=true
+				s=s..'\n'..suffix:rep(index+1)..key.." = "..var2str(v,suffix,index+1,false,tab,fun,multi)..","
+			end
+		end
+		if not used then
+			s=s..'}'
+		else
+			s=s..'\n'..("\t-- # : %d"):format(#t)..'\n'..suffix:rep(index).."}"
+		end
+		return s
+	end
+end
+
+algo.print = function(...)
+	local t={...}
+	OutputMessage("MSG_SYS",algo.object.to_s(#t>1 and t or t[1])..'\n')
+end
+
+
+algo.table.to_s=function(t,mode,index)
+	index=index or 0
+	mode = mode or {suffix="  ",tab=false,fun=false,multi=true,}
+	if mode.table then
 		return mode:table(t) or ""
 	end
-	local s="{"
-	for i,v in pairs(t) do
-		s=s.."["..algo.object.to_s(i,mode).."]".."="..algo.object.to_s(v,mode)..","
+	if mode.tab then
+		return tostring(t)
 	end
-	s=s:sub(1,-2).."}"
+	local s="{"
+	local used=false
+	for i=1,#t do
+		local v,key=t[i]
+		used=true
+		s=s.."\n"..mode.suffix:rep(index+1)..algo.object.to_s(v,mode,index+1)..","
+	end
+	if used then
+		s=s..'\n'..mode.suffix:rep(index+1)..("-- # : %d"):format(#t)
+	end
+	for i,v in pairs(t) do
+		local key
+		if type(i)=="number" then
+			if i>#t then
+				key=("[%d]"):format(i)
+			end
+		elseif type(i)=="string" then
+			key=i
+		else
+			key=("[%s]"):format(tostring(i))
+		end
+		if key then
+			used=true
+			s=s..'\n'..mode.suffix:rep(index+1)..key.." = "..algo.object.to_s(v,mode,index+1)..","
+		end
+	end
+	if not used then
+		s=s..'}'
+	else
+		s=s..'\n'..mode.suffix:rep(index).."}"
+	end
 	return s
+end
+
+algo.string.xxd = function(a,unit,line)
+	-- %0do : address offset
+	-- %0dl	: line number
+	-- %0d.dx	: context with 1d for unit and 2d for repeats
+	-- %da	:	ascii index
+	--[[
+	f=f or "%3l %08.4x"
+	for i in f:gmatch("%%([%d.]*)([olxa])") do
+
+	end
+	]]
+	local s=""
+	unit = unit or 4
+	line = line or 4
+	for k=0,math.ceil(a:len()/unit/line)-1 do
+		for i=k*line,(k+1)*line-1 do
+			for j=i*unit+1,(i+1)*unit do
+				local v=a:byte(j)
+				s=s..(v and ("%02x"):format(v) or "  ")
+			end
+			s=s..' '
+		end
+		s=s..'\t'
+		s=s..(a:sub(k*line*unit+1,(k+1)*line*unit):gsub("[^%w]","."))
+		s=s..'\n'
+	end
+	return s
+end
+
+algo.string.encoding=function(str,mode)
+	mode = mode or {bshowt=false,multi=false}
+	str = str:gsub("\\","\\\\")
+	--str = str:gsub("[\000-\010]",function(a)return ("\\%03o"):format(a:byte(1)) end)
+	str = str:gsub("\"","\\\""):gsub("\'","\\\'")
+	if mode.bshowt then
+		str = str:gsub("\t","\\t")
+	end
+	str = str:gsub("\n",mode.multi and "\\\n" or "\\n")
+	return str
 end
 
 algo.string.to_s=function(str,mode)
 	if mode and mode.string then
 		return mode:string(str) or ""
 	end
-	return '"'..str..'"'
+	return '"'..algo.string.encoding(str)..'"'
 end
 
-algo["function"].to_s=function(func)
+algo["function"].to_s=function(func,mode)
+	Output(mode)
 	if mode and mode["function"] then
 		return mode["function"](mode,func) or ""
+	elseif mode and mode.fun then
+		return tostring(func).."  --[[\n"..algo.string.xxd(string.dump(func)).."]]"
 	end
 	return tostring(func)
 end
 
-
-algo.object.to_s=function(obj,mode)
-	if mode and mode[type(obj)] then
+algo.object.to_s=function(obj,mode,index)
+	local modeex={suffix="  ",tab=false,fun=false,multi=true,}
+	local mode=algo.table.merge(modeex,mode or {})
+	if mode[type(obj)] then
 		return mode[type(obj)](mode,obj) or ""
-	elseif type(obj)=="string" or type(obj)=="function" or type(obj)=="table" then
-		return algo[type(obj)].to_s(mode,obj)
+	elseif type(obj)=="string" or type(obj)=="function" then
+		return algo[type(obj)].to_s(obj,mode)
+	elseif type(obj)=="table" then
+		return algo.table.to_s(obj,mode,index or 0)
 	else
 		return tostring(obj) or ""
 	end
@@ -314,3 +448,56 @@ algo.userdata.is=function(uSrc)
 	end
 	return false
 end
+
+inifile = {}
+
+function algo.ini.parse(str)
+	local t,i = {},{}
+	local section
+	for line in (str.."\n"):gmatch("(.-)\n") do
+		local s = line:match("^%[([^%]]+)%]$")
+		if s then
+			section = s
+			t[section] = t[section] or {}
+			i[section] = {}
+			table.insert(i,section)
+		end
+		if line:match("^;") or line:match("^#") then
+			line = ""
+		end
+		local key, value = line:match("^([._$%w]+)%s-=%s-(.+)$")
+		if key and value then
+			if tonumber(value) then value = tonumber(value) end
+			if value == "true" then value = true end
+			if value == "false" then value = false end
+			t[section][key] = value
+			table.insert(i[section],key)
+		end
+	end
+	return t, i
+end
+
+function algo.ini.save(t, i)
+	local contents = ""
+	if i then
+		for _,section in ipairs(i) do
+			contents = contents .. ("[%s]\n"):format(section)
+			for _, key in ipairs(i[section]) do
+				contents = contents .. ("%s=%s\n"):format(key, tostring(t[section][key]))
+			end
+			contents = contents .. "\n"
+		end
+	else
+		for section, s in pairs(t) do
+			contents = contents .. ("[%s]\n"):format(section)
+			for key, value in pairs(s) do
+				contents = contents .. ("%s=%s\n"):format(key, tostring(value))
+			end
+			contents = contents .. "\n"
+		end
+	end
+	return contents
+end
+
+return inifile
+
