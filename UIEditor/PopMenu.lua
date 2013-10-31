@@ -18,7 +18,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 	if not szTreeNodeType then
 		return
 	end
-	
+
 	local tOptions = {}
 	if szTreeNodeType == "Frame" or szTreeNodeType:match("^Wnd") then
 		table.insert(tOptions, {
@@ -29,12 +29,12 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 			{szOption = "复选框　　　WndCheckBox", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndCheckBox") end},
 			{szOption = "输入框　　　WndEdit", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndEdit") end},
 			{szOption = "标签页面　　WndPage", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndPage") end},
-			{szOption = "标签页面集　WndPageSet", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndPageSet") end},		
-			{szOption = "小地图　　　WndMiniMap", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndMiniMap") end},		
+			{szOption = "标签页面集　WndPageSet", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndPageSet") end},
+			{szOption = "小地图　　　WndMiniMap", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndMiniMap") end},
 			{szOption = "场景　　　　WndScene", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndScene") end},
 			{szOption = "内嵌网页　　WndWebPage", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndWebPage") end},
 		})
-		
+
 		-- 只能拥有一个主容器组件
 		local bEnableHandle = true
 		if tNodeInfo.tChild then
@@ -49,7 +49,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 			szOption = "★添加主容器组件", bDisable = not bEnableHandle, r = 255, g = 255, b = 255, fnAction = function() UIEditor.AppendTreeNode(treeNode, "Handle") end
 		})
 	end
-	
+
 	if szTreeNodeType == "Frame" then
 		table.insert(tOptions, {
 			szOption = "　更改窗口层级：",
@@ -59,8 +59,8 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 			{szOption = "Normal", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Normal") end},
 			{szOption = "Normal1", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Normal1") end},
 			{szOption = "Normal2", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Normal2") end},
-			{szOption = "Topmost", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Topmost") end},		
-			{szOption = "Topmost1", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Topmost1") end},		
+			{szOption = "Topmost", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Topmost") end},
+			{szOption = "Topmost1", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Topmost1") end},
 			{szOption = "Topmost2", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Topmost2") end},
 			{szOption = "Texture", fnAction = function() UIEditor.ModifyWindowLayer(treeNode, "Texture") end},
 		})
@@ -78,7 +78,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 			{szOption = "阴影组件　　Shadow", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Shadow") end},
 			{szOption = "动画组件　　Animate", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Animate") end},
 			{szOption = "格子组件　　Box", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Box") end},
-			{szOption = "场景组件　　Scene", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Scene") end},		
+			{szOption = "场景组件　　Scene", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Scene") end},
 			{szOption = "树节点组件　TreeLeaf", fnAction = function() UIEditor.AppendTreeNode(treeNode, "TreeLeaf") end},		-- TODO: 只有树容器才应该允许这个
 			{szOption = "容器组件　　Handle", fnAction = function() UIEditor.AppendTreeNode(treeNode, "Handle") end},
 		})
@@ -86,27 +86,27 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 			bDevide = true
 		})
 	end
-	
+
 	table.insert(tOptions, {
 		szOption = "　置於底層", r = 150, g = 150, b = 255, fnAction = function() UIEditor.MoveTreeNode(treeNode, -999) end
 	})
-	
+
 	table.insert(tOptions, {
 		szOption = "　置於頂層", r = 150, g = 255, b = 150, fnAction = function() UIEditor.MoveTreeNode(treeNode, 999) end
-	})	
-	
+	})
+
 	table.insert(tOptions, {
 		szOption = "　上移位置", r = 255, g = 255, b = 255, fnAction = function() UIEditor.MoveTreeNode(treeNode, -1) end
 	})
-	
+
 	table.insert(tOptions, {
 		szOption = "　下移位置", r = 255, g = 255, b = 255, fnAction = function() UIEditor.MoveTreeNode(treeNode, 1) end
-	})	
-	
+	})
+
 	table.insert(tOptions, {
 		szOption = "　删除节点", r = 255, g = 50, b = 75, fnAction = function() UIEditor.DeleteTreeNode(treeNode) end
 	})
-	
+
 	table.insert(tOptions, {
 		bDevide = true
 	})
@@ -114,11 +114,11 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 	table.insert(tOptions, {
 		szOption = "　复制节点", bDisable = (treeNode.szType == "Frame"), fnAction = function() UIEditor.CopyTreeNode(treeNode) end
 	})
-	
+
 	table.insert(tOptions, {
 		szOption = "　粘贴节点", bDisable = not UIEditor.tCopyTableCache, fnAction = function() UIEditor.PasteTreeNode(treeNode) end
 	})
-		
+
 	local nX, nY = Cursor.GetPos(true)
 	tOptions.x, tOptions.y = nX + 15, nY + 15
 	PopupMenu(tOptions)
@@ -135,7 +135,7 @@ function UIEditor.PopControlSelectMenu()
 	local nHandleX, nHandleY = UIEditor.handleHoverSelectEffect:GetRelPos()
 	local nMouseX, nMouseY = Cursor.GetPos()
 	local nMouseInnerX, nMouseInnerY = nMouseX - nHandleX, nMouseY - nHandleY
-	
+
 	local tResult = {}
 	local tResultArray = {}
 	local nCount = UIEditor.handleUITree:GetItemCount()
@@ -143,8 +143,8 @@ function UIEditor.PopControlSelectMenu()
 		local treeNode = UIEditor.handleUITree:Lookup(i)
 		if treeNode and treeNode.tInfo then
 			local tNodeInfo = treeNode.tInfo
-			local nX = tNodeInfo.nX or 0
-			local nY = tNodeInfo.nY or 0
+			local nX = tNodeInfo.nLeft or 0
+			local nY = tNodeInfo.nTop or 0
 			local nW = tNodeInfo.nWidth or 0
 			local nH = tNodeInfo.nHeight or 0
 
@@ -182,7 +182,7 @@ function UIEditor.PopControlSelectMenu()
 				})
 			end
 			table.insert(tOptions, t)
-		end		
+		end
 	end
 
 	tOptions.x, tOptions.y = nMouseX + 15, nMouseY + 15
@@ -212,7 +212,7 @@ function UIEditor.PopImageSelectMenu()
 		end
 		table.insert(tOptions, t)
 	end
-	
+
 	local nX, nY = Cursor.GetPos()
 	tOptions.x, tOptions.y = nX + 15, nY + 15
 	PopupMenu(tOptions)
@@ -233,7 +233,7 @@ function UIEditor.PopImageTypeMenu()
 				UIEditor.treeNodeSelected.tInfo.szImageType = UIEditor.tImageTypes[i]
 				UIEditor.UndoScopeEnd(UIEditor.treeNodeSelected.tInfo.szName)
 			end,
-		})		
+		})
 	end
 
 	local nX, nY = Cursor.GetPos()

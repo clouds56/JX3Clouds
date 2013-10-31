@@ -1,5 +1,5 @@
 --Output(pcall(dofile, "Interface\\UIEditor\\ConstAndEnum.lua"))
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" ø™ ºº”‘ÿ ...]] .. "\n"))
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" ø™ ºº”‘ÿ ...]] .. "\n"))
 
 UIEditor = UIEditor or {}
 
@@ -224,4 +224,63 @@ UIEditor.tImageFileBaseNameList = {									-- Õº∆¨Œƒº˛¡–±Ì, ƒø«∞‘› ±÷ª÷ß≥÷ ÷∂ØŒ
 	},
 }
 
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" º”‘ÿÕÍ≥… ...]] .. "\n"))
+local fnimagepath,fnrimagepath = function(s)return s and s..".UITex" or "" end,function(s)return s and s:sub(1,-7) end
+local fnimagetype,fnrimagetype = function(s)return s and UIEditor.tImageTypes[s] or 0 end,function(n)return UIEditor.tImageTypes[n+1]end
+local fnhaligntype,fnrhaligntype = function(s)return s and UIEditor.tTextHAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextHAlignTypes[n+1] end
+local fnvaligntype,fnrvaligntype = function(s)return s and UIEditor.tTextVAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextVAlignTypes[n+1] end
+local fnbooltobin,fnbintobool = function(b)return b and 1 or 0 end,function(n)return n and n~=0 and true or false end
+local fnnbooltobin,fnbintonbool = function(b)return b and 0 or 1 end,function(n)return not(n and n~=0 and true or false) end
+
+UIEditor.tNodeInfoDefault = {
+	{"Left",	"Common",	"nLeft",	0},
+	{"Top",		"Common",	"nTop",		0},
+	{"Width",	"Common",	"nWidth",	0},
+	{"Height",	"Common",	"nHeight",	0},
+
+	{"DragAreaLeft",		"Wnd",	"nDragAreaLeft",		0},	
+	{"DragAreaTop",			"Wnd",	"nDragAreaTop",			0},
+	{"DragAreaWidth",		"Wnd",	"nDragAreaWidth",		0},
+	{"DragAreaHeight",		"Wnd",	"nDragAreaHeight",		0},
+	{"AnimateStartPosX",	"Wnd",	"nAnimateStartPosX",	0},
+	{"AnimateStartPosY",	"Wnd",	"nAnimateStartPosY",	0},
+	{"AnimateEndPosX",		"Wnd",	"nAnimateEndPosX",		0},
+	{"AnimateEndPosY",		"Wnd",	"nAnimateEndPosY",		0},
+	{"AnimateTimeSpace",	"Wnd",	"nAnimateTimeSpace",	0},
+	{"AnimateMoveSpeed",	"Wnd",	"nAnimateMoveSpeed",	0},
+	
+	{"._Comment",	"CommonNonZero",	"szComment",	""},
+
+	{"$Tip",		"Tip",		"szTip",		""},
+	{"ShowTipType",	"Tip",		"nShowTipType",	0},
+	{"OrgTip",		"Tip",		"nOrgTip",		1},
+
+	{"EventID",		"CommonNonZero",	"nEventID",		0},
+	{"Alpha",		"CommonNonZero",	"nAlpha",		0},
+	{"Image",		"CommonNonZero",	"szImagePath",	nil,	fnimagepath,	fnrimagepath},
+	{"Frame",		"CommonOption",		"nFrame",		0},
+	{"Group",		"CommonOption",		"nAniGroup",	-1},
+	{"ImageType",	"CommonNonZero",	"szImageType",	0,	fnimagetype,	fnrimagetype},
+	{"FontSpacing",	"CommonOption",		"nFontSpacing",	nil},
+	{"RowSpacing",	"CommonOption",		"nRowSpacing",	nil},
+	{"FontScheme",	"CommonOption",		"nFontScheme",	nil},
+
+	{"HAlign",	"CommonNonZero",	"szHAlignType",	0,	fnhaligntype,	fnrhaligntype},
+	{"VAlign",	"CommonNonZero",	"szVAlignType",	0,	fnvaligntype,	fnrvaligntype},
+
+	{"$Text",			"Text",	"szText",			""},
+	{"OrgText",			"Text",	"nOrgText",			1},
+	{"ShowAll",			"Text",	"bShowAll",			0,	fnbooltobin,	fnbintobool},
+	{"AutoEtc",			"Text",	"bAutoEtc",			0,	fnbooltobin,	fnbintobool},
+	{"CenterEachRow",	"Text",	"bCenterEachRow",	0,	fnbooltobin,	fnbintobool},
+	{"MultiLine",		"Text",	"bMultiLine",		0,	fnbooltobin,	fnbintobool},
+	{"MlAutoAdj",		"Text",	"bMlAutoAdj",		0,	fnbooltobin,	fnbintobool},
+	{"RichText",		"Text",	"bNoRichText",		0,	fnnbooltobin,	fnbintonbool},
+
+	{"PosType",				"Handle",	"nPosType",				0},
+	{"HandleType",			"Handle",	"nHandleType",			0},
+	{"FirstItemPosType",	"Handle",	"nFirstItemPosType",	0},
+
+	{"ShadowColor",		"CommonOption",	"szColorName",	nil},
+}
+
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" º”‘ÿÕÍ≥… ...]] .. "\n"))

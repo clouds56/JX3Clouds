@@ -1,5 +1,5 @@
 --Output(pcall(dofile, "Interface\\UIEditor\\TreeNode.lua"))
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\TreeNode.lua" 开始加载 ...]] .. "\n"))
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\TreeNode.lua" 开始加载 ...]] .. "\n"))
 
 UIEditor = UIEditor or {}
 
@@ -511,4 +511,4 @@ function UIEditor.PasteTreeNode(treeNode)
 	UIEditor.UndoScopeEnd(treeNode.szName)
 end
 
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\TreeNode.lua" 加载完成 ...]] .. "\n"))
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\TreeNode.lua" 加载完成 ...]] .. "\n"))
