@@ -11,7 +11,7 @@ function inifile.parse(str)
 			i[section] = {}
 			table.insert(i,section)
 		end
-		if line:match("^;") then
+		if line:match("^;") or line:match("^#") then
 			line = ""
 		end
 		local key, value = line:match("^([._$%w]+)%s-=%s-(.+)$")

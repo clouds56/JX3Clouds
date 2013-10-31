@@ -263,7 +263,7 @@ local cpuusage={}
 local hookused={}
 Clouds_Debug.hooklist = hooklist
 Clouds_Debug.hookused = hookused
-Clouds_Debug.hookused = cpuusage
+Clouds_Debug.cpuusage = cpuusage
 
 function Clouds_Debug.SetTable(t,name,value)
 	t=t or _G
