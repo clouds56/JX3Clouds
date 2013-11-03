@@ -76,7 +76,15 @@ UIEditor.tTreeNodeTypes = {											-- ´°ów Type ±í
 	"Box",				-- ¸ñ×Ó×é¼þ
 	"Scene",			-- ³¡¾°×é¼þ
 	"TreeLeaf",			-- Ê÷½Úµã×é¼þ
-	"Handle"			-- ÈÝÆ÷×é¼þ
+	"Handle",			-- ÈÝÆ÷×é¼þ
+	
+	["Scene"] = {"WndFrame","WndScene","WndWindow"},
+	["Window"] = {"WndWindow","WndFrame"},
+	["WndCommon"] = {"WndFrame","WndWindow","WndButton","WndCheckBox","WndEdit","WndPage","WndPageSet","WndScene","WndWebPage","WndMinimap","WndMovie"},
+	["Button"] = {"WndButton","WndCheckBox"},
+	["Edit"] = {"WndEdit","Text"},
+	["Item"] = {"Handle","Null","Text","Image","Shadow","Animate","Box","TreeLeaf"},
+
 }
 
 UIEditor.tImageTypes = {											-- ˆDÆ¬ Type ±í
@@ -224,63 +232,271 @@ UIEditor.tImageFileBaseNameList = {									-- Í¼Æ¬ÎÄ¼þÁÐ±í, Ä¿Ç°ÔÝÊ±Ö»Ö§³ÖÊÖ¶¯Î
 	},
 }
 
-local fnimagepath,fnrimagepath = function(s)return s and s..".UITex" or "" end,function(s)return s and s:sub(1,-7) end
-local fnimagetype,fnrimagetype = function(s)return s and UIEditor.tImageTypes[s] or 0 end,function(n)return UIEditor.tImageTypes[n+1]end
-local fnhaligntype,fnrhaligntype = function(s)return s and UIEditor.tTextHAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextHAlignTypes[n+1] end
-local fnvaligntype,fnrvaligntype = function(s)return s and UIEditor.tTextVAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextVAlignTypes[n+1] end
-local fnbooltobin,fnbintobool = function(b)return b and 1 or 0 end,function(n)return n and n~=0 and true or false end
-local fnnbooltobin,fnbintonbool = function(b)return b and 0 or 1 end,function(n)return not(n and n~=0 and true or false) end
+local fnimagepath	=	{function(s)return s and s..".UITex" or "" end,function(s)return s and s:sub(1,-7) end}
+local fnimagetype	=	{function(s)return s and UIEditor.tImageTypes[s] or 0 end,function(n)return UIEditor.tImageTypes[n+1]end}
+local fnhaligntype	=	{function(s)return s and UIEditor.tTextHAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextHAlignTypes[n+1] end}
+local fnvaligntype	=	{function(s)return s and UIEditor.tTextVAlignTypes[s] or 0 end,function(n)return n and UIEditor.tTextVAlignTypes[n+1] end}
+local fnbooltobin	=	{function(b)return b and 1 or 0 end,function(n)return n and n~=0 and true or false end}
+local fnnbooltobin	=	{function(b)return b and 0 or 1 end,function(n)return not(n and n~=0 and true or false) end}
 
 UIEditor.tNodeInfoDefault = {
-	{"Left",	"Common",	"nLeft",	0},
-	{"Top",		"Common",	"nTop",		0},
-	{"Width",	"Common",	"nWidth",	0},
-	{"Height",	"Common",	"nHeight",	0},
+	--Option means write if non nil
+	--Nonzero means write if non zero or empty string
+	--Important(Default) means if nil write default
+	--
+	--the mode is ((Common|Tip|Window.etc|WndFrame.etc|Item|Handle.etc)(Option(no case)|Nonzero|Important|Default)?)(|\1)+
+	--
+	--[[Manual
+	{"._WndType",	"Common",	"sz_WndType",	""},	-- string : szItemType
+	{"._Parent",	"Common",	"sz_Parent",	""},	-- string : szNext
+	--]]
 
-	{"DragAreaLeft",		"Wnd",	"nDragAreaLeft",		0},	
-	{"DragAreaTop",			"Wnd",	"nDragAreaTop",			0},
-	{"DragAreaWidth",		"Wnd",	"nDragAreaWidth",		0},
-	{"DragAreaHeight",		"Wnd",	"nDragAreaHeight",		0},
-	{"AnimateStartPosX",	"Wnd",	"nAnimateStartPosX",	0},
-	{"AnimateStartPosY",	"Wnd",	"nAnimateStartPosY",	0},
-	{"AnimateEndPosX",		"Wnd",	"nAnimateEndPosX",		0},
-	{"AnimateEndPosY",		"Wnd",	"nAnimateEndPosY",		0},
-	{"AnimateTimeSpace",	"Wnd",	"nAnimateTimeSpace",	0},
-	{"AnimateMoveSpeed",	"Wnd",	"nAnimateMoveSpeed",	0},
+	--Only Common's default is Important
+	{"._Comment",	"CommonNonzero",	"szComment",	nil},	---
+	{"Left",		"Common",			"nLeft",		0},		---
+	{"Top",			"Common",			"nTop",			0},		---
+	{"Width",		"Common",			"nWidth",		0},		---
+	{"Height",		"Common",			"nHeight",		0},		---
+
+	--Tip is special, if szTip is set ALL 4 properties should be written
+	--otherwise none
+{"$Tip",		"Tip",		"szTip",		nil},			---
+{"TipRichText",	"Tip",		"nTipRichText",	0},				--- Integer : &nValue1
+{"OrgTip",		"Tip",		"nOrgTip",		1},				---TODO
+{"ShowTipType",	"Tip",		"nShowTipType",	0},				---TODO
+
+	--TODO: Frame list(but it seems no sense?)
+	--"Scene" means WndFrame|WndScene|WndWindow
+{"DragAreaLeft",		"SceneDefault",		"nDragAreaLeft",		0},			--TODO
+{"DragAreaTop",			"SceneDefault",		"nDragAreaTop",			0},			--TODO
+{"DragAreaWidth",		"WindowDefault",	"nDragAreaWidth",		0},			--TODO
+{"DragAreaHeight",		"WindowDefault",	"nDragAreaHeight",		0},			--TODO
+{"AnimateStartPosX",	"SceneDefault",		"nAnimateStartPosX",	0},			--TODO
+{"AnimateStartPosY",	"SceneDefault",		"nAnimateStartPosY",	0},			--TODO
+{"AnimateEndPosX",		"SceneDefault",		"nAnimateEndPosX",		0},			--TODO
+{"AnimateEndPosY",		"SceneDefault",		"nAnimateEndPosY",		0},			--TODO
+{"AnimateTimeSpace",	"SceneDefault",		"nAnimateTimeSpace",	0},			--TODO
+{"AnimateMoveSpeed",	"SceneDefault",		"nAnimateMoveSpeed",	0},			--TODO
+
+	--Following properties is Option
+	{"ScriptFile",		"WindowNonzero",		"szScriptFile",		nil},	-- string : 
+
+	--vim:set ts=4 sw=4
+	--"Window" means WndWindow|WndFrame
+	{"IsCustomDragable",		"Window",		"bIsCustomDragable",		0},	-- bool : 
+	{"DragAreaRight",			"Scene",		"szuDragAreaRight",			""},	-- unknown : 
+	{"DragAreaBottom",			"Scene",		"szuDragAreaBottom",		""},	-- unknown : 
+	{"MinWidth",				"Scene",		"nMinWidth",				0},	-- unknown : 
+	{"MinHeight",				"Scene",		"nMinHeight",				0},	-- unknown : 
+	{"MaxWidth",				"Scene",		"nMaxWidth",				0},	-- unknown : 
+	{"MaxHeight",				"Scene",		"nMaxHeight",				0},	-- unknown : 
+	{"DisableBringToTop",		"Window|WndButton",	"bDisableBringToTop",	0},	-- unknown : 
+	--"WndCommon" means WndFrame|WndWindow|WndButton|WndCheckBox|WndEdit|WndPage|WndPageSet|WndScene|WndWebPage|WndMinimap|WndMovie
+	{"DummyWnd",			"WndCommon|WndNewScrollBar",	"bDummyWnd",	0},	-- unknown : 
+	{"Moveable",			"WndCommon|WndNewScrollBar",	"bMoveable",	0},	-- unknown : 
+	{"DisableBreath",			"Window",		"bDisableBreath",			0},	-- unknown : 
+	{"MousePenetrable",			"Scene|WndButton",	"szuMousePenetrable",	""},	-- unknown : 
+
+	{"ItemHandle",				"WndFrame",	"szuItemHandle",			""},	-- unknown : 
+	{"MultiFrame",				"WndFrame",	"szuMultiFrame",			""},	-- unknown : 
+	{"ClassName",				"WndFrame",	"szuClassName",				""},	-- unknown : 
+	{"RenderSampling",			"WndFrame",	"szuRenderSampling",		""},	-- unknown : 
+	{"BreatheWhenHide",			"WndFrame",	"bBreatheWhenHide",			0},	-- unknown : 
+	{"SelfHoldMouseHover",		"WndFrame",	"szuSelfHoldMouseHover",	""},	-- unknown : 
+	{"AreaByEventItem",			"WndFrame",	"szuAreaByEventItem",		""},	-- unknown : 
+	{"RenderEvent",				"WndFrame",	"szuRenderEvent",			""},	-- unknown : 
+	{"ShowWhenHideUI",			"WndFrame",	"bShowWhenHideUI",			0},	-- unknown : 
+	--Except NewScrollBar
+	{"FollowMove",				"WndCommon",	"szuFollowMove",		""},	-- unknown : 
+	{"FollowSize",				"WndCommon",	"szuFollowSize",		""},	-- unknown : 
+
+	{"EnableTabChangeFocus",	"Window",	"bEnableTabChangeFocus",	0},	-- unknown : 
+	{"MouseFollowFocus",		"Window",	"szuMouseFollowFocus",		""},	-- unknown : 
+	{"ItemCount",				"Window",	"nItemCount",				0},	-- unknown : 
+	{"Item_0",					"Window",	"szuItem_0",				""},	-- unknown : 
+	{"Item_1",					"Window",	"szuItem_1",				""},	-- unknown : 
+	{"Item_2",					"Window",	"szuItem_2",				""},	-- unknown : 
+
+	{"AreaFile",				"WndFrame",	"szAreaFile",				nil},	-- String : szBuffer
+
+	--Button means WndButton|WndCheckBox
+	{"Trans",		"Button|WndPageSet|WndMovie",	"szuTrans",			""},	-- unknown : 	87
+	--Button,CheckBox,Page,Movie
+{"Image",		"ButtonNonzero|PageNonzero",					"szImage",	nil,		fnimagepath},	--- String : szImagePath	88
+{"Frame",		"Button|WndPage|WndPageSet|WndScene|WndMovie",	"nFrame",	0},	-- Integer : &nValue	89
+	{"GrayColor",	"Button|WndMovie",				"szuGrayColor",			""},	-- unknown : 	90
+
+	--WndButton and WndCheckBox
+	{"Up",				"Button",		"szuUp",				""},	-- unknown : 	91
+	{"Down",			"Button",		"szuDown",				""},	-- unknown : 	92
+	{"DisableFrame",	"Button",		"nDisableFrame",		-1},	-- Integer : &nValue	93
+	{"NoOverSound",		"Button",		"szuNoOverSound",		""},	-- unknown : 	94
+	{"Over",			"Button",		"szuOver",				""},	-- unknown : 	95
+	{"OverFrame",		"Button",		"szuOverFrame",			""},	-- unknown : 	96
+	{"CheckBox",		"WndButton",	"szuCheckBox",			""},	-- unknown : 	97
+	{"CheckOver",		"Button",		"szuCheckOver",			""},	-- unknown : 	98
+	{"SendHoldMsg",		"Button",		"szuSendHoldMsg",		""},	-- unknown : 	99
+	{"NormalGroup",		"Button",		"szuNormalGroup",		""},	-- unknown : 	100
+	{"MouseOverGroup",	"Button",		"szuMouseOverGroup",	""},	-- unknown : 	101
+	{"MouseDownGroup",	"Button",		"szuMouseDownGroup",	""},	-- unknown : 	102
+	{"DisableGroup",	"Button",		"szuDisableGroup",		""},	-- unknown : 	103
+	{"MouseOverFont",	"Button",		"szuMouseOverFont",		""},	-- unknown : 	106
+	{"MouseDownFont",	"Button",		"szuMouseDownFont",		""},	-- unknown : 	107
+	{"DisableFont",		"Button",		"szuDisableFont",		""},	-- unknown : 	108
+	--WndButtonOnly
+	{"ButtonDisable",	"WndButton",	"szuButtonDisable",		""},	-- unknown : 	104
+	{"NormalFont",		"WndButton",	"szuNormalFont",		""},	-- unknown : 	105
+	--WndCheckBox
+	--Following 8 Orz
+	{"UnCheckAndEnable",	"WndCheckBox",	"bUnCheckAndEnable",	0},	-- unknown : 	112
+	{"CheckAndEnable",		"WndCheckBox",	"bCheckAndEnable",		0},	-- unknown : 	113
+	{"UnCheckAndDisable",	"WndCheckBox",	"bUnCheckAndDisable",	0},	-- unknown : 	114
+	{"CheckAndDisable",		"WndCheckBox",	"bCheckAndDisable",		0},	-- unknown : 	115
+	{"UnCheckedAndEnableWhenMouseOver",		"WndCheckBox",	"bUnCheckedAndEnableWhenMouseOver",	0},	-- unknown : 	116
+	{"CheckedAndEnableWhenMouseOver",		"WndCheckBox",	"bCheckedAndEnableWhenMouseOver",	0},	-- unknown : 	117
+	{"CheckedAndDisableWhenMouseOver"	,	"WndCheckBox",	"bCheckedAndDisableWhenMouseOver",	0},	-- unknown : 	118
+	{"UnCheckedAndDisableWhenMouseOver",	"WndCheckBox",	"bUnCheckedAndDisableWhenMouseOver",	0},	-- unknown : 	119
+	{"Checking",			"WndCheckBox",	"szuChecking",			""},	-- unknown : 	120
+	{"UnChecking",			"WndCheckBox",	"szuUnChecking",		""},	-- unknown : 	121
+	{"RadioButton",			"WndCheckBox",	"szuRadioButton",		""},	-- unknown : 	123
+	{"UncheckFont",			"WndCheckBox",	"szuUncheckFont",		""},	-- unknown : 	124
+	{"CheckFont",			"WndCheckBox",	"szuCheckFont",			""},	-- unknown : 	125
+	{"DisableCheck",		"WndCheckBox",	"szuDisableCheck",		""},	-- unknown : 	130
+	{"CheckedWhenCreate",	"WndCheckBox",	"szuCheckedWhenCreate",	""},	-- unknown : 	131
+
+
+	--Edit means WndEdit|Text
+	{"MultiLine",			"Edit",		"bMultiLine",			0},	-- bool : &nValue	153
+	{"FontScheme",			"Edit",		"nFontScheme",			0},	-- number : &nValue	158
+	{"RowSpacing",			"Edit",		"nRowSpacing",			0},	-- number : &nValue	162
+	{"FontSpacing",			"Edit",		"nFontSpacing",			0},	-- number : &nValue	163
+	{"$Text",				"Edit",		"szText",				""},	-- string : szText	168
+	{"HAlign",				"Edit",		"nHAlign",				0,		fnhaligntype},	-- number : &nValue	170
+	{"VAlign",				"Edit",		"nVAlign",				0,		fnvaligntype},	-- number : &nValue	171
+	{"Password",			"WndEdit",	"szuPassword",			""},	-- unknown : 	154
+	{"Type",				"WndEdit",	"szuType",				""},	-- unknown : 	155
+	{"TextLength",			"WndEdit",	"szuTextLength",		""},	-- unknown : 	156
+	{"MaxLen",				"WndEdit",	"szuMaxLen",			""},	-- unknown : 	157
+	{"FocusBgColor",		"WndEdit",	"szuFocusBgColor",		""},	-- unknown : 	159
+	{"FocusBgColorAlpha",	"WndEdit",	"szuFocusBgColorAlpha",	""},	-- unknown : 	160
+	{"SelectBgColorAlpha",	"WndEdit",	"szuSelectBgColorAlpha",	""},	-- unknown : 	161
+	{"SelFontScheme",		"WndEdit",	"szuSelFontScheme",		""},	-- unknown : 	164
+	{"CaretFontScheme",		"WndEdit",	"szuCaretFontScheme",	""},	-- unknown : 	165
+	{"SelectBgColor",		"WndEdit",	"szuSelectBgColor",		""},	-- unknown : 	166
+	{"Alpha",				"WndEdit",	"nAlpha",				255},	-- number : &nValue	167
+	{"PosType",				"WndEdit",	"nPosType",				0},	-- number : &nValue	169
+
+	--WndPageSet
+	{"PageCount",	"WndPageSet",	"nPageCount",		0},	-- unknown : 	183
+	{"Page_0",		"WndPageSet",	"szuPage_0",		""},	-- unknown : 	184
+	{"CheckBox_0",	"WndPageSet",	"szuCheckBox_0",	""},	-- unknown : 	185
+	{"Page_1",		"WndPageSet",	"szuPage_1",		""},	-- unknown : 	186
+	{"CheckBox_1",	"WndPageSet",	"szuCheckBox_1",	""},	-- unknown : 	187
+	{"Page_2",		"WndPageSet",	"szuPage_2",		""},	-- unknown : 	188
+	{"CheckBox_2",	"WndPageSet",	"szuCheckBox_2",	""},	-- unknown : 	189
+	{"Page_3",		"WndPageSet",	"szuPage_3",		""},	-- unknown : 	191
+	{"CheckBox_3",	"WndPageSet",	"szuCheckBox_3",	""},	-- unknown : 	192
+	{"Page_4",		"WndPageSet",	"szuPage_4",		""},	-- unknown : 	193
+	{"CheckBox_4",	"WndPageSet",	"szuCheckBox_4",	""},	-- unknown : 	194
+	{"Page_5",		"WndPageSet",	"szuPage_5",		""},	-- unknown : 	195
+	{"CheckBox_5",	"WndPageSet",	"szuCheckBox_5",	""},	-- unknown : 	196
+
+	--Movie means WndMovie|WndScene
+	{"Alpha",					"WndScene",	"nAlpha",				255},	-- number : &nValue	198
+	{"PosType",					"WndScene",	"nPosType",				0},	-- number : &nValue	199
+	{"EnableFrameMove",			"WndScene",	"szuEnableFrameMove",	""},	-- unknown : 	200
+	{"DisableRenderTerrain",	"Movie",	"szuDisableRenderTerrain",	""},	-- unknown : 	245
+	{"DisableRenderSkyBox",		"Movie",	"szuDisableRenderSkyBox",	""},	-- unknown : 	246
+	{"EnableAlpha",				"Movie",	"nEnableAlpha",			0},	-- Integer : &nValue	247
+
+	--WndWebPage
+	{"$URL",		"WndWebPage",		"szURL",		""},	-- unknown : 	227
+
+	--WndMiniMap
+	{"MinimapType",		"WndMinimap",	"szuMinimapType",		""},	-- unknown : 	232
+	{"image",			"WndMinimap",	"szuimage",				""},	-- unknown : 	233
+	{"selfframe",		"WndMinimap",	"szuselfframe",			""},	-- unknown : 	234
+	{"defaulttexture",	"WndMinimap",	"szudefaulttexture",	""},	-- unknown : 	235
+	{"sharptexture",	"WndMinimap",	"szusharptexture",		""},	-- unknown : 	236
+
+	--NewScrollBar(export from old jx3 source code)
+	{"StepCount",				"WndNewScrollBar",	"szuStepCount",			""},	-- unknown : 	248
+	{"PageStepCount",			"WndNewScrollBar",	"szuPageStepCount",		""},	-- unknown : 	249
+	{"Type",					"WndNewScrollBar",	"szuType",				""},	-- unknown : 	250
+	{"SlideBtn",				"WndNewScrollBar",	"szuSlideBtn",			""},	-- unknown : 	251
+	{"AutoHideSlideButton",		"WndNewScrollBar",	"szuAutoHideSlideButton",	""},	-- unknown : 	252
+	{"AutoResizeSlideButton",	"WndNewScrollBar",	"szuAutoResizeSlideButton",	""},	-- unknown : 	253
+
+
+	------------------------------------------
+	--seperate between Wnd and Item
+	------------------------------------------
+
+	--TODO: change(meanings?)
+	--Handle|TreeLeaf
+{"HandleType",			"Handle|TreeLeaf",	"nHandleType",			0},	-- number : &nValue	11
+{"FirstItemPosType",	"Handle|TreeLeaf",	"nFirstItemPosType",	0},	-- number : &nValue	12
+	--Item means Handle|Null|Text|Image|Shadow|Animate|Box|TreeLeaf
+{"PosType",				"ItemDefault|Null|Scene",	"nPosType",				0},
+
+{"EventID",		"ItemNonzero",	"nEventID",		0},
+{"RowSpacing",	"Handle",		"nRowSpacing",	0},	-- Integer : &nValue	15
+{"PixelScroll",	"Handle",		"nPixelScroll",	0},	-- Integer : &nValue	16
+	{"ControlShow",		"Handle",	"nControlShow",			0},	-- Integer : &nValue	17
+	{"MousePenetrable",	"Handle",	"szuMousePenetrable",	""},	-- unknown : 	19
+	{"IntPos",			"Handle",	"nIntPos",				0},	-- Integer : &nValue	20
+	{"MinRowHeight",	"Handle",	"nMinRowHeight",		0},	-- Integer : &nValue	27
+	{"AreaFile",		"Handle",	"szAreaFile",			""},	-- String : szBuffer	28
+	--Execpt TreeLeaf
+	{"LockShowAndHide",	"Item",	"nLockShowAndHide",	0},	-- Integer : &nValue	18
+
+	{"IconImage",			"Handle|TreeLeaf",	"szIconImage",		""},	-- String : OutData.szImageName	21
+	{"ExpandIconFrame",		"Handle|TreeLeaf",	"nExpandIconFrame",	-1},	-- Integer : &nValue	22
+	{"CollapseIconFrame",	"Handle|TreeLeaf",	"nCollapseIconFrame",	-1},	-- Integer : &nValue	23
+	{"IndentWidth",			"Handle|TreeLeaf",	"nIndentWidth",		0},	-- Integer : &nValue	24
+	{"Indent",				"Handle|TreeLeaf",	"nIndent",			0},	-- Integer : &nValue	25
+	{"LineColor",			"Handle|TreeLeaf",	"szLineColor",		""},	-- String : szColor	26
 	
-	{"._Comment",	"CommonNonZero",	"szComment",	""},
+	--TreeLeaf
+	{"IconWidth",	"TreeLeaf",	"nIconWidth",	0},	-- Integer : &nValue	84
+	{"IconHeight",	"TreeLeaf",	"nIconHeight",	0},	-- Integer : &nValue	85
+	{"ShowLine",	"TreeLeaf",	"nShowLine",	1},	-- Integer : &nValue	86
+	{"AlwaysNode",	"TreeLeaf",	"nAlwaysNode",	0},	-- Integer : &nValue	89
 
-	{"$Tip",		"Tip",		"szTip",		""},
-	{"ShowTipType",	"Tip",		"nShowTipType",	0},
-	{"OrgTip",		"Tip",		"nOrgTip",		1},
+	--Text
+{"Alpha",		"Text",	"nAlpha",	255},	-- number : &nValue	33
+{"ShowAll",		"Text",	"bShowAll",	1},	-- bool : &nValue	39
+{"AutoEtc",		"Text",	"bAutoEtc",	0},	-- bool : &nValue	40
+{"OrgText",		"Text",	"nOrgText",	0},	-- number : &nValue	43
+{"MlAutoAdj",	"Text",	"bMlAutoAdj",	0},	-- bool : &nValue	45
+	{"CenterEachRow",	"Text",	"nCenterEachRow",	0},	-- Integer : &nValue	46
+{"RichText",	"Text",	"bRichText",	1,		fnnbooltobin},	-- bool : &nValue	47
+	{"DisableScale",	"Text",	"bDisableScale",	0},	-- Integer : &nValue	48
+	{"Al",	"Text",	"szuAl",	""},	-- unknown : 	49
 
-	{"EventID",		"CommonNonZero",	"nEventID",		0},
-	{"Alpha",		"CommonNonZero",	"nAlpha",		0},
-	{"Image",		"CommonNonZero",	"szImagePath",	nil,	fnimagepath,	fnrimagepath},
-	{"Frame",		"CommonOption",		"nFrame",		0},
-	{"Group",		"CommonOption",		"nAniGroup",	-1},
-	{"ImageType",	"CommonNonZero",	"szImageType",	0,	fnimagetype,	fnrimagetype},
-	{"FontSpacing",	"CommonOption",		"nFontSpacing",	nil},
-	{"RowSpacing",	"CommonOption",		"nRowSpacing",	nil},
-	{"FontScheme",	"CommonOption",		"nFontScheme",	nil},
+	--{"Alpha",		"CommonNonZero",	"nAlpha",		0},
+	--{"Image",		"CommonNonZero",	"szImagePath",	nil,	fnimagepath,	fnrimagepath},--TODO: Btn and others
+	--{"Frame",		"Common",		"nFrame",		0},--TODO: Btn and others
+	--{"Group",		"Common",		"nAniGroup",	-1},
+	--{"ImageType",	"CommonNonZero",	"szImageType",	0,	fnimagetype,	fnrimagetype},
 
-	{"HAlign",	"CommonNonZero",	"szHAlignType",	0,	fnhaligntype,	fnrhaligntype},
-	{"VAlign",	"CommonNonZero",	"szVAlignType",	0,	fnvaligntype,	fnrvaligntype},
+{"Image",		"ImageNonzero",	"szImage",		nil,	fnimagepath},	-- String : szImagePath	50
+{"Frame",		"Image",			"nFrame",		0},	-- Integer : &nValue	51
+{"Alpha",		"Image",			"nAlpha",		255},	-- number : &nValue	52
+{"ImageType",	"Image",			"nImageType",	0,	fnimagetype},	-- number : &nValue	55
+	{"DisableScale",	"Image",	"bDisableScale",	0},	-- Integer : &nValue	57
+	{"IntPos",			"Image",	"nIntPos",			0},	-- Integer : &nValue	58
 
-	{"$Text",			"Text",	"szText",			""},
-	{"OrgText",			"Text",	"nOrgText",			1},
-	{"ShowAll",			"Text",	"bShowAll",			0,	fnbooltobin,	fnbintobool},
-	{"AutoEtc",			"Text",	"bAutoEtc",			0,	fnbooltobin,	fnbintobool},
-	{"CenterEachRow",	"Text",	"bCenterEachRow",	0,	fnbooltobin,	fnbintobool},
-	{"MultiLine",		"Text",	"bMultiLine",		0,	fnbooltobin,	fnbintobool},
-	{"MlAutoAdj",		"Text",	"bMlAutoAdj",		0,	fnbooltobin,	fnbintobool},
-	{"RichText",		"Text",	"bNoRichText",		0,	fnnbooltobin,	fnbintonbool},
 
-	{"PosType",				"Handle",	"nPosType",				0},
-	{"HandleType",			"Handle",	"nHandleType",			0},
-	{"FirstItemPosType",	"Handle",	"nFirstItemPosType",	0},
+	{"ShadowColor",	"Shadow",	"szShadowColor",	""},	-- String : szColor	59
+{"Alpha",	"Shadow",	"nAlpha",	255},	-- number : &nValue	60
+	{"ShadowAlpha",	"Shadow",	"szuShadowAlpha",	""},	-- unknown : 	62
+{"Image",	"AnimateNonzero",	"szImage",	"",		fnimagepath},	-- String : szImagePath	65
+{"Group",	"Animate",			"nGroup",	0},	-- Integer : &nValue	66
+	{"LoopCount",	"Animate",	"nLoopCount",	0},	-- Integer : &nValue	67
 
-	{"ShadowColor",		"CommonOption",	"szColorName",	nil},
+	{"Index",	"Box",	"nIndex",	-1},	-- Integer : &nValue	71
+	{"EventName",	"Box",	"szuEventName",	""},	-- unknown : 	74
 }
 
 --OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" ¼ÓÔØÍê³É ...]] .. "\n"))

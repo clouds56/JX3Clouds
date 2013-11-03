@@ -88,6 +88,7 @@ function UIEditor.OnLButtonClick()
 	elseif szName == "Btn_Undo" then
 		UIEditor.RefreshTree(-1)
 	elseif szName == "Btn_Refresh" then
+		UIEditor.SaveTableTmp()
 		UIEditor.RefreshTree()
 	elseif szName == "Btn_Redo" then
 		UIEditor.RefreshTree(1)

@@ -24,6 +24,13 @@ function UIEditor.SaveTable()
 	SaveLUAData(dir..filename..".inic",UIEditor.CalculateINIText())
 end
 
+function UIEditor.SaveTableTmp()
+	local dir = "interface\\UIEditor\\examples\\"
+	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
+	SaveLUAData(dir..filename..".1.end",{UIEditor.tUndoStack[UIEditor.nUndoStackLevel]})
+	SaveLUAData(dir..filename..".1.inic",UIEditor.CalculateINIText())
+end
+
 function UIEditor.LoadTable()
 	local dir = "interface\\UIEditor\\examples\\"
 	local filename = LoadLUAData(dir.."LastOpen")
@@ -312,7 +319,7 @@ function UIEditor.CalculateTreeNode(str)
 	}
 	local tnoderev = {}
 	for _,v in ipairs(UIEditor.tNodeInfoDefault) do
-		tnoderev[v[1]]={v[3],v[6]}
+		tnoderev[v[1]]={v[3],v[5]}
 	end
 	local section
 	for line in (str.."\n"):gmatch("(.-)\n") do
@@ -337,7 +344,7 @@ function UIEditor.CalculateTreeNode(str)
 			elseif trev then
 				
 				if trev[2] then
-					t[section][trev[1]]=trev[2](value)
+					t[section][trev[1]]=trev[2][2](value)
 				else
 					t[section][trev[1]]=value
 				end
@@ -393,19 +400,74 @@ function UIEditor.CalculateINIText()
 			--UIEditor.tNodeInfoDefault in ConstAndEnum.lua
 			--almost the same as the following statements
 			--the table is {ininame, type, nodename, default, transfunc}
+			local function getwndtype(mm)
+				local c = mm:match("Nonzero$") or mm:match("Default$") or mm:match("Option$")
+				for i,v in ipairs(UIEditor.tTreeNodeTypes) do
+					if mm:find(v)==1 then
+						return v,c or "Option"
+					end
+				end
+				for i,v in pairs(UIEditor.tTreeNodeTypes) do
+					if type(i)=="string" and mm:find(i)==1 then
+						return i,c or "Option"
+					end
+				end
+				if mm:find("Common")==1 then
+					return "Common",c or "Option"
+				elseif mm:find("Tip")==1 then
+					return "Tip","Nonzero"
+				end
+				return mm,"Option"
+			end
+			local function cantp(tp,szType)
+				if tp=="Tip" or tp=="Common" or tp=="Frame" then
+					return true
+				end
+				if szType==tp then
+					return true
+				end
+				local tps = UIEditor.tTreeNodeTypes[tp]
+				for _,v in ipairs(tps or {}) do
+					if v==szType then
+						return true
+					end
+				end
+				return false
+			end
+			local function cantc(tc,val)
+				if tc=="Option" and type(val)=="nil" then
+					return false
+				elseif tc=="Nonzero" and (type(val)=="nil" or val==0 or val=="") then
+					return false
+				end
+				return true
+			end
 			for _,v in ipairs(UIEditor.tNodeInfoDefault) do
 				local mode,val=v[2],tNodeInfo[v[3]]
-				if mode:find("Wnd") and not szType:find("^Wnd") then
-				elseif mode:find("Handle") and szType~="Handle" then
-				elseif mode:find("Text") and szType~="Text" then
-				elseif mode:find("Tip") and (not tNodeInfo.szTip or tNodeInfo.szTip=="") then
-				elseif mode:find("Option") and not val then
-				elseif mode:find("NonZero") and (not val or val==0 or val=="") then
-				else
-					if v[5] then
-						val = v[5](val)
+				for mm in (mode.."|"):gmatch("(.-)|") do
+					local tp,tc=getwndtype(mm)
+					if tp=="Tip" and (not tNodeInfo.szTip or tNodeInfo.szTip=="") then
+						--continue
+					elseif tp=="Frame" and szType~="WndFrame" then
+						--continue
+					elseif not cantp(tp,szType) then
+						--continue
+					elseif not cantc(tc,val) then
+						--continue
+					else
+						if v[3]:find("b")==1 and not v[5] then--bool
+							v[5]=fnbooltobin
+						end
+						if type(v[5])=="table" and type(v[5][1])=="function" then
+							val = v[5][1](val)
+						elseif type(v[5])=="function" then
+							val = v[5](val)
+						end
+						if cantc(tc,val) then
+							szINI = szINI .. v[1] .. "=" .. tostring(val or v[4]) .. "\n"
+							break
+						end
 					end
-					szINI = szINI .. v[1] .. "=" .. tostring(val or v[4] or "") .. "\n"
 				end
 			end
 		--[[
