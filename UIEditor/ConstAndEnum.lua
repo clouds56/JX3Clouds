@@ -249,10 +249,10 @@ UIEditor.tNodeInfoDefault = {
 	--[[Manual
 	{"._WndType",	"Common",	"sz_WndType",	""},	-- string : szItemType
 	{"._Parent",	"Common",	"sz_Parent",	""},	-- string : szNext
+	{"._Comment",   "CommonNonzero",        "szComment",    nil},   ---
 	--]]
 
 	--Only Common's default is Important
-	{"._Comment",	"CommonNonzero",	"szComment",	nil},	---
 	{"Left",		"Common",			"nLeft",		0},		---
 	{"Top",			"Common",			"nTop",			0},		---
 	{"Width",		"Common",			"nWidth",		0},		---
@@ -373,6 +373,7 @@ UIEditor.tNodeInfoDefault = {
 	{"$Text",				"Edit",		"szText",				""},	-- string : szText	168
 	{"HAlign",				"Edit",		"nHAlign",				0,		fnhaligntype},	-- number : &nValue	170
 	{"VAlign",				"Edit",		"nVAlign",				0,		fnvaligntype},	-- number : &nValue	171
+	{"Alpha",				"Edit",		"nAlpha",				255},	-- number : &nValue	167
 	{"Password",			"WndEdit",	"szuPassword",			""},	-- unknown : 	154
 	{"Type",				"WndEdit",	"szuType",				""},	-- unknown : 	155
 	{"TextLength",			"WndEdit",	"szuTextLength",		""},	-- unknown : 	156
@@ -383,7 +384,6 @@ UIEditor.tNodeInfoDefault = {
 	{"SelFontScheme",		"WndEdit",	"szuSelFontScheme",		""},	-- unknown : 	164
 	{"CaretFontScheme",		"WndEdit",	"szuCaretFontScheme",	""},	-- unknown : 	165
 	{"SelectBgColor",		"WndEdit",	"szuSelectBgColor",		""},	-- unknown : 	166
-	{"Alpha",				"WndEdit",	"nAlpha",				255},	-- number : &nValue	167
 	{"PosType",				"WndEdit",	"nPosType",				0},	-- number : &nValue	169
 
 	--WndPageSet
@@ -464,7 +464,6 @@ UIEditor.tNodeInfoDefault = {
 	{"AlwaysNode",	"TreeLeaf",	"nAlwaysNode",	0},	-- Integer : &nValue	89
 
 	--Text
-{"Alpha",		"Text",	"nAlpha",	255},	-- number : &nValue	33
 {"ShowAll",		"Text",	"bShowAll",	1},	-- bool : &nValue	39
 {"AutoEtc",		"Text",	"bAutoEtc",	0},	-- bool : &nValue	40
 {"OrgText",		"Text",	"nOrgText",	0},	-- number : &nValue	43
@@ -495,8 +494,53 @@ UIEditor.tNodeInfoDefault = {
 {"Group",	"Animate",			"nGroup",	0},	-- Integer : &nValue	66
 	{"LoopCount",	"Animate",	"nLoopCount",	0},	-- Integer : &nValue	67
 
-	{"Index",	"Box",	"nIndex",	-1},	-- Integer : &nValue	71
-	{"EventName",	"Box",	"szuEventName",	""},	-- unknown : 	74
+	{"Index",		"Box",	"nIndex",			-1},	-- Integer : &nValue	71
+	{"EventName",	"Box",	"szuEventName",		""},	-- unknown : 	74
+
+
+	-- Usually we use the following properties
+	--
+	--._WndType				Common
+	--._Parent				Common
+	--Left					Common
+	--Top					Common
+	--Width					Common
+	--Height				Common
+	--
+	--$Tip					Tip
+	--
+	--ScriptFile			Window
+	--IsCustomDragable		Window
+	--DisableBringToTop		Window|WndButton
+	--DummyWnd				WndCommon|WndNewScrollBar
+	--Moveable				WndCommon|WndNewScrollBar
+	--DisableBreath			Window
+	--MousePenetrable		Scene|WndButton
+	--ShowWhenHideUI		WndFrame
+	--
+	--Image					Button|Page|Image|Animate
+	--Frame					Button|WndPage|WndPageSet|WndScene|WndMovie|Image
+	--Group					Animate
+	--
+	--MultiLine				Edit
+	--FontScheme			Edit
+	--RowSpacing			Edit|Handle
+	--FontSpacing			Edit
+	--$Text					Edit
+	--HAlign				Edit
+	--VAlign				Edit
+	--Alpha					Edit|WndScene|Image|Shadow
+	--PosType				WndEdit|WndScene
+	--$URL					WndWebPage
+	--
+	--HandleType			Handle|TreeLeaf
+	--FirstItemPosType		Handle|TreeLeaf
+	--PosType				Item|Null|Scene|WndEdit|WndScene
+	--EventID				Item
+	--
+	--ImageType				Image
+	--ShadowColor			Shadow
+
 }
 
 --OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\ConstAndEnum.lua" º”‘ÿÕÍ≥… ...]] .. "\n"))

@@ -14,143 +14,84 @@ UIEditor.bCheckBoxSystemAction = false								-- 處於系統活動則不觸發事件
 UIEditor.tUndoTableCache = nil										-- 用來臨時保存需要保存的待撤銷數據
 UIEditor.nUndoStackLevel = 1										-- 當前的撤銷棧級別
 UIEditor.tUndoStack = {}											-- 當前的撤銷棧數據表
+UIEditor.szSaveDir = "interface\\UIEditor\\examples\\"
 
-function UIEditor.SaveTable()
-	local dir = "interface\\UIEditor\\examples\\"
-	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
-	SaveLUAData(dir.."LastOpen",filename.."\t"..UIEditor.nUndoStackLevel)
-	SaveLUAData(dir..filename..".tmp",UIEditor.tUndoStack)
-	SaveLUAData(dir..filename..".end",{UIEditor.tUndoStack[UIEditor.nUndoStackLevel]})
-	SaveLUAData(dir..filename..".inic",UIEditor.CalculateINIText())
+UIEditor.tDefaultTable = {
+	nLevel = -1,
+	tChild = {
+		{
+			nLevel = 0,
+			szType = "Frame",
+			szName = "UIEditor",
+			szLayer = "Topmost",
+			tChild = {
+				{
+					nLevel = 1,
+					szType = "Handle",
+					szName = "Handle_Main",
+					tChild = {
+					},
+				},
+			},
+		},
+	},
+}
+
+function UIEditor.SaveTable(filename, btmp, bundolist)
+	local tend = UIEditor.CloneTable(UIEditor.tUndoStack[UIEditor.nUndoStackLevel])
+	tend.szSelectedNodeName = nil
+	if btmp then
+		SaveLUAData(UIEditor.szSaveDir..filename..".tmp",UIEditor.tUndoStack)
+	end
+	if bundolist then
+	end
+	SaveLUAData(UIEditor.szSaveDir..filename..".end",tend)
+	SaveLUAData(UIEditor.szSaveDir..filename..".inic",UIEditor.CalculateINIText())
 end
 
-function UIEditor.SaveTableTmp()
-	local dir = "interface\\UIEditor\\examples\\"
+function UIEditor.SaveProject()
 	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
-	SaveLUAData(dir..filename..".1.end",{UIEditor.tUndoStack[UIEditor.nUndoStackLevel]})
-	SaveLUAData(dir..filename..".1.inic",UIEditor.CalculateINIText())
+	SaveLUAData(UIEditor.szSaveDir.."LastOpen",filename.."\t"..UIEditor.nUndoStackLevel)
+	UIEditor.SaveTable(filename, true, false)
+end
+
+function UIEditor.SaveSnapshot()
+	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
+	SaveLUAData(UIEditor.szSaveDir..filename..".1.end",UIEditor.tUndoStack[UIEditor.nUndoStackLevel])
+	SaveLUAData(UIEditor.szSaveDir..filename..".1.inic",UIEditor.CalculateINIText())
 end
 
 function UIEditor.LoadTable()
-	local dir = "interface\\UIEditor\\examples\\"
-	local filename = LoadLUAData(dir.."LastOpen")
+	local filename = LoadLUAData(UIEditor.szSaveDir.."LastOpen")
 	if filename then
 		local f,level = filename:match("^(.-)\t(.*)$")
 		filename = f or filename
 		level = f and tonumber(level) or level
-		local t=LoadLUAData(dir..filename..".tmp") or LoadLUAData(dir..filename..".end")
-		if t then
+		local t=LoadLUAData(UIEditor.szSaveDir..filename..".tmp") or {LoadLUAData(UIEditor.szSaveDir..filename..".end")}
+		if type(t)=="table" and next(t) then
 			UIEditor.tUndoStack = t
 			UIEditor.nUndoStackLevel = level and level<=#t and level or #t
 			UIEditor.RefreshTree()
-			return
+			return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 		else
-			str=LoadLUAData(dir..filename..".inic")
+			str=LoadLUAData(UIEditor.szSaveDir..filename..".inic")
 			if str then
 				t=UIEditor.CalculateTreeNode(str)
 				if t then
 					UIEditor.tUndoStack = {t}
 					UIEditor.nUndoStackLevel = 1
 					UIEditor.RefreshTree()
-					return
+					return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 				end
 			end
 		end
 	end
 	UIEditor.nUndoStackLevel = 1
 	UIEditor.tUndoStack[UIEditor.nUndoStackLevel] = {}
-	table.insert(UIEditor.tUndoStack[UIEditor.nUndoStackLevel], {
-		nLevel = -1,
-		tChild = {
-			{
-				nLevel = 0,
-				szType = "Frame",
-				szName = "UIEditor",
-				szLayer = "Topmost",
-				tChild = {
-					{
-						nLevel = 1,
-						szType = "Handle",
-						szName = "Handle_Main",
-						tChild = {
-						},
-					},
-				},
-			},
-		},
-	})
-	table.insert({}, {
-		nLevel = -1,
-		tChild = {
-			{
-				nLevel = 0,
-				szType = "Frame",
-				szName = "UIEditor",
-				szLayer = "Topmost",
-				tChild = {
-					{
-						nLevel = 1,
-						szType = "Handle",
-						szName = "Handle_Main",
-						nLeft = 100,
-						nTop = 100,
-						tChild = {
-							{
-								nLevel = 2,
-								szType = "Image",
-								szName = "Image_Test",
-								nLeft = 100,
-								nTop = 100,
-								nWidth = 40,
-								nHeight = 40,
-								szImagePath = "ui/Image/UICommon/CommonPanel",
-								tChild = {
-								},
-							},
-							{
-								nLevel = 2,
-								szType = "Text",
-								szName = "Text",
-								tChild = {
-								},
-							},
-							{
-								nLevel = 2,
-								szType = "Text",
-								szName = "Text_1",
-								nLeft = 100,
-								nTop = 200,
-								nWidth = 100,
-								nHeight = 100,
-								tChild = {
-								},
-							},
-							{
-								nLevel = 2,
-								szType = "Text",
-								szName = "Text_2",
-								tChild = {
-								},
-							},
-							{
-								nLevel = 2,
-								szType = "Text",
-								szName = "Text_6",
-								nLeft = 300,
-								nTop = 300,
-								nWidth = 200,
-								nHeight = 200,
-								tChild = {
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	})
+	table.insert(UIEditor.tUndoStack[UIEditor.nUndoStackLevel],UIEditor.tDefaultTable)
 
 	UIEditor.RefreshTree()
+	return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 end
 
 function UIEditor.UndoScopeStart(tNodeInfo)							-- 開始記錄 Undo 信息
@@ -189,7 +130,7 @@ function UIEditor.UndoScopeEnd(szRefreshExpandName)					-- 結束記錄 Undo 信息
 
 	UIEditor.RefreshTree(nil, szRefreshExpandName)
 	UIEditor.GridLineEnable(UIEditor.bGridLineEnable)
-	UIEditor.SaveTable()
+	UIEditor.SaveProject()
 end
 
 ---------------------------------------------------------------------------------------------------------------
@@ -300,21 +241,6 @@ function UIEditor.CalculateTreeNode(str)
 	local tree = {
 		nLevel = -1,
 		tChild = {
-		--[[{
-				nLevel = 0,
-				szType = "Frame",
-				szName = "UIEditor",
-				szLayer = "Topmost",
-				tChild = {
-					{
-						nLevel = 1,
-						szType = "Handle",
-						szName = "Handle_Main",
-						tChild = {
-						},
-					},
-				},
-			},]]
 		},
 	}
 	local tnoderev = {}
@@ -341,8 +267,9 @@ function UIEditor.CalculateTreeNode(str)
 			--if value == "false" then value = false end
 			if key == "._WndType" then
 				t[section].szType = value=="WndFrame" and "Frame" or value
+			elseif key == "._Comment" then
+				t[section].szComment = value
 			elseif trev then
-				
 				if trev[2] then
 					t[section][trev[1]]=trev[2][2](value)
 				else
@@ -395,7 +322,10 @@ function UIEditor.CalculateINIText()
 			end
 			szINI = szINI .. "._WndType=" .. szType .. "\n"
 			szINI = szINI .. "._Parent=" .. szParent .. "\n"
-
+			-- Comment
+			if tNodeInfo.szComment and tNodeInfo.szComment ~= "" then
+				szINI = szINI .. "._Comment=" .. (tNodeInfo.szComment:gsub("\n","\n;") or "") .. "\n"
+			end
 			--Rebuild by Clouds,
 			--UIEditor.tNodeInfoDefault in ConstAndEnum.lua
 			--almost the same as the following statements
@@ -415,7 +345,7 @@ function UIEditor.CalculateINIText()
 				if mm:find("Common")==1 then
 					return "Common",c or "Option"
 				elseif mm:find("Tip")==1 then
-					return "Tip","Nonzero"
+					return "Tip","Default"
 				end
 				return mm,"Option"
 			end
@@ -470,102 +400,6 @@ function UIEditor.CalculateINIText()
 					end
 				end
 			end
-		--[[
-			szINI = szINI .. "Left=" .. (tNodeInfo.nLeft or 0) .. "\n"
-			szINI = szINI .. "Top=" .. (tNodeInfo.nTop or 0) .. "\n"
-			szINI = szINI .. "Width=" .. (tNodeInfo.nWidth or 0) .. "\n"
-			szINI = szINI .. "Height=" .. (tNodeInfo.nHeight or 0) .. "\n"
-
-			if szType:match("^Wnd") then
-				szINI = szINI .. "DragAreaLeft=0\n" ..
-					"DragAreaTop=0\n" ..
-					"DragAreaWidth=0\n" ..
-					"DragAreaHeight=0\n" ..
-					"AnimateStartPosX=0\n" ..
-					"AnimateStartPosY=0\n" ..
-					"AnimateEndPosX=0\n" ..
-					"AnimateEndPosY=0\n" ..
-					"AnimateTimeSpace=0\n" ..
-					"AnimateMoveSpeed=0\n"
-			end
-
-			-- Comment
-			if tNodeInfo.szComment and tNodeInfo.szComment ~= "" then
-				szINI = szINI .. "._Comment=" .. (tNodeInfo.szComment or "") .. "\n"
-			end
-
-			-- TIP
-			if tNodeInfo.szTip and tNodeInfo.szTip ~= "" then
-				szINI = szINI .. "$Tip=" .. (tNodeInfo.szTip or "") .. "\n"
-				szINI = szINI .. "ShowTipType=0\n"
-				szINI = szINI .. "OrgTip=1\n"
-			end
-
-			-- EventID
-			if tNodeInfo.nEventID and tNodeInfo.nEventID ~= 0 then
-				szINI = szINI .. "EventID=" .. tNodeInfo.nEventID .. "\n"
-			end
-
-			if tNodeInfo.nAlpha and tNodeInfo.nAlpha ~= 0 then
-				szINI = szINI .. "Alpha=" .. tNodeInfo.nAlpha .. "\n"
-			end
-
-			if tNodeInfo.szImagePath and tNodeInfo.szImagePath ~= "" then
-				szINI = szINI .. "Image=" .. tNodeInfo.szImagePath .. ".UITex\n"
-			end
-			if tNodeInfo.nFrame then
-				szINI = szINI .. "Frame=" .. (tNodeInfo.nFrame or 0) .. "\n"
-			end
-			if tNodeInfo.nAniGroup then
-				szINI = szINI .. "Group=" .. (tNodeInfo.nAniGroup or -1) .. "\n"
-			end
-			if UIEditor.tImageTypes[tNodeInfo.szImageType] then
-				szINI = szINI .. "ImageType=" .. (UIEditor.tImageTypes[tNodeInfo.szImageType] or 0) .. "\n"
-			end
-
-			if tNodeInfo.nFontSpacing then
-				szINI = szINI .. "FontSpacing=" .. tNodeInfo.nFontSpacing .. "\n"
-			end
-			if tNodeInfo.nRowSpacing then
-				szINI = szINI .. "RowSpacing=" .. tNodeInfo.nRowSpacing .. "\n"
-			end
-			if tNodeInfo.nFontScheme then
-				szINI = szINI .. "FontScheme=" .. tNodeInfo.nFontScheme .. "\n"
-			end
-
-			if UIEditor.tTextHAlignTypes[tNodeInfo.szHAlignType] then
-				szINI = szINI .. "HAlign=" .. UIEditor.tTextHAlignTypes[tNodeInfo.szHAlignType] .. "\n"
-			end
-			if UIEditor.tTextVAlignTypes[tNodeInfo.szVAlignType] then
-				szINI = szINI .. "VAlign=" .. UIEditor.tTextVAlignTypes[tNodeInfo.szVAlignType] .. "\n"
-			end
-
-			if szType == "Text" then
-				szINI = szINI .. "$Text=" .. (tNodeInfo.szText or "") .. "\n"
-				szINI = szINI .. "OrgText=1\n"
-
-				for _,v in ipairs({
-					"ShowAll",
-					"AutoEtc",
-					"CenterEachRow",
-					"MultiLine",
-					"MlAutoAdj",
-					"RichText",
-				}) do
-					szINI = szINI .. ("%s=%d\n"):format(v,(tNodeInfo["b"..v] and not tNodeInfo["bNo"..v]) and 1 or 0)
-				end
-			end
-
-			if szType == "Handle" then
-				szINI = szINI .. "PosType=0\n"
-				szINI = szINI .. "HandleType=0\n"
-				szINI = szINI .. "FirstItemPosType=0\n"
-			end
-
-			if tNodeInfo.szColorName then
-				szINI = szINI .. "ShadowColor=" .. tNodeInfo.szColorName .. "\n"
-			end
-			]]
 		end
 		szINI = szINI .. "\n"
 	end
