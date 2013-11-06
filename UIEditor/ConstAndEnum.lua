@@ -58,7 +58,7 @@ UIEditor.tTreeNodeTypes = {											-- 窗體 Type 表
 	"Frame",			-- 主窗体
 	
 	"WndWindow",		-- 虚窗口
-	"WndScrollBar",		-- 滚动条
+	"WndNewScrollBar",		-- 滚动条
 	"WndButton",		-- 按钮
 	"WndCheckBox",		-- 复选框
 	"WndEdit",			-- 输入框

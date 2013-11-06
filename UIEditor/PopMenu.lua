@@ -24,7 +24,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 		table.insert(tOptions, {
 			szOption = "★添加子窗口：",
 			{szOption = "虚窗口　　　WndWindow", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndWindow") end},
-			{szOption = "滚动条　　　WndScrollBar", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndScrollBar") end},
+			{szOption = "滚动条　　　WndNewScrollBar", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndNewScrollBar") end},
 			{szOption = "按钮　　　　WndButton", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndButton") end},
 			{szOption = "复选框　　　WndCheckBox", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndCheckBox") end},
 			{szOption = "输入框　　　WndEdit", fnAction = function() UIEditor.AppendTreeNode(treeNode, "WndEdit") end},

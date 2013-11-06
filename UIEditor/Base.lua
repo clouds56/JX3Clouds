@@ -74,7 +74,7 @@ function UIEditor.LoadTable()
 			UIEditor.RefreshTree()
 			return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 		else
-			str=LoadLUAData(UIEditor.szSaveDir..filename..".inic")
+			local str=LoadLUAData(UIEditor.szSaveDir..filename..".inic")
 			if str then
 				t=UIEditor.CalculateTreeNode(str)
 				if t then
