@@ -52,7 +52,7 @@ end
 
 function UIEditor.DeleteProject(filename)
 	filename = filename or UIEditor.szFilename
-	for i,v in ipairs(UIEditor.tWorkspace.projects) do
+	for i,v in ipairs(UIEditor.tWorkspace.projects or {}) do
 		if v==filename then
 			table.remove(UIEditor.tWorkspace.projects,i)
 			break
@@ -79,7 +79,18 @@ function UIEditor.UpdateWorkspace(filename)
 	elseif not UIEditor.tWorkspace.projects then
 		UIEditor.tWorkspace.projects = {}
 	end
-	UIEditor.szFilename = filename or UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
+	if filename then
+		UIEditor.szFilename = filename
+	end
+	if UIEditor.szFilename and UIEditor.szFilename:find("^tmp:") then
+	else
+		UIEditor.szFilename = UIEditor.szFilename or UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
+	end
+	for i,v in ipairs(UIEditor.tWorkspace.tmp or {}) do
+		if "tmp:"..v==UIEditor.szFilename then
+			bfind=true
+		end
+	end
 	for i,v in ipairs(UIEditor.tWorkspace.projects) do
 		if v==UIEditor.szFilename then
 			bfind=true
@@ -139,8 +150,18 @@ function UIEditor.LoadProject(filename)
 end
 
 function UIEditor.LoadTable(filename)
+	local btmp = false
+	if filename and filename:find("^tmp:") then
+		filename = filename:sub(5,-1)
+		btmp = true
+	end
 	if filename then
 		local fulldir,filefull = UIEditor.GetFileFullDir(filename),UIEditor.GetFileFullName(filename)
+		if btmp then
+			fulldir = UIEditor.szSaveDir .. "tmp\\"
+			filefull = fulldir .. filename
+			filename = "tmp:"..filename
+		end
 		local project,level = LoadLUAData(fulldir.."project")
 		if project then
 			level = project.level
@@ -166,6 +187,9 @@ function UIEditor.LoadTable(filename)
 					return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 				end
 			end
+		end
+		if btmp then
+			filename = nil
 		end
 	end
 	filename = filename or "Untitle"

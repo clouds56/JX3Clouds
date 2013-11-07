@@ -4,20 +4,18 @@ require "loadf"
 
 function chop(filename,suf)
 	local fin,fout
-	for _,pre in ipairs({filename,".","old"}) do
-		local filefull=pre.."/"..(suf and filename.."."..suf or filename)
-		print("check..",filefull)
-		fin=io.open(filefull..".inic")
-		if fin then
-			fin:close()
-			print(filefull..".ini")
-			fout=io.open(filefull..".ini","w")
-			--print(str:byte(1,50))
-			--print((function(...)return ("%2x "):rep(select('#',...)):format(...)end)(str:byte(1,50)))
-			local str=loadf(filefull..".inic")
-			fout:write(str:sub(str:find('\n')+1,-1))
-			fout:close()
-		end
+	local filefull=(suf and filename.."."..suf or filename)
+	print("check..",filefull)
+	fin=io.open(filefull..".inic")
+	if fin then
+		fin:close()
+		print(filefull..".ini")
+		fout=io.open(filefull..".ini","w")
+		--print(str:byte(1,50))
+		--print((function(...)return ("%2x "):rep(select('#',...)):format(...)end)(str:byte(1,50)))
+		local str=loadf(filefull..".inic")
+		fout:write(str:sub(str:find('\n')+1,-1))
+		fout:close()
 	end
 end
 
@@ -29,5 +27,4 @@ if type(filename)=="table" then
 	end
 else
 	chop(filename)
-	chop(filename,"1")
 end

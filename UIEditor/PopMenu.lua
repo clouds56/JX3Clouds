@@ -266,7 +266,7 @@ function UIEditor.PopFileMenu()
 	UIEditor.UpdateWorkspace()
 	local tOptions = {
 		{szOption = UIEditor.szFilename, bDisable = true},
-		{szOption = "新建", fnAction = function()UIEditor.LoadProject() end},
+		--{szOption = "新建", fnAction = function()UIEditor.LoadProject() end},
 		{szOption = "打开", fnAction = function()
 				GetUserInput("请输入文件名（不存在则新建）：",function(filename)
 					filename=filename:gsub(".inic?$","")
@@ -289,12 +289,26 @@ function UIEditor.PopFileMenu()
 			fnAction = function()UIEditor.LoadTable(v)end,
 			{szOption = "删除", fnAction=function()
 				MessageBox({
-					szMessage = "是否将"..v.."移除工作区？（仍可在"..UIEditor.GetFileFullDir(UIEditor.szFilename).."找到该project文件）",
+					szMessage = "是否将"..v.."移出工作区？（仍可在"..UIEditor.GetFileFullDir(UIEditor.szFilename).."找到该project文件）",
 					szName = "UIEditor_PopFileMenu_Compress",
-					{szOption = "确定", fnAction = function()UIEditor.CompressProject()end},
+					{szOption = "确定", fnAction = function()UIEditor.DeleteProject(v)end},
 					{szOption = "取消", fnAction = function()end},
 				},true)
 			end},
+		})
+	end
+	table.insert(tOptions, {szOption = "--------", bDisable=true})
+	for i,v in ipairs(UIEditor.tWorkspace.tmp or {}) do
+		table.insert(tOptions,{szOption = v, bMCheck = true, bCheck = true, bChecked = "tmp:"..v==UIEditor.szFilename,
+			fnAction = function()UIEditor.LoadTable("tmp:"..v)end,
+			--{szOption = "删除", fnAction=function()
+			--	MessageBox({
+			--		szMessage = "是否将"..v.."移除工作区？（仍可在"..UIEditor.GetFileFullDir(UIEditor.szFilename).."找到该project文件）",
+			--		szName = "UIEditor_PopFileMenu_Compress",
+			--		{szOption = "确定", fnAction = function()UIEditor.CompressProject()end},
+			--		{szOption = "取消", fnAction = function()end},
+			--	},true)
+			--end},
 		})
 	end
 	table.insert(tOptions,{bDevide = true})
