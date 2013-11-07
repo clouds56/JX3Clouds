@@ -1,3 +1,7 @@
+------------------------------------
+-- Clouds_Base
+-- algorithm that not related to the game
+------------------------------------
 Clouds_Algorithm={}
 algo=Clouds_Algorithm
 
@@ -136,7 +140,6 @@ algo.table.select=function(tSrc,func,nIndex)
 			end
 		end
 	end
-	--Output(tSrc)
 	return tSrc
 end
 
@@ -174,7 +177,10 @@ algo.var2str = function(t,suffix,index,first,tab,fun,multi)
 		for i=1,#t do
 			local v,key=t[i]
 			used=true
-			s=s.."\n"..suffix:rep(index+1)..var2str(v,suffix,index+1,false,tab,fun,multi)..","
+			s=s.."\n"..suffix:rep(index+1)..algo.var2str(v,suffix,index+1,false,tab,fun,multi)..","
+		end
+		if used then
+			s=s..'\n'..suffix:rep(index+1)..("-- # : %d"):format(#t)
 		end
 		for i,v in pairs(t) do
 			local key
@@ -189,13 +195,13 @@ algo.var2str = function(t,suffix,index,first,tab,fun,multi)
 			end
 			if key then
 				used=true
-				s=s..'\n'..suffix:rep(index+1)..key.." = "..var2str(v,suffix,index+1,false,tab,fun,multi)..","
+				s=s..'\n'..suffix:rep(index+1)..key.." = "..algo.var2str(v,suffix,index+1,false,tab,fun,multi)..","
 			end
 		end
 		if not used then
 			s=s..'}'
 		else
-			s=s..'\n'..("\t-- # : %d"):format(#t)..'\n'..suffix:rep(index).."}"
+			s=s..'\n'..suffix:rep(index).."}"
 		end
 		return s
 	end
@@ -206,10 +212,14 @@ algo.print = function(...)
 	OutputMessage("MSG_SYS",algo.object.to_s(#t>1 and t or t[1])..'\n')
 end
 
+algo.printex = function(object, mode)
+	OutputMessage("MSG_SYS",algo.object.to_s(object,mode)..'\n')
+end
 
 algo.table.to_s=function(t,mode,index)
 	index=index or 0
-	mode = mode or {suffix="  ",tab=false,fun=false,multi=true,}
+	mode = mode or {suffix="  ",tab=false,fun=false,multi=true,oneline=false,tabcard=true,tabchop=true,shallow=false,}
+	local modeex = algo.table.merge(mode,{tab=mode.shallow or mode.tab})
 	if mode.table then
 		return mode:table(t) or ""
 	end
@@ -218,13 +228,17 @@ algo.table.to_s=function(t,mode,index)
 	end
 	local s="{"
 	local used=false
+	local newline = not mode.oneline and '\n'..mode.suffix:rep(index+1) or ""
 	for i=1,#t do
 		local v,key=t[i]
 		used=true
-		s=s.."\n"..mode.suffix:rep(index+1)..algo.object.to_s(v,mode,index+1)..","
+		s=s..newline..algo.object.to_s(v,modeex,index+1)..","
 	end
-	if used then
-		s=s..'\n'..mode.suffix:rep(index+1)..("-- # : %d"):format(#t)
+	if mode.tabchop or (mode.oneline and not mode.tabcard and #t==1) then
+		s=s:sub(1,-2)
+	end
+	if mode.tabcard and used then
+		s=s..newline..(mode.oneline and "--[[%d]]" or "-- # : %d"):format(#t)
 	end
 	for i,v in pairs(t) do
 		local key
@@ -239,13 +253,13 @@ algo.table.to_s=function(t,mode,index)
 		end
 		if key then
 			used=true
-			s=s..'\n'..mode.suffix:rep(index+1)..key.." = "..algo.object.to_s(v,mode,index+1)..","
+			s=s..newline..key.." = "..algo.object.to_s(v,modeex,index+1)..","
 		end
 	end
 	if not used then
 		s=s..'}'
 	else
-		s=s..'\n'..mode.suffix:rep(index).."}"
+		s=s..(not mode.oneline and '\n'..mode.suffix:rep(index) or "").."}"
 	end
 	return s
 end
@@ -287,7 +301,7 @@ algo.string.encoding=function(str,mode)
 	if mode.bshowt then
 		str = str:gsub("\t","\\t")
 	end
-	str = str:gsub("\n",mode.multi and "\\\n" or "\\n")
+	str = str:gsub("\n",not mode.oneline and mode.multi and "\\\n" or "\\n")
 	return str
 end
 
@@ -299,7 +313,6 @@ algo.string.to_s=function(str,mode)
 end
 
 algo["function"].to_s=function(func,mode)
-	Output(mode)
 	if mode and mode["function"] then
 		return mode["function"](mode,func) or ""
 	elseif mode and mode.fun then
@@ -309,7 +322,7 @@ algo["function"].to_s=function(func,mode)
 end
 
 algo.object.to_s=function(obj,mode,index)
-	local modeex={suffix="  ",tab=false,fun=false,multi=true,}
+	local modeex={suffix="  ",tab=false,fun=false,multi=true,oneline=false,tabcard=true,tabchop=false,shallow=false,}
 	local mode=algo.table.merge(modeex,mode or {})
 	if mode[type(obj)] then
 		return mode[type(obj)](mode,obj) or ""
@@ -449,8 +462,6 @@ algo.userdata.is=function(uSrc)
 	return false
 end
 
-inifile = {}
-
 function algo.ini.parse(str)
 	local t,i = {},{}
 	local section
@@ -498,6 +509,4 @@ function algo.ini.save(t, i)
 	end
 	return contents
 end
-
-return inifile
 

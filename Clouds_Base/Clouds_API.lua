@@ -267,7 +267,7 @@ end
 function Clouds_API.GetUserInputNumber(szMsg, fnSure, szDefault, fnCancel, nCount)
 	local t={}
 	GetUserInput(szMsg,function(str)
-		i=1
+		local i=1
 		for v in (str..","):gmatch("(%S-)%s*,") do
 			t[i]=tonumber(v)
 			i=i+1
@@ -279,7 +279,7 @@ end
 function Clouds_API.GetUserInputText(szMsg, fnSure, szDefault, fnCancel, nCount)
 	local t={}
 	GetUserInput(szMsg,function(str)
-		i=1
+		local i=1
 		for v in (str..","):gmatch("(%S-)%s*,") do
 			t[i]=v
 			i=i+1

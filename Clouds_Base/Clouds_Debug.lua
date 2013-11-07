@@ -224,34 +224,6 @@ function Clouds_Debug.ItemMenu(list)
 				table.insert(mm,genOptionNumber(v, "Count","%d","ItemCount",nil,true))
 			end
 
-				--[[unpack(algo.table.map(algo.table.select(
-				{
-					{{"Text"},"Scheme:\t%d,%.2f",v.GetFontID,v.GetFontScale},
-					{{"Text"},"Color:\t%3d,%3d,%3d",v.GetFontColor},
-					{{"Text"},"Text:\t%s",v.GetText},
-					{{"Text"},"Length\t%2d,%.2f",v.GetTextPosExtent,v.GetTextExtent},
-
-					{{"Image"},"Type:\t%d,%d",v.GetImageType,v.GetImageID},
-					{{"Image"},"Frame:\t%d",v.GetFrame},
-
-					{{"Handle"},"ItemCount:\t%d",v.GetItemCount},
-				},function(t)
-					for _,tp in ipairs(t[1]) do
-						if tp==v:GetType() or tp==v:GetType():sub(1,3) then
-							return true
-						end
-					end
-					return false
-				end),function(tt)
-					local str,t=tt[2],{select(3,unpack(tt))}
-					if #t==1 then
-						t={t[1](v)}
-					else
-						algo.table.map(t,function(f)return f(v) end)
-					end
-					return {szOption = str:format(unpack(t)),bDisable=true}
-				end
-				))]]
 			table.insert(menu,mm)
 		end
 	end
