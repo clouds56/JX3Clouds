@@ -1,5 +1,5 @@
 --Output(pcall(dofile, "Interface\\UIEditor\\UIEditor.lua"))
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\UIEditor.lua" 开始加载 ...]] .. "\n"))
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\UIEditor.lua" 开始加载 ...]] .. "\n"))
 
 UIEditor = UIEditor or {}
 
@@ -87,11 +87,14 @@ function UIEditor.OnLButtonClick()
 		UIEditor.wndINI:Hide()
 	elseif szName == "Btn_Undo" then
 		UIEditor.RefreshTree(-1)
+		UIEditor.UpdateProject()
 	elseif szName == "Btn_Refresh" then
 		UIEditor.SaveSnapshot()
 		UIEditor.RefreshTree()
+		UIEditor.UpdateProject()
 	elseif szName == "Btn_Redo" then
 		UIEditor.RefreshTree(1)
+		UIEditor.UpdateProject()
 	elseif szName == "Btn_File" then
 		UIEditor.CalculateINIText()
 		UIEditor.PopFileMenu()
@@ -190,7 +193,7 @@ function UIEditor.OpenPanel()
 	end
 
 	-- 这里用标准的 Table 来建立内容
-	UIEditor.LoadTable()
+	UIEditor.LoadProject()
 
 	UIEditor.handleHelpGridLine:Clear()
 	UIEditor.handleFontSelector:Clear()
@@ -202,6 +205,9 @@ function UIEditor.ClosePanel(bHide)
 	if frame then
 		if bHide then
 			frame:Hide()
+			if UIEditor_Debug then
+				UIEditor_Debug.show()
+			end
 		else
 			Wnd.CloseWindow(frame:GetName())
 		end
@@ -210,4 +216,4 @@ end
 
 UIEditor.ClosePanel()
 UIEditor.OpenPanel()
-OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\UIEditor.lua" 加载完成 ...]] .. "\n"))
+--OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\UIEditor.lua" 加载完成 ...]] .. "\n"))

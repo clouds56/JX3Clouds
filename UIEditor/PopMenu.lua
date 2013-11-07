@@ -116,7 +116,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 	})
 
 	table.insert(tOptions, {
-		szOption = "　粘贴节点", bDisable = not UIEditor.tCopyTableCache, fnAction = function() UIEditor.PasteTreeNode(treeNode) end
+		szOption = "　粘贴节点"..(UIEditor.tCopyTableCache and "*" or ""), bDisable = not UIEditor.tCopyTableCache or not UIEditor.CheckPaste(tNodeInfo, UIEditor.tCopyTableCache.szType), fnAction = function() UIEditor.PasteTreeNode(treeNode) end
 	})
 
 	local nX, nY = Cursor.GetPos(true)
@@ -251,6 +251,10 @@ function UIEditor.PopToolMenu()
 			UIEditor.GridLineEnable(UIEditor.bGridLineEnable)
 			GetPopupMenu():Hide()
 		end},
+		{szOption = "调试"..UIEditor.szFilename..".ini", fnAction = function()
+			local filefull = UIEditor.GetFileFullName()
+			OutputMessage("MSG_SYS","骗你的未完成\n")
+		end},
 	}
 
 	local nX, nY = Cursor.GetPos()
@@ -259,13 +263,47 @@ function UIEditor.PopToolMenu()
 end
 
 function UIEditor.PopFileMenu()
+	UIEditor.UpdateWorkspace()
 	local tOptions = {
+		{szOption = UIEditor.szFilename, bDisable = true},
+		{szOption = "新建", fnAction = function()UIEditor.LoadProject() end},
+		{szOption = "打开", fnAction = function()
+				GetUserInput("请输入文件名（不存在则新建）：",function(filename)
+					filename=filename:gsub(".inic?$","")
+					UIEditor.LoadProject(filename)
+				end,nil,nil,nil,"Untitle")
+			end},
+		{szOption = "保存", fnAction = function()UIEditor.SaveProject() end},
+		{szOption = "压缩", fnAction = function()
+				MessageBox({
+					szMessage = "是否压缩"..UIEditor.szFilename.."？（该操作不可逆建议备份"..UIEditor.GetFileFullName(UIEditor.szFilename)..".tmp）",
+					szName = "UIEditor_PopFileMenu_Compress",
+					{szOption = "确定", fnAction = function()UIEditor.CompressProject()end},
+					{szOption = "取消", fnAction = function()end},
+				},true)
+			end},
+		{bDevide = true},
+	}
+	for i,v in ipairs(UIEditor.tWorkspace.projects) do
+		table.insert(tOptions,{szOption = v, bMCheck = true, bCheck = true, bChecked = v==UIEditor.szFilename,
+			fnAction = function()UIEditor.LoadTable(v)end,
+			{szOption = "删除", fnAction=function()
+				MessageBox({
+					szMessage = "是否将"..v.."移除工作区？（仍可在"..UIEditor.GetFileFullDir(UIEditor.szFilename).."找到该project文件）",
+					szName = "UIEditor_PopFileMenu_Compress",
+					{szOption = "确定", fnAction = function()UIEditor.CompressProject()end},
+					{szOption = "取消", fnAction = function()end},
+				},true)
+			end},
+		})
+	end
+	table.insert(tOptions,{bDevide = true})
+	table.insert(tOptions,
 		{szOption = "查看INI文本內容", fnAction = function()
 			UIEditor.wndINI:Show()
 			UIEditor.editINI:SetText(UIEditor.CalculateINIText())
 			GetPopupMenu():Hide()
-		end},
-	}
+		end})
 
 	local nX, nY = Cursor.GetPos()
 	tOptions.x, tOptions.y = nX + 15, nY + 15

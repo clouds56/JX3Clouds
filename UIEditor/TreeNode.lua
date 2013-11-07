@@ -182,7 +182,8 @@ end
 
 -- 選擇指定的樹節點
 function UIEditor.SelectTreeNode(treeNode)
-	if UIEditor.treeNodeSelected then
+	--TODO: this is temporary solution (check for ___id)
+	if UIEditor.treeNodeSelected and UIEditor.treeNodeSelected.___id then
 		local img = UIEditor.treeNodeSelected:Lookup("ImageLeafCover_" .. UIEditor.treeNodeSelected.tInfo.nLevel)
 		if img then
 			img:Hide()
@@ -468,6 +469,32 @@ function UIEditor.AdjustForPaste(tTab, nLevelDiff)
 	return tResult
 end
 
+function UIEditor.CheckPaste(tNodeInfo, szType)
+	-- 這裡判斷是否能粘貼的指定位置
+	--algo.print(tNodeInfo.szType,szType)
+	if tNodeInfo.szType == "Frame" or tNodeInfo.szType:find("^Wnd") then
+		if szType == "Handle" then
+			if not tNodeInfo.tChild then
+				return true
+			end
+			for i = 1, #tNodeInfo.tChild do
+				if tNodeInfo.tChild[i].szType == "Handle" then
+					return false
+				end
+			end
+			return true
+		elseif szType:match("^Wnd") then
+			return true
+		end
+	elseif tNodeInfo.szType == "Handle" then
+		if not szType:match("^Wnd") and szType~="Frame" then
+			return true
+		end
+	end
+	return false
+end
+
+
 -- 粘貼樹節點(調整層級和避免重名)
 function UIEditor.PasteTreeNode(treeNode)
 	if not treeNode then
@@ -482,24 +509,7 @@ function UIEditor.PasteTreeNode(treeNode)
 	end
 	
 	-- 這裡判斷是否能粘貼的指定位置
-	local bCanPaste = false
-	if tNodeInfo.szType == "Frame" then
-		if UIEditor.tCopyTableCache.szType == "Handle" and tNodeInfo.tChild then
-			for i = 1, #tNodeInfo.tChild do
-				if tNodeInfo.tChild[i].szType == "Handle" then
-					bCanPaste = false
-					break
-				end
-			end
-		elseif UIEditor.tCopyTableCache.szType:match("^Wnd") then
-			bCanPaste = true
-		end
-	elseif tNodeInfo.szType == "Handle" then
-		if not UIEditor.tCopyTableCache.szType:match("^Wnd") then
-			bCanPaste = true
-		end
-	end
-	if not bCanPaste then
+	if not UIEditor.CheckPaste(tNodeInfo, UIEditor.tCopyTableCache.szType) then
 		return
 	end
 	

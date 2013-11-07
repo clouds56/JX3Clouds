@@ -322,7 +322,7 @@ UIEditor.tNodeInfoDefault = {
 	--Button means WndButton|WndCheckBox
 	{"Trans",		"Button|WndPageSet|WndMovie",	"szuTrans",			""},	-- unknown : 	87
 	--Button,CheckBox,Page,Movie
-{"Image",		"ButtonNonzero|PageNonzero",					"szImage",	nil,		fnimagepath},	--- String : szImagePath	88
+{"Image",		"ButtonNonzero|PageNonzero",					"szImagePath",	nil,		fnimagepath},	--- String : szImagePath	88
 {"Frame",		"Button|WndPage|WndPageSet|WndScene|WndMovie",	"nFrame",	0},	-- Integer : &nValue	89
 	{"GrayColor",	"Button|WndMovie",				"szuGrayColor",			""},	-- unknown : 	90
 
@@ -371,8 +371,8 @@ UIEditor.tNodeInfoDefault = {
 	{"RowSpacing",			"Edit",		"nRowSpacing",			0},	-- number : &nValue	162
 	{"FontSpacing",			"Edit",		"nFontSpacing",			0},	-- number : &nValue	163
 	{"$Text",				"Edit",		"szText",				""},	-- string : szText	168
-	{"HAlign",				"Edit",		"nHAlign",				0,		fnhaligntype},	-- number : &nValue	170
-	{"VAlign",				"Edit",		"nVAlign",				0,		fnvaligntype},	-- number : &nValue	171
+	{"HAlign",				"Edit",		"szHAlignType",				0,		fnhaligntype},	-- number : &nValue	170
+	{"VAlign",				"Edit",		"szVAlignType",				0,		fnvaligntype},	-- number : &nValue	171
 	{"Alpha",				"Edit",		"nAlpha",				255},	-- number : &nValue	167
 	{"Password",			"WndEdit",	"szuPassword",			""},	-- unknown : 	154
 	{"Type",				"WndEdit",	"szuType",				""},	-- unknown : 	155
@@ -434,8 +434,8 @@ UIEditor.tNodeInfoDefault = {
 
 	--TODO: change(meanings?)
 	--Handle|TreeLeaf
-{"HandleType",			"Handle|TreeLeaf",	"nHandleType",			0},	-- number : &nValue	11
-{"FirstItemPosType",	"Handle|TreeLeaf",	"nFirstItemPosType",	0},	-- number : &nValue	12
+{"HandleType",			"HandleDefault|TreeLeaf",	"nHandleType",			0},	-- number : &nValue	11
+{"FirstItemPosType",	"HandleDefault|TreeLeaf",	"nFirstItemPosType",	0},	-- number : &nValue	12
 	--Item means Handle|Null|Text|Image|Shadow|Animate|Box|TreeLeaf
 {"PosType",				"ItemDefault|Null|Scene",	"nPosType",				0},
 
@@ -469,7 +469,7 @@ UIEditor.tNodeInfoDefault = {
 {"OrgText",		"Text",	"nOrgText",	0},	-- number : &nValue	43
 {"MlAutoAdj",	"Text",	"bMlAutoAdj",	0},	-- bool : &nValue	45
 	{"CenterEachRow",	"Text",	"nCenterEachRow",	0},	-- Integer : &nValue	46
-{"RichText",	"Text",	"bRichText",	1,		fnnbooltobin},	-- bool : &nValue	47
+{"RichText",	"Text",	"bNoRichText",	1,		fnnbooltobin},	-- bool : &nValue	47
 	{"DisableScale",	"Text",	"bDisableScale",	0},	-- Integer : &nValue	48
 	{"Al",	"Text",	"szuAl",	""},	-- unknown : 	49
 
@@ -479,19 +479,19 @@ UIEditor.tNodeInfoDefault = {
 	--{"Group",		"Common",		"nAniGroup",	-1},
 	--{"ImageType",	"CommonNonZero",	"szImageType",	0,	fnimagetype,	fnrimagetype},
 
-{"Image",		"ImageNonzero",	"szImage",		nil,	fnimagepath},	-- String : szImagePath	50
+{"Image",		"ImageNonzero",	"szImagePath",		nil,	fnimagepath},	-- String : szImagePath	50
 {"Frame",		"Image",			"nFrame",		0},	-- Integer : &nValue	51
 {"Alpha",		"Image",			"nAlpha",		255},	-- number : &nValue	52
-{"ImageType",	"Image",			"nImageType",	0,	fnimagetype},	-- number : &nValue	55
+{"ImageType",	"Image",			"szImageType",	0,	fnimagetype},	-- number : &nValue	55
 	{"DisableScale",	"Image",	"bDisableScale",	0},	-- Integer : &nValue	57
 	{"IntPos",			"Image",	"nIntPos",			0},	-- Integer : &nValue	58
 
 
-	{"ShadowColor",	"Shadow",	"szShadowColor",	""},	-- String : szColor	59
+	{"ShadowColor",	"Shadow",	"szColorName",	""},	-- String : szColor	59
 {"Alpha",	"Shadow",	"nAlpha",	255},	-- number : &nValue	60
 	{"ShadowAlpha",	"Shadow",	"szuShadowAlpha",	""},	-- unknown : 	62
-{"Image",	"AnimateNonzero",	"szImage",	"",		fnimagepath},	-- String : szImagePath	65
-{"Group",	"Animate",			"nGroup",	0},	-- Integer : &nValue	66
+{"Image",	"AnimateNonzero",	"szImagePath",	"",		fnimagepath},	-- String : szImagePath	65
+{"Group",	"Animate",			"nAniGroup",	0},	-- Integer : &nValue	66
 	{"LoopCount",	"Animate",	"nLoopCount",	0},	-- Integer : &nValue	67
 
 	{"Index",		"Box",	"nIndex",			-1},	-- Integer : &nValue	71

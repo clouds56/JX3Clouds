@@ -15,6 +15,8 @@ UIEditor.tUndoTableCache = nil										-- 用來臨時保存需要保存的待撤銷數據
 UIEditor.nUndoStackLevel = 1										-- 當前的撤銷棧級別
 UIEditor.tUndoStack = {}											-- 當前的撤銷棧數據表
 UIEditor.szSaveDir = "interface\\UIEditor\\examples\\"
+UIEditor.tWorkspace = {projects={},lastopen=nil}
+UIEditor.szFilename = nil
 
 UIEditor.tDefaultTable = {
 	nLevel = -1,
@@ -22,7 +24,7 @@ UIEditor.tDefaultTable = {
 		{
 			nLevel = 0,
 			szType = "Frame",
-			szName = "UIEditor",
+			szName = "Untitle",
 			szLayer = "Topmost",
 			tChild = {
 				{
@@ -37,58 +39,142 @@ UIEditor.tDefaultTable = {
 	},
 }
 
+function UIEditor.GetFileFullDir(filename)
+	filename = filename or UIEditor.szFilename
+	return UIEditor.szSaveDir..
+		(not filename:find("Untitle") and filename.."\\" or "tmp\\")
+end
+
+function UIEditor.GetFileFullName(filename)
+	filename = filename or UIEditor.szFilename
+	return UIEditor.GetFileFullDir(filename)..filename
+end
+
+function UIEditor.DeleteProject(filename)
+	filename = filename or UIEditor.szFilename
+	for i,v in ipairs(UIEditor.tWorkspace.projects) do
+		if v==filename then
+			table.remove(UIEditor.tWorkspace.projects,i)
+			break
+		end
+	end
+	if filename == UIEditor.szFilename then
+		UIEditor.szFilename = nil
+	end
+	UIEditor.LoadTable(UIEditor.szFilename)
+end
+
+function UIEditor.UpdateProject(filename)
+	filename = filename or UIEditor.szFilename
+	local fulldir = UIEditor.GetFileFullDir(filename)
+	local project = {level = UIEditor.nUndoStackLevel,selectname=UIEditor.tUndoStack[UIEditor.nUndoStackLevel].szSelectedNodeName}
+	SaveLUAData(fulldir.."project",project)
+	UIEditor.UpdateWorkspace(filename)
+end
+
+function UIEditor.UpdateWorkspace(filename)
+	local bfind=false
+	if not UIEditor.tWorkspace then
+		UIEditor.tWorkspace = {projects={}}
+	elseif not UIEditor.tWorkspace.projects then
+		UIEditor.tWorkspace.projects = {}
+	end
+	UIEditor.szFilename = filename or UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
+	for i,v in ipairs(UIEditor.tWorkspace.projects) do
+		if v==UIEditor.szFilename then
+			bfind=true
+			break
+		end
+	end
+	if not bfind then
+		table.insert(UIEditor.tWorkspace.projects,UIEditor.szFilename)
+	end
+	UIEditor.tWorkspace.lastopen = UIEditor.szFilename
+	--UIEditor.tWorkspace.level = UIEditor.tWorkspace.level or UIEditor.nUndoStackLevel or 1
+	SaveLUAData(UIEditor.szSaveDir.."workspace",UIEditor.tWorkspace)
+end
+
+function UIEditor.CompressProject()
+	local tend = UIEditor.tUndoStack[UIEditor.nUndoStackLevel]
+	if tend then
+		UIEditor.tUndoStack = {tend}
+		UIEditor.nUndoStackLevel = 1
+	end
+	UIEditor.SaveProject()
+end
+
 function UIEditor.SaveTable(filename, btmp, bundolist)
+	local fulldir,filefull = UIEditor.GetFileFullDir(filename),UIEditor.GetFileFullName(filename)
 	local tend = UIEditor.CloneTable(UIEditor.tUndoStack[UIEditor.nUndoStackLevel])
 	tend.szSelectedNodeName = nil
+	UIEditor.UpdateProject(filename)
 	if btmp then
-		SaveLUAData(UIEditor.szSaveDir..filename..".tmp",UIEditor.tUndoStack)
+		SaveLUAData(filefull..".tmp",UIEditor.tUndoStack)
 	end
 	if bundolist then
 	end
-	SaveLUAData(UIEditor.szSaveDir..filename..".end",tend)
-	SaveLUAData(UIEditor.szSaveDir..filename..".inic",UIEditor.CalculateINIText())
+	SaveLUAData(filefull..".end",tend)
+	SaveLUAData(filefull..".inic",UIEditor.CalculateINIText())
 end
 
-function UIEditor.SaveProject()
-	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
-	SaveLUAData(UIEditor.szSaveDir.."LastOpen",filename.."\t"..UIEditor.nUndoStackLevel)
-	UIEditor.SaveTable(filename, true, false)
+function UIEditor.SaveProject(filename)
+	UIEditor.UpdateWorkspace(filename)
+	UIEditor.SaveTable(UIEditor.szFilename, true, false)
 end
 
 function UIEditor.SaveSnapshot()
-	local filename = UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName
-	SaveLUAData(UIEditor.szSaveDir..filename..".1.end",UIEditor.tUndoStack[UIEditor.nUndoStackLevel])
-	SaveLUAData(UIEditor.szSaveDir..filename..".1.inic",UIEditor.CalculateINIText())
+	local filefull = UIEditor.GetFileFullDir().."snapshot\\"..
+		UIEditor.szFilename.."."..GetCurrentTime()
+	SaveLUAData(filefull..".end",UIEditor.tUndoStack[UIEditor.nUndoStackLevel])
+	SaveLUAData(filefull..".inic",UIEditor.CalculateINIText())
 end
 
-function UIEditor.LoadTable()
-	local filename = LoadLUAData(UIEditor.szSaveDir.."LastOpen")
+function UIEditor.LoadProject(filename)
+	local workspace = LoadLUAData(UIEditor.szSaveDir.."workspace")
+	if workspace then
+		UIEditor.tWorkspace = workspace
+	end
+	UIEditor.UpdateWorkspace(filename or UIEditor.tWorkspace.lastopen or "Untitle")
+	UIEditor.LoadTable(UIEditor.szFilename)
+end
+
+function UIEditor.LoadTable(filename)
 	if filename then
-		local f,level = filename:match("^(.-)\t(.*)$")
-		filename = f or filename
-		level = f and tonumber(level) or level
-		local t=LoadLUAData(UIEditor.szSaveDir..filename..".tmp") or {LoadLUAData(UIEditor.szSaveDir..filename..".end")}
+		local fulldir,filefull = UIEditor.GetFileFullDir(filename),UIEditor.GetFileFullName(filename)
+		local project,level = LoadLUAData(fulldir.."project")
+		if project then
+			level = project.level
+		end
+		--local f,level = filename:match("^(.-)\t(.*)$")
+		--filename = f or filename
+		local t=LoadLUAData(filefull..".tmp") or {LoadLUAData(filefull..".end")}
 		if type(t)=="table" and next(t) then
 			UIEditor.tUndoStack = t
 			UIEditor.nUndoStackLevel = level and level<=#t and level or #t
+			UIEditor.UpdateWorkspace(filename)
 			UIEditor.RefreshTree()
 			return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 		else
-			local str=LoadLUAData(UIEditor.szSaveDir..filename..".inic")
+			local str=LoadLUAData(filefull..".inic")
 			if str then
 				t=UIEditor.CalculateTreeNode(str)
 				if t then
 					UIEditor.tUndoStack = {t}
 					UIEditor.nUndoStackLevel = 1
+					UIEditor.UpdateWorkspace(filename)
 					UIEditor.RefreshTree()
 					return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
 				end
 			end
 		end
 	end
+	filename = filename or "Untitle"
 	UIEditor.nUndoStackLevel = 1
-	UIEditor.tUndoStack[UIEditor.nUndoStackLevel] = {}
-	table.insert(UIEditor.tUndoStack[UIEditor.nUndoStackLevel],UIEditor.tDefaultTable)
+	UIEditor.tUndoStack = {}
+	UIEditor.tUndoStack[UIEditor.nUndoStackLevel] = {UIEditor.CloneTable(UIEditor.tDefaultTable)}
+	UIEditor.szFilename = filename
+	UIEditor.tUndoStack[UIEditor.nUndoStackLevel][1].tChild[1].szName = UIEditor.szFilename
+	UIEditor.UpdateWorkspace(UIEditor.szFilename)
 
 	UIEditor.RefreshTree()
 	return UIEditor.tUndoStack, UIEditor.nUndoStackLevel
@@ -307,7 +393,7 @@ function UIEditor.CalculateINIText()
 		local treeNode = UIEditor.handleUITree:Lookup(i)
 		if treeNode and treeNode.tInfo then
 			local tNodeInfo = treeNode.tInfo
-			szINI = szINI .. "[" .. tNodeInfo.szName .. "]\n"
+			szINI = szINI .. ("[" .. tNodeInfo.szName .. "]\n")
 
 			local szType = tNodeInfo.szType or ""
 			local szParent = tNodeInfo.szLayer or ""
@@ -320,11 +406,11 @@ function UIEditor.CalculateINIText()
 					szParent = parent.tInfo.szName or ""
 				end
 			end
-			szINI = szINI .. "._WndType=" .. szType .. "\n"
-			szINI = szINI .. "._Parent=" .. szParent .. "\n"
+			szINI = szINI .. ("._WndType=" .. szType .. "\n")
+			szINI = szINI .. ("._Parent=" .. szParent .. "\n")
 			-- Comment
 			if tNodeInfo.szComment and tNodeInfo.szComment ~= "" then
-				szINI = szINI .. "._Comment=" .. (tNodeInfo.szComment:gsub("\n","\n;") or "") .. "\n"
+				szINI = szINI .. ("._Comment=" .. (tNodeInfo.szComment:gsub("\n","\n;") or "") .. "\n")
 			end
 			--Rebuild by Clouds,
 			--UIEditor.tNodeInfoDefault in ConstAndEnum.lua
@@ -394,7 +480,7 @@ function UIEditor.CalculateINIText()
 							val = v[5](val)
 						end
 						if cantc(tc,val) then
-							szINI = szINI .. v[1] .. "=" .. tostring(val or v[4]) .. "\n"
+							szINI = szINI .. (v[1] .. "=" .. tostring(val or v[4]) .. "\n")
 							break
 						end
 					end
