@@ -465,7 +465,8 @@ function UIEditor.AppendUIContent(node)
 
 	local nShownX, nShownY = UIEditor.CalculateShownPos(node)
 
-	if tNodeInfo.szType == "Image" and tNodeInfo.szImagePath and tNodeInfo.szImagePath ~= "" then
+	local szType = tNodeInfo.szType
+	if (szType == "Image" or szType == "WndButton" or szType == "WndCheckBox") and tNodeInfo.szImagePath and tNodeInfo.szImagePath ~= "" then
 		local nImageIndex = UIEditor.handleUIContent:GetItemCount()
 		UIEditor.handleUIContent:AppendItemFromString(("<image>w=%s h=%s path=\"%s.UITex\" frame=%s eventid=277 name=\"%s\" </image>"):format(tNodeInfo.nWidth or 0, tNodeInfo.nHeight or 0, tNodeInfo.szImagePath or "", tNodeInfo.nFrame or 0, "UIContent_" .. nImageIndex))
 		local img = UIEditor.handleUIContent:Lookup(nImageIndex)
@@ -474,7 +475,7 @@ function UIEditor.AppendUIContent(node)
 			img:SetAlpha(tNodeInfo.nAlpha or 255)
 			img:SetImageType(UIEditor.tImageTypes[tNodeInfo.szImageType] or 0)
 		end
-	elseif tNodeInfo.szType == "Animate" and tNodeInfo.szImagePath and tNodeInfo.szImagePath ~= "" then
+	elseif szType == "Animate" and tNodeInfo.szImagePath and tNodeInfo.szImagePath ~= "" then
 		local nIndex = UIEditor.handleUIContent:GetItemCount()
 		local ani = UIEditor.handleUIContent:AppendItemFromIni(UIEditor.szINIPath, "Animate", "UIContent_" .. nIndex)
 		if ani then
@@ -484,7 +485,7 @@ function UIEditor.AppendUIContent(node)
 			ani:SetSize(tNodeInfo.nWidth or 0, tNodeInfo.nHeight or 0)
 			ani:SetAlpha(tNodeInfo.nAlpha or 255)
 		end
-	elseif tNodeInfo.szType == "Text" then
+	elseif szType == "Text" or szType == "WndEdit" then
 		local nIndex = UIEditor.handleUIContent:GetItemCount()
 		local text = UIEditor.handleUIContent:AppendItemFromIni(UIEditor.szINIPath, "Text", "UIContent_" .. nIndex)
 		if text then
@@ -506,7 +507,7 @@ function UIEditor.AppendUIContent(node)
 			text:SetMultiLine(tNodeInfo.bMultiLine or false)
 			text:SetRichText(not tNodeInfo.bNoRichText or true)
 		end
-	elseif tNodeInfo.szType == "Shadow" then
+	elseif szType == "Shadow" then
 		local nIndex = UIEditor.handleUIContent:GetItemCount()
 		local shadow = UIEditor.handleUIContent:AppendItemFromIni(UIEditor.szINIPath, "Shadow", "UIContent_" .. nIndex)
 		if shadow then

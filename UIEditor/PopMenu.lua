@@ -19,7 +19,7 @@ function UIEditor.PopTreeNodeMenu(treeNode)
 		return
 	end
 
-	local tOptions = {}
+	local tOptions = {{szOption = tNodeInfo.szName or szTreeNodeType or "", bDisable = true}, {bDevide = true},}
 	if szTreeNodeType == "Frame" or szTreeNodeType:match("^Wnd") then
 		table.insert(tOptions, {
 			szOption = "¡ïÌí¼Ó×Ó´°¿Ú£º",

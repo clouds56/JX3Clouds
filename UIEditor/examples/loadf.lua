@@ -32,7 +32,14 @@ function getfilename(key)
 				return fn and fn.."\\"..fn or fn
 			end
 		end
-		return workspace.lastopen
+		if workspace.lastopen then
+			if workspace.lastopen:find("^tmp:") then
+				return workspace.lastopen:gsub("^tmp:","tmp\\")
+			else
+				return workspace.lastopen.."\\"..workspace.lastopen
+			end
+		end
+		return nil
 	end
 end
 

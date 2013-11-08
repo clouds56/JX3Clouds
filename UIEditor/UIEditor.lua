@@ -216,4 +216,5 @@ end
 
 UIEditor.ClosePanel()
 UIEditor.OpenPanel()
+UIEditor.ClosePanel(true)
 --OutputMessage("MSG_SYS", "[UIEditor] " .. tostring([["Interface\UIEditor\UIEditor.lua" ╪стьмЙЁи ...]] .. "\n"))
