@@ -222,6 +222,22 @@ function Clouds_Debug.ItemMenu(list)
 				table.insert(mm,genOptionNumber(v, "Frame","%d","Frame"))
 			elseif szType == "Handle" then
 				table.insert(mm,genOptionNumber(v, "Count","%d","ItemCount",nil,true))
+			elseif szType == "WndFrame" then
+				table.insert(mm,{
+					szOption = "bDragable"..":\t"..("%s"):format(v["IsDragable"](v)and "true" or "false"),
+					bCheck = true, bChecked = v["IsDragable"](v),
+					fnAction = function(u,b)
+						if not b then
+							Clouds_API.GetUserInputNumber("fX,fY,fW,fH",
+							function(...)
+								v["SetDragArea"](v,...)
+							end,"0,0,20,20")
+							v["EnableDrag"](v,not b)
+						else
+							v["EnableDrag"](v,not b)
+						end
+					end
+				})
 			end
 
 			table.insert(menu,mm)

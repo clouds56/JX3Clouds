@@ -185,6 +185,7 @@ class = function(super)
 	return class_type
 end
 
+var2str = Clouds_JX3_Engine.var2str
 for i,v in pairs(Clouds_JX3_Engine) do
 	if i:find("[A-Z]") then
 		_G[i] = Clouds_JX3_Engine[i]

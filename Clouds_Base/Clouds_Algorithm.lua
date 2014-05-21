@@ -216,23 +216,34 @@ algo.printex = function(object, mode)
 	OutputMessage("MSG_SYS",algo.object.to_s(object,mode)..'\n')
 end
 
-algo.table.to_s=function(t,mode,index)
+algo.table.to_s=function(t,mode,index,visited)
 	index=index or 0
 	mode = mode or {suffix="  ",tab=false,fun=false,multi=true,oneline=false,tabcard=true,tabchop=true,shallow=false,}
 	local modeex = algo.table.merge(mode,{tab=mode.shallow or mode.tab})
 	if mode.table then
 		return mode:table(t) or ""
 	end
-	if mode.tab then
+	if mode.tab or (visited and visited[t]) then
+		visited[t]="p"
 		return tostring(t)
 	end
+	if visited then
+		visited[t]=true
+	end
+do
+	local tt={}
+	for i,v in pairs(visited) do
+		table.insert(tt,tostring(i))
+	end
+	--Output(tt)
+end
 	local s="{"
 	local used=false
-	local newline = not mode.oneline and '\n'..mode.suffix:rep(index+1) or ""
+	local newline = not mode.oneline and '\n'..mode.suffix:rep(index+1) or " "
 	for i=1,#t do
 		local v,key=t[i]
 		used=true
-		s=s..newline..algo.object.to_s(v,modeex,index+1)..","
+		s=s..newline..algo.object.to_s(v,modeex,index+1,visited)..","
 	end
 	if mode.tabchop or (mode.oneline and not mode.tabcard and #t==1) then
 		s=s:sub(1,-2)
@@ -253,8 +264,11 @@ algo.table.to_s=function(t,mode,index)
 		end
 		if key then
 			used=true
-			s=s..newline..key.." = "..algo.object.to_s(v,modeex,index+1)..","
+			s=s..newline..key.." = "..algo.object.to_s(v,modeex,index+1,visited)..","
 		end
+	end
+	if visited and visited[t]=="p" then
+		s=s..newline.."--"..(mode.oneline and "[[%s]]" or " %s"):format(tostring(t))
 	end
 	if not used then
 		s=s..'}'
@@ -321,15 +335,16 @@ algo["function"].to_s=function(func,mode)
 	return tostring(func)
 end
 
-algo.object.to_s=function(obj,mode,index)
+algo.object.to_s=function(obj,mode,index,visited)
 	local modeex={suffix="  ",tab=false,fun=false,multi=true,oneline=false,tabcard=true,tabchop=false,shallow=false,}
 	local mode=algo.table.merge(modeex,mode or {})
+	visited = visited or {}
 	if mode[type(obj)] then
 		return mode[type(obj)](mode,obj) or ""
 	elseif type(obj)=="string" or type(obj)=="function" then
 		return algo[type(obj)].to_s(obj,mode)
 	elseif type(obj)=="table" then
-		return algo.table.to_s(obj,mode,index or 0)
+		return algo.table.to_s(obj,mode,index or 0,visited)
 	else
 		return tostring(obj) or ""
 	end

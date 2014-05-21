@@ -1,5 +1,5 @@
 Clouds_API={}
-
+--[[
 MAP_TYPE={
 	NORMAL_MAP = 0,
 	DUNGEON = 1,
@@ -20,7 +20,7 @@ TARGET={
 	ITEM_POS = 6,
 	CHARACTER = 7
 }
-
+]]
 function Clouds_API.GetPNDByID(dwID)
 	dwID=dwID or 0
 	return GetPlayer(dwID) or GetNpc(dwID) or GetDoodad(dwID) or nil
@@ -150,6 +150,7 @@ function Clouds_API.ChangeADTong(name)
 	end
 	local item=frame:Lookup("PageSet_List/Page_AdList"):Lookup("", "Handle_AdList"):Lookup(0)
 	if not item then
+		OutputMessage("MSG_SYS","Œ¥’“µΩ\n")
 		return
 	end
 	item:Lookup("Text_GuildName"):SetText(name)
