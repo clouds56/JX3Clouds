@@ -1,19 +1,31 @@
 local _ = Clouds_Base
 
+_.DEBUG = true
+_.LEVEL_CURRENT = 1
+
 _.debug = {
-  to_string_default_mode = {
-    suffix="  ", -- indent string
-    fun=false, -- show function as string or decoded hex
-    oneline=false, -- show all table in oneline
-    tabcard=true, -- show table length as comment
-    table = nil, -- specific table handle function
-  },
+  to_string_default_mode = function()
+    return {
+      suffix="  ", -- indent string
+      fun=false, -- show function as string or decoded hex
+      oneline=false, -- show all table in oneline
+      tabcard=true, -- show table length as comment
+      table = nil, -- specific table handle function
+    }
+  end,
+  to_string_get_mode = function(mode)
+    local modeex = _.debug.to_string_default_mode()
+    for i, v in pairs(mode or {}) do
+      modeex[i] = v
+    end
+    return modeex
+  end
 }
 
 _.debug.object_to_string = function(o, mode, index, visited)
   index = index or 0
   visited = visited or {}
-  mode = mode or _.debug.to_string_default_mode
+  mode = _.debug.to_string_get_mode(mode)
   if type(o) == "string" then
     return _.debug.string_to_string(o, mode, index, visited)
   elseif type(o) == "number" then
@@ -22,12 +34,14 @@ _.debug.object_to_string = function(o, mode, index, visited)
     return tostring(o)
   elseif type(o) == "table" then
     return _.debug.table_to_string(o, mode, index, visited)
+  elseif type(o) == "userdata" then
+    return "'" .. tostring(o) .. "'"
   elseif type(o) == "function" then
     return _.debug.function_to_string(o, mode, index, visited)
   elseif type(o) == "nil" then
     return "nil"
   else
-    return type(o)..":"..tostring(o)
+    return "'" .. type(o)..":"..tostring(o) .. "''"
   end
   return "??"
 end
@@ -37,20 +51,21 @@ _.debug.string_to_string = function(s, mode)
 end
 
 _.debug.function_to_string = function(f, mode)
+  mode = _.debug.to_string_get_mode(mode)
   if not f then
     return "function: nil"
   end
   if mode.fun then
-    return tostring(f) .. "  --[[\n" .. _.debug.xxd(string.dump(f)) .. "]]"
+    return "'" .. tostring(f) .. "'" .. "  --[[\n" .. _.debug.xxd(string.dump(f)) .. "]]"
   else
-    return tostring(f)
+    return "'" .. tostring(f) .. "'"
   end
 end
 
 _.debug.table_to_string = function(t, mode, index, visited)
   index = index or 0
   visited = visited or {}
-  mode = mode or _.debug.to_string_default_mode
+  mode = _.debug.to_string_get_mode(mode)
   if mode.table then
     return mode:table(t) or ""
   end
@@ -129,4 +144,24 @@ _.debug.xxd = function(a, unit, line)
     s = s .. '\n'
   end
   return s
+end
+
+if _.DEBUG then
+  function _var2str(...)
+    local t = {...}
+    if #t == 1 then
+      return _.debug.object_to_string(t[1])
+    end
+    return _.debug.object_to_string(t)
+  end
+
+  function _dumpstr(f)
+    return _.debug.object_to_string(f, { fun=true })
+  end
+
+  function out(...)
+    local s = _var2str(...)
+    OutputMessage("MSG_SYS", s)
+    print(s)
+  end
 end

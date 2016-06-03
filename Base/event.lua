@@ -36,31 +36,33 @@ function _.event.GenNewMonitor(event)
     _.event.GenNewMsgMonitor(event)
   end
 
-  local monitors, monitor = _.event.ui.Monitors[event], nil
+  local monitors, monitor = _.event.ui.Monitors, nil
   monitor = function(...)
     -- TODO: no need for check?
     if _.event.ui and _.event.ui.Monitors and _.event.ui.Monitors[event] ~= monitor then
       if _.event.ui.Monitors[event] == nil then
         _.event.ui.Monitors[event] = monitor
       else
+        _.event.Output(_.LEVEL.VERBOSE, "not mulitple monitor running default: %s, current: %s", tostring(_.event.ui.Monitors[event]), tostring(monitor))
         return
       end
     end
 
-    for _, v in pairs(_.event.tMonitor[event] or {}) do
+    for i, v in pairs(_.event.tMonitor[event] or {}) do
       if v[2] then
         local b, s = pcall(v[1], ...)
         v[3] = v[3] + 1
         if not b then
           FireUIEvent("CALL_LUA_ERROR", s)
+          _.event.Output(_.LEVEL.WARNING, s)
           v[4] = v[4] + 1
           v[5] = s
         end
       end
     end
   end
-  _.event.ui.Monitors[event] = monitor
   RegisterEvent(event, monitor)
+  _.event.ui.Monitors[event] = monitor
 end
 
 --- Add a monitoring function on event into tMonitor[event]
@@ -239,7 +241,9 @@ RegisterEvent("LOADING_END", function()
 
   _.event.ui = ui
   _.event.ui.Monitors = {}
-  _.event.tDelay = {}
+  for i, v in pairs(_.event.tMonitor) do
+    _.event.GenNewMonitor(i)
+  end
   _.event.Output(_.LEVEL.VERBOSE, "LOADING_END")
 end)
 
