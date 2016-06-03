@@ -8,6 +8,7 @@ _t = {
       suffix="  ", -- indent string
       fun=false, -- show function as string or decoded hex
       oneline=false, -- show all table in oneline
+      tab = false, -- expand table
       tabcard=true, -- show table length as comment
       table = nil, -- specific table handle function
     }
@@ -21,22 +22,24 @@ _t = {
   end
 }
 
-_t.object_to_string = function(o, mode, index, visited)
+_t.object_to_string = function(o, mode, index)
   index = index or 0
-  visited = visited or {}
   mode = _t.to_string_get_mode(mode)
   if type(o) == "string" then
-    return _t.string_to_string(o, mode, index, visited)
+    return _t.string_to_string(o, mode, index)
   elseif type(o) == "number" then
     return tostring(o)
   elseif type(o) == "boolean" then
     return tostring(o)
   elseif type(o) == "table" then
-    return _t.table_to_string(o, mode, index, visited)
+    if o.tostring then
+      return o:tostring()
+    end
+    return _t.table_to_string(o, mode, index)
   elseif type(o) == "userdata" then
     return "'" .. tostring(o) .. "'"
   elseif type(o) == "function" then
-    return _t.function_to_string(o, mode, index, visited)
+    return _t.function_to_string(o, mode, index)
   elseif type(o) == "nil" then
     return "nil"
   else
@@ -61,19 +64,24 @@ _t.function_to_string = function(f, mode)
   end
 end
 
-_t.table_to_string = function(t, mode, index, visited)
+_t.table_to_string = function(t, mode, index, visited, path)
   index = index or 0
   visited = visited or {}
+  path = path or "ROOT"
   mode = _t.to_string_get_mode(mode)
   if mode.table then
     return mode:table(t) or ""
   end
+  if t.tostring then
+    return t:tostring()
+  end
+
   if mode.tab or (visited and visited[t]) then
-    visited[t]="p"
-    return tostring(t)
+    visited[t].referenced = true
+    return tostring(t) .. " " .. ("--[=[ %s ]=]"):format(visited[t].path)
   end
   if visited then
-    visited[t] = true
+    visited[t] = { path=path, referenced=false }
   end
 
   local s = "{"
@@ -82,7 +90,13 @@ _t.table_to_string = function(t, mode, index, visited)
   for i = 1, #t do
     local v = t[i]
     empty = false
-    s = s .. newline .. _t.object_to_string(v, mode, index+1, visited) .. ","
+    local value
+    if type(v) == "table" then
+      value = _t.table_to_string(v, mode, index+1, visited, string.format("%s[%d]",path,i))
+    else
+      value = _t.object_to_string(v, mode, index+1)
+    end
+    s = s .. newline .. value .. ","
   end
 
   if mode.tabcard and not empty then
@@ -96,15 +110,24 @@ _t.table_to_string = function(t, mode, index, visited)
       end
     elseif type(i)=="string" then
       key = i
+    elseif type(i)=="table" and i.tostring then
+      key = ("[table: %s]"):format(i:tostring())
     else
       key = ("[%s]"):format(tostring(i))
     end
     if key then
       empty=false
-      s = s .. newline .. key .. " = " .. _t.object_to_string(v, mode, index+1, visited) .. ","
+      local value
+      if type(v) == "table" then
+        value = _t.table_to_string(v, mode, index+1, visited, string.format("%s[%s]",path,tostring(t)))
+      else
+        value = _t.object_to_string(v, mode, index+1)
+      end
+      s = s .. newline .. key .. " = " .. value .. ","
     end
   end
-  if visited[t]=="p" then
+  if visited[t].referenced then
+    -- TODO: visited later, the original one should show id
     s = s .. newline .. "--" .. (mode.oneline and "[[%s]]" or " %s"):format(tostring(t))
   end
   if empty then
