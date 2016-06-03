@@ -1,9 +1,8 @@
-local _ = Clouds_Base
+Clouds_Base.DEBUG = true
+Clouds_Base.LEVEL_CURRENT = 1
 
-_.DEBUG = true
-_.LEVEL_CURRENT = 1
-
-_.debug = {
+local _t
+_t = {
   to_string_default_mode = function()
     return {
       suffix="  ", -- indent string
@@ -14,7 +13,7 @@ _.debug = {
     }
   end,
   to_string_get_mode = function(mode)
-    local modeex = _.debug.to_string_default_mode()
+    local modeex = _t.to_string_default_mode()
     for i, v in pairs(mode or {}) do
       modeex[i] = v
     end
@@ -22,22 +21,22 @@ _.debug = {
   end
 }
 
-_.debug.object_to_string = function(o, mode, index, visited)
+_t.object_to_string = function(o, mode, index, visited)
   index = index or 0
   visited = visited or {}
-  mode = _.debug.to_string_get_mode(mode)
+  mode = _t.to_string_get_mode(mode)
   if type(o) == "string" then
-    return _.debug.string_to_string(o, mode, index, visited)
+    return _t.string_to_string(o, mode, index, visited)
   elseif type(o) == "number" then
     return tostring(o)
   elseif type(o) == "boolean" then
     return tostring(o)
   elseif type(o) == "table" then
-    return _.debug.table_to_string(o, mode, index, visited)
+    return _t.table_to_string(o, mode, index, visited)
   elseif type(o) == "userdata" then
     return "'" .. tostring(o) .. "'"
   elseif type(o) == "function" then
-    return _.debug.function_to_string(o, mode, index, visited)
+    return _t.function_to_string(o, mode, index, visited)
   elseif type(o) == "nil" then
     return "nil"
   else
@@ -46,26 +45,26 @@ _.debug.object_to_string = function(o, mode, index, visited)
   return "??"
 end
 
-_.debug.string_to_string = function(s, mode)
+_t.string_to_string = function(s, mode)
   return '"' .. s:gsub("\n", "\\n") .. '"'
 end
 
-_.debug.function_to_string = function(f, mode)
-  mode = _.debug.to_string_get_mode(mode)
+_t.function_to_string = function(f, mode)
+  mode = _t.to_string_get_mode(mode)
   if not f then
     return "function: nil"
   end
   if mode.fun then
-    return "'" .. tostring(f) .. "'" .. "  --[[\n" .. _.debug.xxd(string.dump(f)) .. "]]"
+    return "'" .. tostring(f) .. "'" .. "  --[[\n" .. _t.xxd(string.dump(f)) .. "]]"
   else
     return "'" .. tostring(f) .. "'"
   end
 end
 
-_.debug.table_to_string = function(t, mode, index, visited)
+_t.table_to_string = function(t, mode, index, visited)
   index = index or 0
   visited = visited or {}
-  mode = _.debug.to_string_get_mode(mode)
+  mode = _t.to_string_get_mode(mode)
   if mode.table then
     return mode:table(t) or ""
   end
@@ -83,7 +82,7 @@ _.debug.table_to_string = function(t, mode, index, visited)
   for i = 1, #t do
     local v = t[i]
     empty = false
-    s = s .. newline .. _.debug.object_to_string(v, mode, index+1, visited) .. ","
+    s = s .. newline .. _t.object_to_string(v, mode, index+1, visited) .. ","
   end
 
   if mode.tabcard and not empty then
@@ -102,7 +101,7 @@ _.debug.table_to_string = function(t, mode, index, visited)
     end
     if key then
       empty=false
-      s = s .. newline .. key .. " = " .. _.debug.object_to_string(v, mode, index+1, visited) .. ","
+      s = s .. newline .. key .. " = " .. _t.object_to_string(v, mode, index+1, visited) .. ","
     end
   end
   if visited[t]=="p" then
@@ -116,7 +115,7 @@ _.debug.table_to_string = function(t, mode, index, visited)
   return s
 end
 
-_.debug.xxd = function(a, unit, line)
+_t.xxd = function(a, unit, line)
   -- %0do : address offset
   -- %0dl  : line number
   -- %0d.dx  : context with 1d for unit and 2d for repeats
@@ -146,17 +145,20 @@ _.debug.xxd = function(a, unit, line)
   return s
 end
 
-if _.DEBUG then
+_t.module = Clouds_Base
+Clouds_Base.debug = _t
+
+if _t.module.DEBUG then
   function _var2str(...)
     local t = {...}
     if #t == 1 then
-      return _.debug.object_to_string(t[1])
+      return _t.object_to_string(t[1])
     end
-    return _.debug.object_to_string(t)
+    return _t.object_to_string(t)
   end
 
   function _dumpstr(f)
-    return _.debug.object_to_string(f, { fun=true })
+    return _t.object_to_string(f, { fun=true })
   end
 
   function out(...)

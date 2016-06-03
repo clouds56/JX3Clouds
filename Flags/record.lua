@@ -1,8 +1,7 @@
-local _ = Clouds_Flags
-
-local _print = _.base.gen_msg("record")
-local _print_verbose = function(...) _print(_.LEVEL.VERBOSE, ...) end
-_.record = {
+local _print = Clouds_Flags.base.gen_msg("record")
+local _print_verbose = function(...) _print(Clouds_Flags.LEVEL.VERBOSE, ...) end
+local _t
+_t = {
   OnEvent = function()
     _print_verbose(string.format("%s %s %s %s", tostring(arg0), tostring(arg1), tostring(arg2), tostring(arg3)))
   end,
@@ -16,7 +15,7 @@ _.record = {
     --local szSkillName = Table_GetSkillName(dwSkillID, dwLevel)
     --szRespond = GlobalEventHandler.GetSkillRespondText(nRespond)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_CAST_RESPOND_LOG, szCasterName, szSkillName, szRespond)
-    _print_verbose(string.format("%d casting (%d, %d), result %s(%d)", dwCaster, dwSkillID, dwLevel, _.record.GetSkillRespondText(nRespond), nRespond))
+    _print_verbose(string.format("%d casting (%d, %d), result %s(%d)", dwCaster, dwSkillID, dwLevel, _t.GetSkillRespondText(nRespond), nRespond))
   end,
 
   --- @param(dwCaster): caster id
@@ -45,14 +44,14 @@ _.record = {
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_LIFE], SKILL_RESULT_TYPE.TRANSFER_LIFE)
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_MANA], SKILL_RESULT_TYPE.TRANSFER_MANA)
     local verbose = ""
-    if _.DEBUG then verbose = string.format("verbose: %s", Clouds_Base.debug.object_to_string(tResult, {oneline=true})) end
+    if _t.module.DEBUG then verbose = string.format("verbose: %s", Clouds_Base.debug.object_to_string(tResult, {oneline=true})) end
     _print_verbose(string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
     local damage, therapy = 0, tResult[SKILL_RESULT_TYPE.THERAPY] or 0
     for i, t in ipairs({"PHYSICS_DAMAGE", "SOLAR_MAGIC_DAMAGE", "NEUTRAL_MAGIC_DAMAGE", "LUNAR_MAGIC_DAMAGE", "POISON_DAMAGE"}) do
       damage = damage + (tResult[SKILL_RESULT_TYPE[t]] or 0)
     end
     if damage ~= 0 or therapy ~= 0 then
-      _.data.RecordSkill(GetLogicFrameCount(), dwCaster, dwTarget, dwID, damage, therapy)
+      _t.module.data.RecordSkill(GetLogicFrameCount(), dwCaster, dwTarget, dwID, damage, therapy)
     end
   end,
 
@@ -129,7 +128,7 @@ _.record = {
   end,
 }
 
-_.record.GetSkillRespondText=function(nRespondCode)
+_t.GetSkillRespondText=function(nRespondCode)
   if nRespondCode == SKILL_RESULT_CODE.INVALID_CAST_MODE then return "INVALID_CAST_MODE"
   elseif nRespondCode == SKILL_RESULT_CODE.NOT_ENOUGH_LIFE then return "NOT_ENOUGH_LIFE"
   elseif nRespondCode == SKILL_RESULT_CODE.NOT_ENOUGH_MANA then return "NOT_ENOUGH_MANA"
@@ -181,20 +180,23 @@ _.record.GetSkillRespondText=function(nRespondCode)
   else return "UNABLE_CAST" end
 end
 
+_t.module = Clouds_Flags
+Clouds_Flags.record = _t
+
 Clouds_Base.event.Add("SYS_MSG", function()
   local event = arg0
-  if event == "UI_OME_SKILL_CAST_LOG" then _.record.OnSkillCast(arg1, arg2, arg3)
-  elseif event == "UI_OME_SKILL_CAST_RESPOND_LOG" then _.record.OnSkillCastRespond(arg1, arg2, arg3, arg4)
-  elseif event == "UI_OME_SKILL_EFFECT_LOG" then _.record.OnSkillEffectLog(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-  elseif event == "UI_OME_SKILL_BLOCK_LOG" then _.record.OnSkillBlockLog(arg1, arg2, arg3, arg4, arg5, arg6)
-  elseif event == "UI_OME_SKILL_SHIELD_LOG" then _.record.OnSkillShieldLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_MISS_LOG" then _.record.OnSkillMissLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_HIT_LOG" then _.record.OnSkillHitLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_DODGE_LOG" then _.record.OnSkillDodgeLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_COMMON_HEALTH_LOG" then _.record.OnCommonHealthLog(arg1, arg2)
-  elseif event == "UI_OME_BUFF_LOG" then _.record.OnBuffLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_BUFF_IMMUNITY" then _.record.OnBuffImmunity(arg1, arg2, arg3, arg4)
-  elseif event == "UI_OME_SKILL_RESPOND" then _.record.OnSkillRespond(arg1)
+  if event == "UI_OME_SKILL_CAST_LOG" then _t.OnSkillCast(arg1, arg2, arg3)
+  elseif event == "UI_OME_SKILL_CAST_RESPOND_LOG" then _t.OnSkillCastRespond(arg1, arg2, arg3, arg4)
+  elseif event == "UI_OME_SKILL_EFFECT_LOG" then _t.OnSkillEffectLog(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+  elseif event == "UI_OME_SKILL_BLOCK_LOG" then _t.OnSkillBlockLog(arg1, arg2, arg3, arg4, arg5, arg6)
+  elseif event == "UI_OME_SKILL_SHIELD_LOG" then _t.OnSkillShieldLog(arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_MISS_LOG" then _t.OnSkillMissLog(arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_HIT_LOG" then _t.OnSkillHitLog(arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_DODGE_LOG" then _t.OnSkillDodgeLog(arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_COMMON_HEALTH_LOG" then _t.OnCommonHealthLog(arg1, arg2)
+  elseif event == "UI_OME_BUFF_LOG" then _t.OnBuffLog(arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_BUFF_IMMUNITY" then _t.OnBuffImmunity(arg1, arg2, arg3, arg4)
+  elseif event == "UI_OME_SKILL_RESPOND" then _t.OnSkillRespond(arg1)
   end
 end, "Clouds_Flags_record")
 

@@ -1,11 +1,13 @@
-local _ = {
+Clouds_Flags = {
   DEBUG = Clouds_Base.DEBUG,
   LEVEL = Clouds_Base.LEVEL,
-  LEVEL_CURRENT = 1,
+  LEVEL_CURRENT = Clouds_Base.LEVEL_CURRENT,
 }
 
-_.base = {
+local _t
+_t = {
   gen_msg = Clouds_Base.base.gen_msg,
 }
 
-Clouds_Flags = _
+_t.module = Clouds_Flags
+Clouds_Flags.base = _t

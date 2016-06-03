@@ -1,6 +1,5 @@
-local _ = Clouds_Flags
-
-_.data = {
+local _t
+_t = {
   PLAYER_TYPE = {
     DAXIA = 0,
     QIXIU = 1,
@@ -23,7 +22,7 @@ _.data = {
   --- @param(id): player id
   --- @param(type): NPC or Player
   RecordPlayer = function(id, type, name, force, zhuangfen )
-    _.data._players[id] = { id, type, name, force, zhuangfen }
+    _t._players[id] = { id, type, name, force, zhuangfen }
   end,
 
   --- cache for Table_Skill...
@@ -38,6 +37,9 @@ _.data = {
     status = {},
   },
   RecordSkill = function(timestamp, sourceid, destid, skillid, damage, therapy)
-    table.insert(_.data._compat.skill, {timestamp, sourceid, destid, skillid, damage, therapy})
+    table.insert(_t._compat.skill, {timestamp, sourceid, destid, skillid, damage, therapy})
   end,
 }
+
+_t.module = Clouds_Flags
+Clouds_Flags.data = _t
