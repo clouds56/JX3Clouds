@@ -28,6 +28,7 @@ _t = {
   --- @param(nCount): #tResult
   --- @param(tResult): effect value table? { [13]=EFFECTIVE_DAMAGE, [14]=EFFECTIVE_THERAPY }
   OnSkillEffectLog = function(dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult)
+    if dwID == 7513 and dwLevel == 10 then return end
     --local nValue = tResult[SKILL_RESULT_TYPE.PHYSICS_DAMAGE]
     --PHYSICS_DAMAGE, SOLAR_MAGIC_DAMAGE, NEUTRAL_MAGIC_DAMAGE, LUNAR_MAGIC_DAMAGE, POISON_DAMAGE
     --szDamage = szDamage..FormatString(g_tStrings.SKILL_DAMAGE, nValue, g_tStrings.STR_SKILL_PHYSICS_DAMAGE)
@@ -51,7 +52,7 @@ _t = {
       damage = damage + (tResult[SKILL_RESULT_TYPE[t]] or 0)
     end
     if damage ~= 0 or therapy ~= 0 then
-      _t.module.data.RecordSkill(GetLogicFrameCount(), dwCaster, dwTarget, dwID, damage, therapy)
+      _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, {nEffectType, dwID, dwLevel}, damage, therapy)
     end
   end,
 

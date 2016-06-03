@@ -21,13 +21,51 @@ _t = {
   _players = {},
   --- @param(id): player id
   --- @param(type): NPC or Player
-  RecordPlayer = function(id, type, name, force, zhuangfen )
-    _t._players[id] = { id, type, name, force, zhuangfen }
+  RecordPlayer = function(self, playerid)
+    local t = {type = IsPlayerExist(playerid), id = playerid, tostring = self.PlayerToString}
+    if t.type == true then
+      t.t = GetPlayer(t.id)
+    else
+      t.t = GetNpc(t.id)
+    end
+    if t.t then
+      t.name = t.t.szName
+    end
+    self._players[playerid] = t
+    return t
+  end,
+  GetPlayer = function(self, playerid)
+    return self._players[playerid] or self:RecordPlayer(playerid)
+  end,
+  PlayerToString = function(self)
+    return string.format("%s#%d", self.name or "Unknown", self.id)
   end,
 
   --- cache for Table_Skill...
   --- _skills[id] = {id, school, }
   _skills = {},
+  RecordSkill = function(self, skillid)
+    local index = table.concat(skillid, "|")
+    local t = {type = skillid[1], id = skillid[2], level = skillid[3], tostring = self.SkillToString}
+    if t.type == SKILL_EFFECT_TYPE.SKILL then
+      t.t = Table_GetSkill(t.id, t.level)
+    elseif t.type == SKILL_EFFECT_TYPE.BUFF then
+      t.t = Table_GetBuff(t.id, t.level)
+    end
+    if t.t then
+      t.name = t.t.szName
+    end
+    self._skills[index] = t
+    return t
+  end,
+  GetSkill = function(self, skillid)
+    local index = table.concat(skillid, "|")
+    return self._skills[index] or self:RecordSkill(skillid)
+  end,
+  SkillToString = function(self)
+    local t = self.type == SKILL_EFFECT_TYPE.BUFF and "B:" or ""
+    return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
+  end,
 
   _compat = {
     --- skill[i] = { sourceid, destid, skillid,  }
@@ -36,8 +74,8 @@ _t = {
     damage = {},
     status = {},
   },
-  RecordSkill = function(timestamp, sourceid, destid, skillid, damage, therapy)
-    table.insert(_t._compat.skill, {timestamp, sourceid, destid, skillid, damage, therapy})
+  RecordSkillEffect = function(self, timestamp, sourceid, destid, skillid, damage, health)
+    table.insert(self._compat.skill, {time=timestamp, self:GetPlayer(sourceid), self:GetPlayer(destid), self:GetSkill(skillid), damage=damage, health=health})
   end,
 }
 
