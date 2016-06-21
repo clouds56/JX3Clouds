@@ -5,12 +5,13 @@ import itertools
 import logging
 import lupa
 import codecs
+import sys
 from pprint import pformat
 from configparser import ConfigParser
 from toposort import toposort_flatten
 
 logger_level = logging.DEBUG
-logger_formatter = "[%(asctime)s][%(name)s] %(levelname)s::%(message)s"
+logger_formatter = "[%(asctime)s][%(name)s] %(levelname)s :: %(message)s"
 logging.basicConfig(level=logger_level, format=logger_formatter)
 py_logger = logging.getLogger("python")
 lua_logger = logging.getLogger("lua")
@@ -69,7 +70,7 @@ def make_stubs(lua, stubs_file):
     dofile = lua.globals().dofile
     stubs = dofile(stubs_file)
     for n in stubs:
-        fake(lua, n, stubs[n].item)
+        fake(lua, n, stubs[n])
 
 def load_lua_file(lua, rootdir, ts, cs):
     dofile = lua.globals().dofile
@@ -82,12 +83,77 @@ def load_lua_file(lua, rootdir, ts, cs):
             except Exception as e:
                 py_logger.error("%s", e)
 
+def make_print_from_logger(logger, level=logging.INFO):
+    tostring = lua.globals().tostring
+    def print(*args):
+        logger.log(level, "%s", " ".join([tostring(x) for x in args]))
+    return print
+
+class ReadlineHistory:
+    def __init__(self, history=".hist"):
+        self.history = history
+        self.readline = sys.modules["readline"]
+
+    def __enter__(self):
+        py_logger.debug("read history file %s", self.history)
+        try:
+            self.readline.read_history_file(self.history)
+        except:
+            open(".hist", "a").close()
+        return self
+
+    def append(self, s):
+        #py_logger.debug("append %s into history file %s", s, self.history)
+        #self.readline.add_history(s, self.history)
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        #py_logger.debug("%s", sorted(sys.modules.keys()))
+        #self.readline.save_history_file(self.history)
+        pass
+
+def make_shell(lua, history=".hist"):
+    with ReadlineHistory() as rl:
+        while True:
+            try:
+                s = input()
+            except EOFError:
+                py_logger.debug("readline: EOF")
+                break
+            except Exception as e:
+                py_logger.error("readline error: %s", e)
+            py_logger.debug("readline: %s", s)
+            if s == "exit":
+                break
+            else:
+                rl.append(s)
+                try:
+                    lua.execute(s)
+                except lupa.LuaSyntaxError as e:
+                    py_logger.error("LuaSyntaxError: %s", e)
+                except lupa.LuaError as e:
+                    py_logger.error("LuaError: %s", e)
+                except Exception as e:
+                    py_logger.error("Exception(%s) in Lua: %s", type(e).__name__, e)
+        pass
+
+def run_world(lua):
+    py_logger.info("world start")
+    FireEvent = lua.globals().FireEvent
+    try:
+      FireEvent("LOADING_END")
+    except Exception as e:
+      py_logger.error("Exception(%s) in lua: %s", type(e).__name__, e)
+
 if __name__ == "__main__":
     lua = lupa.LuaRuntime()
     root_dir = "../JX3Clouds/"
 
-    fake(lua, "print", lua_logger.info, force=True)
+    fake(lua, "print", make_print_from_logger(lua_logger), force=True)
+    fake(lua, "__log", make_print_from_logger(fake_logger), force=True)
     make_stubs(lua, "stubs.lua")
-    lua.execute("print('hello world!')")
+    lua.execute("print('hello', 'world!')")
     ts, cs = load_package_ini(lua, root_dir)
     load_lua_file(lua, root_dir, ts, cs)
+    run_world(lua)
+    make_shell(lua)
