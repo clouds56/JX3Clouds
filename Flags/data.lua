@@ -1,3 +1,12 @@
+local IsPlayerExist = IsPlayerExist
+local GetPlayer = GetPlayer
+local GetNpc = GetNpc
+local Table_GetBuff = Table_GetBuff
+local Table_GetSkill = Table_GetSkill
+local Table_GetBuffName = Table_GetBuffName
+local Table_GetSkillName = Table_GetSkillName
+local SKILL_EFFECT_TYPE = SKILL_EFFECT_TYPE
+
 local _t
 _t = {
   PLAYER_TYPE = {

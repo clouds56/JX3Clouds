@@ -1,8 +1,11 @@
+local Table_GetBuffName = Table_GetBuffName
+local GetLogicFrameCount = GetLogicFrameCount
+local GetClientPlayer = GetClientPlayer
+
 local _t
 _t = {
   Buff_ToString = function(self)
     local id, level, isbuff, endframe, index, stacknum, skillid, valid, visible = unpack(self)
-    out(unpack(self))
     local name, visibleflag, debuffflag = Table_GetBuffName(id, level) or "", visible and "" or "*", isbuff and "" or "D:"
     local endtime = endframe == 2^31-1 and "never" or ("%.2f"):format(endframe-GetLogicFrameCount()/16)
     return string.format("{ %s%s%s(%d,%d), endtime: %s, index: %d, stacknum: %d, skillid: %d, valid: %s }",

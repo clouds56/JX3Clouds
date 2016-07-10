@@ -1,3 +1,8 @@
+local GetLogicFrameCount = GetLogicFrameCount
+local SKILL_EFFECT_TYPE = SKILL_EFFECT_TYPE
+local SKILL_RESULT_TYPE = SKILL_RESULT_TYPE
+local SKILL_RESULT_CODE = SKILL_RESULT_CODE
+
 local _t
 _t = {
   NAME = "record",
@@ -133,7 +138,7 @@ _t = {
 _t.module = Clouds_Flags
 Clouds_Flags.record = _t
 _t.Output = Clouds_Flags.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(Clouds_Flags.LEVEL.VERBOSE, ...) end
+_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
 
 _t.GetSkillRespondText=function(nRespondCode)
   if nRespondCode == SKILL_RESULT_CODE.INVALID_CAST_MODE then return "INVALID_CAST_MODE"

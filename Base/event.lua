@@ -1,3 +1,9 @@
+local RegisterEvent = RegisterEvent
+local FireUIEvent = FireUIEvent
+local GetLogicFrameCount = GetLogicFrameCount
+local RegisterMsgMonitor = RegisterMsgMonitor
+local Station, Wnd = Station, Wnd
+
 local _t
 _t = {
   NAME = "event",
@@ -187,46 +193,18 @@ function Clouds_Base_Event.OnFrameBreathe()
   end
 end
 
---- (Dprecated) Add monitor on opening a dialog when intract with NPC
-function _t.AddSelect(npc, string, pattern, tag)
-  if not _t.module.DEPRECATED then
-    return
-  end
-  tag = tag or tostring(npc) .. "::" .. tostring(string) .. "<<" .. tostring(pattern)
-  _t.Add("OPEN_WINDOW",function()
-    if npc and arg3~=npc then
-      local target=Clouds_API.GetPNDByID(arg3)
-      if not target or target.szName~=npc then return end
-    end
-    if string and not arg1:find(string) then return end
-    Clouds_API.WindowSelect(arg0, arg1, pattern)
-  end, tag)
-end
-
---- (Dprecated) Remove monitor on opening a dialog when intract with NPC
-function _t.RemoveSelect(tag)
-  if not _t.module.DEPRECATED then
-    return
-  end
-  _t.Remove("OPEN_WINDOW", tag)
-end
-
 --- Create system message monitor that call all functions in tMonitor[event]
 function _t.GenNewMsgMonitor(event)
   -- the system channel name
-  channel = event:gsub("MESSAGE", "MSG", 1)
-  if not _t.tMonitor or _t.tMonitor[event] then
+  local channel = event:gsub("MESSAGE", "MSG", 1)
+  if not _t.tMonitor then
     return
   end
-  _t.tMonitor[event] = {}
-  if monitors[event] ~= monitor then
-    if monitors[event] == nil then
-      monitors[event] = monitor
-    else
-      return
-    end
+  if not _t.tMonitor[event] then
+    _t.tMonitor[event] = {}
   end
 
+  -- TODO: once
   RegisterMsgMonitor(function(message, font, rich, r, g, b)
     FireUIEvent(event, message, rich, font, {r, g, b})
   end, {channel})
@@ -260,6 +238,7 @@ function _t.UI.GetMenu(name)
   end
   local menu = {}
   name = "tDelay"
+  local now = GetLogicFrameCount()
   local submenu = {szOption = name}
   for i,v in pairs(_t.tDelay) do
     table.insert(submenu,{

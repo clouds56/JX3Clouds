@@ -2,6 +2,8 @@ if not Clouds_Flags.DEBUG then
   return
 end
 
+local GetClientPlayer = GetClientPlayer
+
 local _t
 _t = {
   OutputLast = function()

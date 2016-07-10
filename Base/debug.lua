@@ -1,7 +1,9 @@
+local OutputMessage = OutputMessage
+
 Clouds_Base.DEBUG = true
 Clouds_Base.LEVEL_CURRENT = 1
 
-_t = {}
+local _t = {}
 
 _t.module = Clouds_Base
 Clouds_Base.debug = _t

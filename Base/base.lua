@@ -1,3 +1,6 @@
+local Trace = Trace
+local OutputMessage = OutputMessage
+
 local _ = {}
 local _level = {
   VERBOSE = 1,
