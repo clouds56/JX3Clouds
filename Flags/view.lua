@@ -1,7 +1,7 @@
-local _print = Clouds_Flags.base.gen_msg("view")
-local _print_verbose = function(...) _print(_.LEVEL.VERBOSE, ...) end
 local _t
 _t = {
+  NAME = "view",
+
   Analyze = function(data, id, filter)
     -- skills[id] = { [skill] = (dict){times, id, skill, damage, health}, ... }
     local skills = {}

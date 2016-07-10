@@ -1,13 +1,13 @@
-local _print = Clouds_Flags.base.gen_msg("record")
-local _print_verbose = function(...) _print(Clouds_Flags.LEVEL.VERBOSE, ...) end
 local _t
 _t = {
+  NAME = "record",
+
   OnEvent = function()
-    _print_verbose(string.format("%s %s %s %s", tostring(arg0), tostring(arg1), tostring(arg2), tostring(arg3)))
+    _t.Output_verbose(string.format("%s %s %s %s", tostring(arg0), tostring(arg1), tostring(arg2), tostring(arg3)))
   end,
 
   OnSkillCast = function(dwCaster, dwSkillID, dwLevel)
-    _print_verbose(string.format("%d casting (%d, %d)", dwCaster, dwSkillID, dwLevel))
+    _t.Output_verbose(string.format("%d casting (%d, %d)", dwCaster, dwSkillID, dwLevel))
   end,
 
   OnSkillCastRespond=function(dwCaster, dwSkillID, dwLevel, nRespond)
@@ -15,7 +15,7 @@ _t = {
     --local szSkillName = Table_GetSkillName(dwSkillID, dwLevel)
     --szRespond = GlobalEventHandler.GetSkillRespondText(nRespond)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_CAST_RESPOND_LOG, szCasterName, szSkillName, szRespond)
-    _print_verbose(string.format("%d casting (%d, %d), result %s(%d)", dwCaster, dwSkillID, dwLevel, _t.GetSkillRespondText(nRespond), nRespond))
+    _t.Output_verbose(string.format("%d casting (%d, %d), result %s(%d)", dwCaster, dwSkillID, dwLevel, _t.GetSkillRespondText(nRespond), nRespond))
   end,
 
   --- @param(dwCaster): caster id
@@ -46,7 +46,7 @@ _t = {
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_MANA], SKILL_RESULT_TYPE.TRANSFER_MANA)
     local verbose = ""
     if _t.module.DEBUG then verbose = string.format("verbose: %s", Clouds_Base.debug.object_to_string(tResult, {oneline=true})) end
-    _print_verbose(string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
+    _t.Output_verbose(string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
     local damage, therapy = 0, tResult[SKILL_RESULT_TYPE.THERAPY] or 0
     for i, t in ipairs({"PHYSICS_DAMAGE", "SOLAR_MAGIC_DAMAGE", "NEUTRAL_MAGIC_DAMAGE", "LUNAR_MAGIC_DAMAGE", "POISON_DAMAGE"}) do
       damage = damage + (tResult[SKILL_RESULT_TYPE[t]] or 0)
@@ -59,22 +59,22 @@ _t = {
   OnCommonHealthLog=function(dwTarget, nDeltaLife)
     --szMsg = FormatString(g_tStrings.STR_SKILL_COMMON_DAMAGE_LOG_MSG, szTargetName, -nDeltaLife)
     --szMsg = FormatString(g_tStrings.STR_SKILL_COMMON_THERAPY_LOG_MSG, szTargetName, nDeltaLife)
-    _print_verbose(string.format("%d get %d health", dwTarget, nDeltaLife))
+    _t.Output_verbose(string.format("%d get %d health", dwTarget, nDeltaLife))
   end,
 
   OnSkillBlockLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel, dwDamageType)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_BLOCK_LOG_MSG, szCasterName, szSkillName, GlobalEventHandler.g_DamageType[dwDamageType], szTargetName)
-    _print_verbose(string.format("%d casted (%d, %d) to %d, blocked", dwCaster, dwID, dwLevel, dwTarget))
+    _t.Output_verbose(string.format("%d casted (%d, %d) to %d, blocked", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   OnSkillShieldLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_SHIELD_LOG_MSG, szCasterName, szSkillName, szTargetName)
-    _print_verbose(string.format("%d casted (%d, %d) to %d, shield", dwCaster, dwID, dwLevel, dwTarget))
+    _t.Output_verbose(string.format("%d casted (%d, %d) to %d, shield", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   OnSkillMissLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_MISS_LOG_MSG, szCasterName, szSkillName)
-    _print_verbose(string.format("%d casted (%d, %d) to %d, missed", dwCaster, dwID, dwLevel, dwTarget))
+    _t.Output_verbose(string.format("%d casted (%d, %d) to %d, missed", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   --- @param(dwCaster): caster id
@@ -85,19 +85,19 @@ _t = {
   OnSkillHitLog = function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     -- the message is null
     --local szMsg = FormatString(g_tStrings.STR_SKILL_HIT_LOG_MSG, szCasterName, szSkillName, szTargetName)
-    _print_verbose(string.format("%d casted (%d, %d), hit %d", dwCaster, dwID, dwLevel, dwTarget))
+    _t.Output_verbose(string.format("%d casted (%d, %d), hit %d", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   OnSkillDodgeLog = function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_DODGE_LOG_MSG, szCasterName, szSkillName, szTargetName)
-    _print_verbose(string.format("%d casted (%d, %d) to %d, dodged", dwCaster, dwID, dwLevel, dwTarget))
+    _t.Output_verbose(string.format("%d casted (%d, %d) to %d, dodged", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   --- TODO: remove
   OnExpLog = function(dwPlayerID, nAddExp)
     --local szMsg = FormatString(g_tStrings.STR_EXP_YOU_GET_EXP_MSG, nAddExp)
     --OutputMessage("MSG_EXP", szMsg)
-    _print_verbose(string.format("%d get %d exp", dwPlayerID, nAddExp))
+    _t.Output_verbose(string.format("%d get %d exp", dwPlayerID, nAddExp))
   end,
 
   --- @param(dwTarget): who get buff
@@ -110,17 +110,18 @@ _t = {
     --local szBuffName = Table_GetBuffName(dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
-    _print_verbose(string.format("buff (%d, %d) %s on %d", dwID, nLevel, bAddOrDel and "add" or "delete", dwTarget))
+    _t.Output_verbose(string.format("buff(%s) (%d, %d) %s on %d", tostring(bCanCancel), dwID, nLevel, bAddOrDel and "add" or "delete", dwTarget))
+    _t.module.data:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 
   OnBuffImmunity = function(dwTarget, bCanCancel, dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_BUFF_IMMUNITY_LOG_MSG, szBuffName, szTargetName)
-    _print_verbose(string.format("buff (%d, %d) to %d, immunity", dwID, nLevel, dwTarget))
+    _t.Output_verbose(string.format("buff (%d, %d) to %d, immunity", dwID, nLevel, dwTarget))
   end,
 
   OnDeathNotify = function(dwID, nLeftReviveFrame, szKiller)
     ----CreateRevivePanel(nLeftReviveFrame / GLOBAL.GAME_FPS)
-    _print_verbose(string.format("%s killed %d, revive in %d", szKiller or "#nil", dwID, nLeftReviveFrame))
+    _t.Output_verbose(string.format("%s killed %d, revive in %d", szKiller or "#nil", dwID, nLeftReviveFrame))
   end,
 
   OnSkillRespond = function(nRespondCode)
@@ -128,6 +129,11 @@ _t = {
     --if nRespondCode == SKILL_RESULT_CODE.FORCE_EFFECT then OutputMessage("MSG_SKILL_SELF_FAILED", szMsg..g_tStrings.STR_FULL_STOP.."\n") end
   end,
 }
+
+_t.module = Clouds_Flags
+Clouds_Flags.record = _t
+_t.Output = Clouds_Flags.base.gen_msg(_t.NAME)
+_t.Output_verbose = function(...) _t.Output(Clouds_Flags.LEVEL.VERBOSE, ...) end
 
 _t.GetSkillRespondText=function(nRespondCode)
   if nRespondCode == SKILL_RESULT_CODE.INVALID_CAST_MODE then return "INVALID_CAST_MODE"
@@ -180,9 +186,6 @@ _t.GetSkillRespondText=function(nRespondCode)
   --szMsg = player.bSprintFlag and g_tStrings.STR_ERROR_SKILL_NOT_IN_SPRINT or g_tStrings.STR_ERROR_SKILL_IN_SPRINT
   else return "UNABLE_CAST" end
 end
-
-_t.module = Clouds_Flags
-Clouds_Flags.record = _t
 
 Clouds_Base.event.Add("SYS_MSG", function()
   local event = arg0

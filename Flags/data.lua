@@ -67,6 +67,26 @@ _t = {
     return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
   end,
 
+  _buffs = {},
+  RecordBuff = function(self, buffid)
+    local index = table.sconcat(buffid, "|")
+    local t = {type = buffid[1], id = buffid[2], level = buffid[3], tostring = self.SkillToString}
+    t.t = Table_GetBuff(t.id, t.level)
+    if t.t then
+      t.name = t.t.szName
+    end
+    self._buffs[index] = t
+    return t
+  end,
+  GetBuff = function(self, buffid)
+    local index = table.sconcat(buffid, "|")
+    return self._buffs[index] or self:RecordBuff(buffid)
+  end,
+  BuffToString = function(self)
+    local t = self.type and "" or "D:"
+    return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
+  end,
+
   _compat = {
     --- skill[i] = { sourceid, destid, skillid,  }
     skill = {},
@@ -77,6 +97,9 @@ _t = {
   RecordSkillEffect = function(self, timestamp, sourceid, destid, skillid, damage, health)
     table.insert(self._compat.skill, {time=timestamp, self:GetPlayer(sourceid), self:GetPlayer(destid), self:GetSkill(skillid), damage=damage, health=health})
   end,
+  RecordBuffLog = function(self, timestamp, sourceid, destid, buffid, isadd)
+    table.insert(self._compat.buff, {time=timestamp, self:GetPlayer(destid), self:GetBuff(buffid), isadd=isadd})
+  end
 }
 
 _t.module = Clouds_Flags

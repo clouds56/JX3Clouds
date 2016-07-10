@@ -1,11 +1,17 @@
 local _t
 _t = {
+  NAME = "event",
+
   --- tMonitor[event][tag] = { func, enabled, called, errored }
   tMonitor = {},
 
   tDelay = {},
   szIni="interface/Clouds/Base/event.ini",
 }
+
+_t.module = Clouds_Base
+Clouds_Base.event = _t
+_t.Output = _t.module.base.gen_msg(_t.NAME)
 
 --- Generate system monitor that call all functions in tMonitor[event]
 --- @param(event): system event name, if begin with MESSAGE, call GenNewMsgMonitor additionally
@@ -225,11 +231,6 @@ function _t.GenNewMsgMonitor(event)
     FireUIEvent(event, message, rich, font, {r, g, b})
   end, {channel})
 end
-
-_t.module = Clouds_Base
-Clouds_Base.event = _t
-
-_t.Output = _t.module.base.gen_msg("Clouds_Base_Event")
 
 -- TODO: once
 RegisterEvent("LOADING_END", function()
