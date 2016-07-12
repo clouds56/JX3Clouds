@@ -8,14 +8,14 @@ _t = {
   Buff_ToString = function(self)
     local id, level, isbuff, endframe, index, stacknum, skillid, flag1, flag2 = unpack(self)
     if flag1 ~= true or flag2 ~= false then
-      _t.Output(_t.module.LEVEL.WARNING, "Buff flag1(%s) and flag2(%s)", tostring(flag1), tostring(flag2))
+      _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "Buff flag1(%s) and flag2(%s)", tostring(flag1), tostring(flag2))
     end
     local name, debuffheader = Table_GetBuffName(id, level) or "", isbuff and "" or "D:"
     local endtime = endframe >= 2^31-1 and "never" or xv.frame.tostring(endframe-GetLogicFrameCount())
     local s = string.format("{ %s%s(%d,%d), endtime: %s, index: %d, stacknum: %d, skillid: %d }",
       debuffheader, name, id, level, endtime, index, stacknum, skillid)
     if flag1 ~= true or flag2 ~= false then
-      _t.Output(_t.module.LEVEL.WARNING, "Buff flag1(%s) and flag2(%s) in %s", tostring(flag1), tostring(flag2), s)
+      _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "Buff flag1(%s) and flag2(%s) in %s", tostring(flag1), tostring(flag2), s)
     end
     return s
   end,

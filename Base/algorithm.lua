@@ -27,7 +27,7 @@ _t = {
       local s = ""
       local first = true
       sep = sep or ""
-      --if i or j then _t.Output(_t.module.LEVEL.WARNING, "algorithm.table.sconcat do not support arg i(%s), j(%s)", tostring(i), tostring(j)) end
+      --if i or j then _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "algorithm.table.sconcat do not support arg i(%s), j(%s)", tostring(i), tostring(j)) end
       if t[1] == nil then
         return s
       end

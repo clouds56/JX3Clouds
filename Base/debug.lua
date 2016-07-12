@@ -1,7 +1,7 @@
 local OutputMessage = OutputMessage
 
 Clouds_Base.DEBUG = true
-Clouds_Base.LEVEL_CURRENT = 1
+Clouds_Base.LEVEL_CURRENT = Clouds_Base.LEVEL.VERBOSE
 
 local _t = {}
 

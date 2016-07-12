@@ -54,7 +54,7 @@ function _t.GenNewMonitor(event)
       if _t.ui.Monitors[event] == nil then
         _t.ui.Monitors[event] = monitor
       else
-        _t.Output(_t.module.LEVEL.VERBOSE, "not mulitple monitor running default: %s, current: %s", tostring(_t.ui.Monitors[event]), tostring(monitor))
+        _t.Output(_t.module.LEVEL.VERBOSE, --[[tag]]0, "not mulitple monitor running default: %s, current: %s", tostring(_t.ui.Monitors[event]), tostring(monitor))
         return
       end
     end
@@ -65,7 +65,7 @@ function _t.GenNewMonitor(event)
         v[3] = v[3] + 1
         if not b then
           FireUIEvent("CALL_LUA_ERROR", s)
-          _t.Output(_t.module.LEVEL.WARNING, s)
+          _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, s)
           v[4] = v[4] + 1
           v[5] = s
         end
@@ -225,7 +225,7 @@ RegisterEvent("LOADING_END", function()
   for i, v in pairs(_t.tMonitor) do
     _t.GenNewMonitor(i)
   end
-  _t.Output(_t.module.LEVEL.VERBOSE, "LOADING_END")
+  _t.Output(_t.module.LEVEL.VERBOSE, --[[tag]]0, "LOADING_END")
 end)
 
 
@@ -260,7 +260,7 @@ function _t.UI.GetMenu(name)
         end,
         {szOption=tostring(v[1])},
         {szOption=v[4].."/"..v[3]},
-        v[5] and {szOption=v[5]:sub(1,50),bCheck=true,fnAction=function()_t.Output(v[5]) v[5]=nil end},
+        v[5] and {szOption=v[5]:sub(1,50),bCheck=true,fnAction=function()_t.Output(_t.module.LEVEL.INFO,  --[[tag]]0, v[5]) v[5]=nil end},
       })
     end
     table.insert(menu,submenu)
