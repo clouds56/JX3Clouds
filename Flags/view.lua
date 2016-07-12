@@ -6,8 +6,8 @@ _t = {
     -- skills[id] = { [skill] = (dict){times, id, skill, damage, health}, ... }
     local skills = {}
     for i, v in pairs(data) do
-      if v[2].id == id and (not filter or filter(v)) then
-        local source, skill = v[1].name or "#"..v[1].id, v[3]
+      if v.dst.id == id and (not filter or filter(v)) then
+        local source, skill = v.src.name or "#"..v.src.id, v.skill
         local t = skills[source]
         if not t then
           t = { id=source, damage=0, health=0 }

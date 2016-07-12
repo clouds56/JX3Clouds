@@ -4,12 +4,20 @@ local GetClientPlayer = GetClientPlayer
 
 local _t
 _t = {
+  NAME = "api",
   Buff_ToString = function(self)
-    local id, level, isbuff, endframe, index, stacknum, skillid, valid, visible = unpack(self)
-    local name, visibleflag, debuffflag = Table_GetBuffName(id, level) or "", visible and "" or "*", isbuff and "" or "D:"
-    local endtime = endframe == 2^31-1 and "never" or ("%.2f"):format(endframe-GetLogicFrameCount()/16)
-    return string.format("{ %s%s%s(%d,%d), endtime: %s, index: %d, stacknum: %d, skillid: %d, valid: %s }",
-      visibleflag, debuffflag, name, id, level, endtime, index, stacknum, skillid, tostring(valid))
+    local id, level, isbuff, endframe, index, stacknum, skillid, flag1, flag2 = unpack(self)
+    if flag1 ~= true or flag2 ~= false then
+      _t.Output(_t.module.LEVEL.WARNING, "Buff flag1(%s) and flag2(%s)", tostring(flag1), tostring(flag2))
+    end
+    local name, debuffheader = Table_GetBuffName(id, level) or "", isbuff and "" or "D:"
+    local endtime = endframe >= 2^31-1 and "never" or xv.frame.tostring(endframe-GetLogicFrameCount())
+    local s = string.format("{ %s%s(%d,%d), endtime: %s, index: %d, stacknum: %d, skillid: %d }",
+      debuffheader, name, id, level, endtime, index, stacknum, skillid)
+    if flag1 ~= true or flag2 ~= false then
+      _t.Output(_t.module.LEVEL.WARNING, "Buff flag1(%s) and flag2(%s) in %s", tostring(flag1), tostring(flag2), s)
+    end
+    return s
   end,
   GetBuffList = function(target)
     target = target or GetClientPlayer()
@@ -27,3 +35,5 @@ _t = {
 
 _t.module = Clouds_Base
 Clouds_Base.api = _t
+_t.Output = Clouds_Base.base.gen_msg(_t.NAME)
+_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end

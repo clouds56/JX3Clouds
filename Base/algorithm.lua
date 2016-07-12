@@ -1,3 +1,5 @@
+xv = {}
+
 local _t
 _t = {
   NAME = "algorithm",
@@ -44,7 +46,44 @@ _t = {
       end
       return s
     end
-  }
+  },
+
+  frame = {
+    tostring = function(self)
+      local t = self
+      if t >= 2^31-1 then
+        return "never"
+      end
+      local minus = ""
+      if t < 0 then
+        minus = "-"
+        t = -t
+      end
+      t = t/16
+      local milliseconds, seconds = string.format("%.3f", t%1):sub(3)
+      if t > 60 then
+        seconds = string.format("%02d.%s", math.floor(t%60), milliseconds)
+        t = math.floor(t/60)
+      else
+        return string.format("%s%.3f", minus, t)
+      end
+      local minutes = t
+      if minutes > 60 then
+        minutes = minutes % 60
+        t = math.floor(t/60)
+      else
+        return string.format("%s%d:%s", minus, minutes, seconds)
+      end
+      local hours = t
+      if hours > 100 then
+        hours = hours % 24
+        local day = math.floor(t/24)
+        return string.format("%s%dd%02d:%02d:%s", minus, day, hours, minutes, seconds)
+      else
+        return string.format("%s%d:%02d:%s", minus, hours, minutes, seconds)
+      end
+    end,
+  },
 }
 
 _t.module = Clouds_Base
@@ -198,3 +237,5 @@ _t.xxd = function(a, unit, line)
 end
 
 table.sconcat = _t.table.sconcat
+xv.frame = _t.frame
+xv.object_to_string = _t.object_to_string

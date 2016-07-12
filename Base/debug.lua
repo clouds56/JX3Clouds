@@ -10,22 +10,28 @@ Clouds_Base.debug = _t
 
 _t.object_to_string = _t.module.algorithm.object_to_string
 
+_t.var2str = function(...)
+  local t = {...}
+  if #t == 1 then
+    return _t.object_to_string(t[1])
+  end
+  return _t.object_to_string(t)
+end
+
+_t.dumpstr = function(f)
+  return _t.object_to_string(f, { fun=true })
+end
+
+_t.out = function(...)
+  local s = _t.var2str(...)
+  OutputMessage("MSG_SYS", s)
+  print(s)
+end
+
+xv.debug = _t
+
 if _t.module.DEBUG then
-  function _var2str(...)
-    local t = {...}
-    if #t == 1 then
-      return _t.object_to_string(t[1])
-    end
-    return _t.object_to_string(t)
-  end
-
-  function _dumpstr(f)
-    return _t.object_to_string(f, { fun=true })
-  end
-
-  function out(...)
-    local s = _var2str(...)
-    OutputMessage("MSG_SYS", s)
-    print(s)
-  end
+  _var2str = _t.var2str
+  _dumpstr = _t.dumpstr
+  out = _t.out
 end

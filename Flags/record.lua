@@ -50,7 +50,7 @@ _t = {
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_LIFE], SKILL_RESULT_TYPE.TRANSFER_LIFE)
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_MANA], SKILL_RESULT_TYPE.TRANSFER_MANA)
     local verbose = ""
-    if _t.module.DEBUG then verbose = string.format("verbose: %s", Clouds_Base.debug.object_to_string(tResult, {oneline=true})) end
+    if _t.module.DEBUG then verbose = string.format("verbose: %s", xv.object_to_string(tResult, {oneline=true})) end
     _t.Output_verbose(string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
     local damage, therapy = 0, tResult[SKILL_RESULT_TYPE.THERAPY] or 0
     for i, t in ipairs({"PHYSICS_DAMAGE", "SOLAR_MAGIC_DAMAGE", "NEUTRAL_MAGIC_DAMAGE", "LUNAR_MAGIC_DAMAGE", "POISON_DAMAGE"}) do
@@ -106,16 +106,16 @@ _t = {
   end,
 
   --- @param(dwTarget): who get buff
-  --- @param(bCanCancel): buff or debuff
+  --- @param(bCanCancel): buff(true) or debuff(false)
   --- @param(dwID): buff id
-  --- @param(bAddOrDel): add or remove
+  --- @param(bAddOrDel): (it's a int) add(1) or remove(0)
   --- @param(nLevel): buff level
   OnBuffLog = function(dwTarget, bCanCancel, dwID, bAddOrDel, nLevel)
     --Table_BuffIsVisible(dwID, nLevel)
     --local szBuffName = Table_GetBuffName(dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
-    _t.Output_verbose(string.format("buff(%s) (%d, %d) %s on %d", tostring(bCanCancel), dwID, nLevel, bAddOrDel and "add" or "delete", dwTarget))
+    _t.Output_verbose(string.format("buff(%s) (%d, %d) affact(%s) on %d", tostring(bCanCancel), dwID, nLevel, tostring(bAddOrDel), dwTarget))
     _t.module.data:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 

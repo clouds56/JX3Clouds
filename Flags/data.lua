@@ -26,7 +26,7 @@ _t = {
     NPC = 100,
     BOSS = 104,
   },
-  --- _players[id] = { id, type, name, force, level, zhuangfen }
+  --- _players[id] = { id, type, [name, force, level, zhuangfen] }
   _players = {},
   --- @param(id): player id
   --- @param(type): NPC or Player
@@ -51,7 +51,7 @@ _t = {
   end,
 
   --- cache for Table_Skill...
-  --- _skills[id] = {id, school, }
+  --- _skills[id] = {type, id, level, [name, school,] }
   _skills = {},
   RecordSkill = function(self, skillid)
     local index = table.concat(skillid, "|")
@@ -97,17 +97,18 @@ _t = {
   end,
 
   _compat = {
-    --- skill[i] = { sourceid, destid, skillid,  }
+    --- skill[i] = { time=, src=, dst=, skill=, damage=, health=, }
     skill = {},
+    --- buff[i] = { time=, [src=,] dst=, buff=, isadd=, }
     buff = {},
     damage = {},
     status = {},
   },
   RecordSkillEffect = function(self, timestamp, sourceid, destid, skillid, damage, health)
-    table.insert(self._compat.skill, {time=timestamp, self:GetPlayer(sourceid), self:GetPlayer(destid), self:GetSkill(skillid), damage=damage, health=health})
+    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(skillid), damage=damage, health=health})
   end,
   RecordBuffLog = function(self, timestamp, sourceid, destid, buffid, isadd)
-    table.insert(self._compat.buff, {time=timestamp, self:GetPlayer(destid), self:GetBuff(buffid), isadd=isadd})
+    table.insert(self._compat.buff, {time=timestamp, dst=self:GetPlayer(destid), buff=self:GetBuff(buffid), isadd=isadd})
   end
 }
 
