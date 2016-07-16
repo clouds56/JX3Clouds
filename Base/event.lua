@@ -8,10 +8,10 @@ local _t
 _t = {
   NAME = "event",
 
-  --- tMonitor[event][tag] = { func, enabled, called, errored }
-  tMonitor = {},
+  --- monitors[event][tag] = { func, enabled, called, errored }
+  monitors = {},
 
-  tDelay = {},
+  delaycalls = {},
   szIni="interface/Clouds/Base/event.ini",
 }
 
@@ -19,27 +19,17 @@ _t.module = Clouds_Base
 Clouds_Base.event = _t
 _t.Output = _t.module.base.gen_msg(_t.NAME)
 
---- Generate system monitor that call all functions in tMonitor[event]
+--- Generate system monitor that call all functions in monitors[event]
 --- @param(event): system event name, if begin with MESSAGE, call GenNewMsgMonitor additionally
 function _t.GenNewMonitor(event)
   -- TODO: make sure there's only one call per event through RELOADING
   -- broken
-  if not _t.tMonitor then
+  if not _t.monitors then
     return
   end
 
-  if not _t.tMonitor[event] then
-    _t.tMonitor[event] = {}
-  end
-
-  -- not first loading end
-  if not _t.ui or not _t.ui.Monitors then
-    return
-  end
-
-  -- already registered
-  if _t.ui.Monitors[event] then
-    return
+  if not _t.monitors[event] then
+    _t.monitors[event] = {}
   end
 
   -- redirect message to event register
@@ -47,19 +37,8 @@ function _t.GenNewMonitor(event)
     _t.GenNewMsgMonitor(event)
   end
 
-  local monitors, monitor = _t.ui.Monitors, nil
-  monitor = function(...)
-    -- TODO: no need for check?
-    if _t.ui and _t.ui.Monitors and _t.ui.Monitors[event] ~= monitor then
-      if _t.ui.Monitors[event] == nil then
-        _t.ui.Monitors[event] = monitor
-      else
-        _t.Output(_t.module.LEVEL.VERBOSE, --[[tag]]0, "not mulitple monitor running default: %s, current: %s", tostring(_t.ui.Monitors[event]), tostring(monitor))
-        return
-      end
-    end
-
-    for i, v in pairs(_t.tMonitor[event] or {}) do
+  RegisterEvent(event, function(...)
+    for i, v in pairs(_t.monitors[event] or {}) do
       if v[2] then
         local b, s = pcall(v[1], ...)
         v[3] = v[3] + 1
@@ -71,25 +50,23 @@ function _t.GenNewMonitor(event)
         end
       end
     end
-  end
-  RegisterEvent(event, monitor)
-  _t.ui.Monitors[event] = monitor
+  end)
 end
 
---- Add a monitoring function on event into tMonitor[event]
+--- Add a monitoring function on event into monitors[event]
 --- @param(event): the event name
 --- @param(func): the monitor function
---- @param(tag): the index of function in tMonitor[event]
+--- @param(tag): the index of function in monitors[event]
 --- @remark: the tag should not be "all", if it is null, the func itself would be the tag.
 function _t.Add(event, func, tag)
   tag = tag or func
-  if not _t.tMonitor then
+  if not _t.monitors then
     return
   end
-  if not _t.tMonitor[event] then
+  if not _t.monitors[event] then
     _t.GenNewMonitor(event)
   end
-  _t.tMonitor[event][tag] = { func, true, 0, 0 }
+  _t.monitors[event][tag] = { func, true, 0, 0 }
 end
 
 --- Remove a monitoring function on event
@@ -103,22 +80,22 @@ function _t.Remove(event, tag)
   if not tag then
     return
   end
-  if not _t.tMonitor or not _t.tMonitor[event] then
+  if not _t.monitors or not _t.monitors[event] then
     return
   end
   if tag == "all" then
-    _t.tMonitor[event] = nil
+    _t.monitors[event] = nil
   end
-  _t.tMonitor[event][tag] = nil
+  _t.monitors[event][tag] = nil
 end
 
 --- Remove
 function _t.RemoveAll(tag)
   tag = tag or "test"
-  if not _t.tMonitor then
+  if not _t.monitors then
     return
   end
-  for i, v in pairs(_t.tMonitor) do
+  for i, v in pairs(_t.monitors) do
     _t.Remove(i, tag)
   end
 end
@@ -172,36 +149,36 @@ function _t.Delay(time, func, tag)
     return
   end
   tag = tag or GetLogicFrameCount()
-  _t.tDelay[tag] = { func, GetLogicFrameCount() + time }
+  _t.delaycalls[tag] = { func, GetLogicFrameCount() + time }
 end
 
 function _t.RemoveDelay(tag)
   -- TODO: test
-  _t.tDelay[tag] = nil
+  _t.delaycalls[tag] = nil
 end
 
 Clouds_Base_Event = {}
 function Clouds_Base_Event.OnFrameBreathe()
   FireUIEvent("CLOUDS_FRAME_BREATHE")
   local now = GetLogicFrameCount()
-  for i, v in pairs(_t.tDelay) do
+  for i, v in pairs(_t.delaycalls) do
     if v[2] <= now then
       -- TODO: log error
       pcall(v[1])
-      _t.tDelay[i] = nil
+      _t.delaycalls[i] = nil
     end
   end
 end
 
---- Create system message monitor that call all functions in tMonitor[event]
+--- Create system message monitor that call all functions in monitors[event]
 function _t.GenNewMsgMonitor(event)
   -- the system channel name
   local channel = event:gsub("MESSAGE", "MSG", 1)
-  if not _t.tMonitor then
+  if not _t.monitors then
     return
   end
-  if not _t.tMonitor[event] then
-    _t.tMonitor[event] = {}
+  if not _t.monitors[event] then
+    _t.monitors[event] = {}
   end
 
   -- TODO: once
@@ -210,8 +187,7 @@ function _t.GenNewMsgMonitor(event)
   end, {channel})
 end
 
--- TODO: once
-RegisterEvent("LOADING_END", function()
+local init = function()
   if _t.ui then
     return
   end
@@ -219,14 +195,13 @@ RegisterEvent("LOADING_END", function()
   if not ui then
     ui = Wnd.OpenWindow(_t.szIni, "Clouds_Base_Event")
   end
-
   _t.ui = ui
-  _t.ui.Monitors = {}
-  for i, v in pairs(_t.tMonitor) do
-    _t.GenNewMonitor(i)
-  end
-  _t.Output(_t.module.LEVEL.VERBOSE, --[[tag]]0, "LOADING_END")
-end)
+  _t.Output(_t.module.LEVEL.INFO, --[[tag]]0, "init successfully")
+end
+
+-- TODO: once
+init()
+-- RegisterEvent("LOADING_END", init)
 
 
 _t.UI = {}
@@ -237,10 +212,10 @@ function _t.UI.GetMenu(name)
     return
   end
   local menu = {}
-  name = "tDelay"
+  name = "delaycalls"
   local now = GetLogicFrameCount()
   local submenu = {szOption = name}
-  for i,v in pairs(_t.tDelay) do
+  for i,v in pairs(_t.delaycalls) do
     table.insert(submenu,{
       szOption=i,
       {szOption=tostring((v[2]-now)/16)},
@@ -248,7 +223,7 @@ function _t.UI.GetMenu(name)
     })
   end
   table.insert(menu,submenu)
-  for name,t in pairs(_t.tMonitor) do
+  for name,t in pairs(_t.monitors) do
     submenu={szOption=name}
     for i,v in pairs(t or {}) do
       table.insert(submenu,{

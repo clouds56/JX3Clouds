@@ -37,3 +37,4 @@ _t.module = Clouds_Base
 Clouds_Base.api = _t
 _t.Output = Clouds_Base.base.gen_msg(_t.NAME)
 _t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
+xv.api = _t
