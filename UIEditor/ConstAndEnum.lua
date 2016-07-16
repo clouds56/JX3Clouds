@@ -6,7 +6,7 @@ UIEditor = UIEditor or {}
 ---------------------------------------------------------------------------------------------------------------
 -- Í¨³£”µ“þ¶¨Áx
 ---------------------------------------------------------------------------------------------------------------
-UIEditor.szINIPath = "Interface\\UIEditor\\UIEditor.ini"			-- INI Î»ÖÃ
+UIEditor.szINIPath = "Interface\\UIEditor\\UIEditor\\UIEditor.ini"			-- INI Î»ÖÃ
 UIEditor.nTreeUndoLimited = 9999									-- ¿É³·äN´Î”µ
 
 ---------------------------------------------------------------------------------------------------------------
@@ -15,25 +15,25 @@ UIEditor.nTreeUndoLimited = 9999									-- ¿É³·äN´Î”µ
 UIEditor.tEventIndex = {											-- ÊÂ¼þ¶¨ÁxºÍ bit Ó³Éä±í
 	KeyDown = 13,
 	KeyUp = 14,
-	
+
 	MouseLDown = 1,
 	MouseLUp = 3,
 	MouseLClick = 5,
 	MouseLDBClick = 7,
 	MouseLDrag = 20,
-	
+
 	MouseRDown = 2,
 	MouseRUp = 4,
 	MouseRClick = 6,
 	MouseRDBClick = 8,
 	MouseRDrag = 19,
-	
+
 	MouseMDown = 15,
 	MouseMUp = 16,
 	MouseMClick = 17,
 	MouseMDBClick = 18,
 	MouseMDrag = 21,
-	
+
 	MouseEnterLeave = 9,
 	MouseArea = 10,
 	MouseMove = 11,
@@ -56,7 +56,7 @@ UIEditor.tWindowLayers = {											-- ´°ów Layer ±í
 
 UIEditor.tTreeNodeTypes = {											-- ´°ów Type ±í
 	"Frame",			-- Ö÷´°Ìå
-	
+
 	"WndWindow",		-- Ðé´°¿Ú
 	"WndNewScrollBar",		-- ¹ö¶¯Ìõ
 	"WndButton",		-- °´Å¥
@@ -77,7 +77,7 @@ UIEditor.tTreeNodeTypes = {											-- ´°ów Type ±í
 	"Scene",			-- ³¡¾°×é¼þ
 	"TreeLeaf",			-- Ê÷½Úµã×é¼þ
 	"Handle",			-- ÈÝÆ÷×é¼þ
-	
+
 	["Scene"] = {"WndFrame","WndScene","WndWindow"},
 	["Window"] = {"WndWindow","WndFrame"},
 	["WndCommon"] = {"WndFrame","WndWindow","WndButton","WndCheckBox","WndEdit","WndPage","WndPageSet","WndScene","WndWebPage","WndMinimap","WndMovie"},
@@ -89,7 +89,7 @@ UIEditor.tTreeNodeTypes = {											-- ´°ów Type ±í
 
 UIEditor.tImageTypes = {											-- ˆDÆ¬ Type ±í
 	"Ò»°ãˆDÏñ", "°Ù·Ö±È£º×óÓÒ", "°Ù·Ö±È£ºÓÒ×ó", "°Ù·Ö±È£ºÉÏÏÂ", "°Ù·Ö±È£ºÏÂÉÏ", "°Ù·Ö±È£ºÞDÈ¦",
-	"¿ÉÐýÞDˆDÏñ", "ÉÏÏÂ·­ÞDˆDÏñ", "×óÓÒ·­ÞDˆDÏñ", "Œ¦½Ç·­ÞDˆDÏñ", "¾ÅŒmˆDÏñ", "×óÖÐÓÒÈýŒm", "ÉÏÖÐÏÂÈýŒm", 
+	"¿ÉÐýÞDˆDÏñ", "ÉÏÏÂ·­ÞDˆDÏñ", "×óÓÒ·­ÞDˆDÏñ", "Œ¦½Ç·­ÞDˆDÏñ", "¾ÅŒmˆDÏñ", "×óÖÐÓÒÈýŒm", "ÉÏÖÐÏÂÈýŒm",
 
 	["Ò»°ãˆDÏñ"] = 0,
 	["°Ù·Ö±È£º×óÓÒ"] = 1,
@@ -107,7 +107,7 @@ UIEditor.tImageTypes = {											-- ˆDÆ¬ Type ±í
 }
 
 UIEditor.tTextHAlignTypes = {										-- ÎÄ±¾Ë®Æ½Œ¦ýR Type ±í
-	"Ë®Æ½×óŒ¦ýR", "Ë®Æ½¾ÓÖÐ", "Ë®Æ½ÓÒŒ¦ýR", 
+	"Ë®Æ½×óŒ¦ýR", "Ë®Æ½¾ÓÖÐ", "Ë®Æ½ÓÒŒ¦ýR",
 
 	["Ë®Æ½×óŒ¦ýR"] = 0,
 	["Ë®Æ½¾ÓÖÐ"] = 1,
@@ -115,7 +115,7 @@ UIEditor.tTextHAlignTypes = {										-- ÎÄ±¾Ë®Æ½Œ¦ýR Type ±í
 }
 
 UIEditor.tTextVAlignTypes = {										-- ÎÄ±¾´¹Ö±Œ¦ýR Type ±í
-	"´¹Ö±ÉÏŒ¦ýR", "´¹Ö±¾ÓÖÐ", "´¹Ö±ÏÂŒ¦ýR", 
+	"´¹Ö±ÉÏŒ¦ýR", "´¹Ö±¾ÓÖÐ", "´¹Ö±ÏÂŒ¦ýR",
 
 	["´¹Ö±ÉÏŒ¦ýR"] = 0,
 	["´¹Ö±¾ÓÖÐ"] = 1,
@@ -148,7 +148,7 @@ UIEditor.tImageFileBaseNameList = {									-- Í¼Æ¬ÎÄ¼þÁÐ±í, Ä¿Ç°ÔÝÊ±Ö»Ö§³ÖÊÖ¶¯Î
 		"UI/Image/Button/SystemButton",
 		"UI/Image/Button/SystemButton_1",
 	},
-	
+
 	ChannelsPanel = {
 		"UI/Image/ChannelsPanel/b",
 		"UI/Image/ChannelsPanel/Button",
@@ -164,7 +164,7 @@ UIEditor.tImageFileBaseNameList = {									-- Í¼Æ¬ÎÄ¼þÁÐ±í, Ä¿Ç°ÔÝÊ±Ö»Ö§³ÖÊÖ¶¯Î
 		"UI/Image/ChannelsPanel/NewChannels",
 		"UI/Image/ChannelsPanel/NewChannels2",
 	},
-	
+
 	Common = {
 		"UI/Image/Common/Animate",
 		"UI/Image/Common/Box",
@@ -182,26 +182,26 @@ UIEditor.tImageFileBaseNameList = {									-- Í¼Æ¬ÎÄ¼þÁÐ±í, Ä¿Ç°ÔÝÊ±Ö»Ö§³ÖÊÖ¶¯Î
 		"UI/Image/Common/TempBox",
 		"UI/Image/Common/TextShadow",
 	},
-	
+
 	Minimap = {
 		"UI/Image/Minimap/Mapmark",
 		"UI/Image/Minimap/Minimap",
 		"UI/Image/Minimap/Minimap2",
 	},
-	
+
 	QuestPanel = {
 		"UI/Image/QuestPanel/QuestPanel",
 		"UI/Image/QuestPanel/QuestPanelButton",
 		"UI/Image/QuestPanel/QuestPanelPart",
 	},
-	
+
 	TargetPanel = {
 		"UI/Image/TargetPanel/CangjianAnimation1",
 		"UI/Image/TargetPanel/CangjianAnimation2",
 		"UI/Image/TargetPanel/Player",
 		"UI/Image/TargetPanel/Target",
 	},
-	
+
 	UICommon = {
 		"UI/Image/UICommon/Commonpanel",
 		"UI/Image/UICommon/Commonpanel2",
@@ -218,7 +218,7 @@ UIEditor.tImageFileBaseNameList = {									-- Í¼Æ¬ÎÄ¼þÁÐ±í, Ä¿Ç°ÔÝÊ±Ö»Ö§³ÖÊÖ¶¯Î
 		"UI/Image/UICommon/ScienceTreeNode",
 		"UI/Image/UICommon/Talk_Face",
 	},
-	
+
 	Misc = {
 		"UI/Image/ChatPanel/EditBox",
 		"UI/Image/Cursor/Arrowimg",
@@ -279,43 +279,43 @@ UIEditor.tNodeInfoDefault = {
 {"AnimateMoveSpeed",	"SceneDefault",		"nAnimateMoveSpeed",	0},			--TODO
 
 	--Following properties is Option
-	{"ScriptFile",		"WindowNonzero",		"szScriptFile",		nil},	-- string : 
+	{"ScriptFile",		"WindowNonzero",		"szScriptFile",		nil},	-- string :
 
 	--vim:set ts=4 sw=4
 	--"Window" means WndWindow|WndFrame
-	{"IsCustomDragable",		"Window",		"bIsCustomDragable",		0},	-- bool : 
-	{"DragAreaRight",			"Scene",		"szuDragAreaRight",			""},	-- unknown : 
-	{"DragAreaBottom",			"Scene",		"szuDragAreaBottom",		""},	-- unknown : 
-	{"MinWidth",				"Scene",		"nMinWidth",				0},	-- unknown : 
-	{"MinHeight",				"Scene",		"nMinHeight",				0},	-- unknown : 
-	{"MaxWidth",				"Scene",		"nMaxWidth",				0},	-- unknown : 
-	{"MaxHeight",				"Scene",		"nMaxHeight",				0},	-- unknown : 
-	{"DisableBringToTop",		"Window|WndButton",	"bDisableBringToTop",	0},	-- unknown : 
+	{"IsCustomDragable",		"Window",		"bIsCustomDragable",		0},	-- bool :
+	{"DragAreaRight",			"Scene",		"szuDragAreaRight",			""},	-- unknown :
+	{"DragAreaBottom",			"Scene",		"szuDragAreaBottom",		""},	-- unknown :
+	{"MinWidth",				"Scene",		"nMinWidth",				0},	-- unknown :
+	{"MinHeight",				"Scene",		"nMinHeight",				0},	-- unknown :
+	{"MaxWidth",				"Scene",		"nMaxWidth",				0},	-- unknown :
+	{"MaxHeight",				"Scene",		"nMaxHeight",				0},	-- unknown :
+	{"DisableBringToTop",		"Window|WndButton",	"bDisableBringToTop",	0},	-- unknown :
 	--"WndCommon" means WndFrame|WndWindow|WndButton|WndCheckBox|WndEdit|WndPage|WndPageSet|WndScene|WndWebPage|WndMinimap|WndMovie
-	{"DummyWnd",			"WndCommon|WndNewScrollBar",	"bDummyWnd",	0},	-- unknown : 
-	{"Moveable",			"WndCommon|WndNewScrollBar",	"bMoveable",	0},	-- unknown : 
-	{"DisableBreath",			"Window",		"bDisableBreath",			0},	-- unknown : 
-	{"MousePenetrable",			"Scene|WndButton",	"szuMousePenetrable",	""},	-- unknown : 
+	{"DummyWnd",			"WndCommon|WndNewScrollBar",	"bDummyWnd",	0},	-- unknown :
+	{"Moveable",			"WndCommon|WndNewScrollBar",	"bMoveable",	0},	-- unknown :
+	{"DisableBreath",			"Window",		"bDisableBreath",			0},	-- unknown :
+	{"MousePenetrable",			"Scene|WndButton",	"szuMousePenetrable",	""},	-- unknown :
 
-	{"ItemHandle",				"WndFrame",	"szuItemHandle",			""},	-- unknown : 
-	{"MultiFrame",				"WndFrame",	"szuMultiFrame",			""},	-- unknown : 
-	{"ClassName",				"WndFrame",	"szuClassName",				""},	-- unknown : 
-	{"RenderSampling",			"WndFrame",	"szuRenderSampling",		""},	-- unknown : 
-	{"BreatheWhenHide",			"WndFrame",	"bBreatheWhenHide",			0},	-- unknown : 
-	{"SelfHoldMouseHover",		"WndFrame",	"szuSelfHoldMouseHover",	""},	-- unknown : 
-	{"AreaByEventItem",			"WndFrame",	"szuAreaByEventItem",		""},	-- unknown : 
-	{"RenderEvent",				"WndFrame",	"szuRenderEvent",			""},	-- unknown : 
-	{"ShowWhenHideUI",			"WndFrame",	"bShowWhenHideUI",			0},	-- unknown : 
+	{"ItemHandle",				"WndFrame",	"szuItemHandle",			""},	-- unknown :
+	{"MultiFrame",				"WndFrame",	"szuMultiFrame",			""},	-- unknown :
+	{"ClassName",				"WndFrame",	"szuClassName",				""},	-- unknown :
+	{"RenderSampling",			"WndFrame",	"szuRenderSampling",		""},	-- unknown :
+	{"BreatheWhenHide",			"WndFrame",	"bBreatheWhenHide",			0},	-- unknown :
+	{"SelfHoldMouseHover",		"WndFrame",	"szuSelfHoldMouseHover",	""},	-- unknown :
+	{"AreaByEventItem",			"WndFrame",	"szuAreaByEventItem",		""},	-- unknown :
+	{"RenderEvent",				"WndFrame",	"szuRenderEvent",			""},	-- unknown :
+	{"ShowWhenHideUI",			"WndFrame",	"bShowWhenHideUI",			0},	-- unknown :
 	--Except NewScrollBar
-	{"FollowMove",				"WndCommon",	"szuFollowMove",		""},	-- unknown : 
-	{"FollowSize",				"WndCommon",	"szuFollowSize",		""},	-- unknown : 
+	{"FollowMove",				"WndCommon",	"szuFollowMove",		""},	-- unknown :
+	{"FollowSize",				"WndCommon",	"szuFollowSize",		""},	-- unknown :
 
-	{"EnableTabChangeFocus",	"Window",	"bEnableTabChangeFocus",	0},	-- unknown : 
-	{"MouseFollowFocus",		"Window",	"szuMouseFollowFocus",		""},	-- unknown : 
-	{"ItemCount",				"Window",	"nItemCount",				0},	-- unknown : 
-	{"Item_0",					"Window",	"szuItem_0",				""},	-- unknown : 
-	{"Item_1",					"Window",	"szuItem_1",				""},	-- unknown : 
-	{"Item_2",					"Window",	"szuItem_2",				""},	-- unknown : 
+	{"EnableTabChangeFocus",	"Window",	"bEnableTabChangeFocus",	0},	-- unknown :
+	{"MouseFollowFocus",		"Window",	"szuMouseFollowFocus",		""},	-- unknown :
+	{"ItemCount",				"Window",	"nItemCount",				0},	-- unknown :
+	{"Item_0",					"Window",	"szuItem_0",				""},	-- unknown :
+	{"Item_1",					"Window",	"szuItem_1",				""},	-- unknown :
+	{"Item_2",					"Window",	"szuItem_2",				""},	-- unknown :
 
 	{"AreaFile",				"WndFrame",	"szAreaFile",				nil},	-- String : szBuffer
 
@@ -456,7 +456,7 @@ UIEditor.tNodeInfoDefault = {
 	{"IndentWidth",			"Handle|TreeLeaf",	"nIndentWidth",		0},	-- Integer : &nValue	24
 	{"Indent",				"Handle|TreeLeaf",	"nIndent",			0},	-- Integer : &nValue	25
 	{"LineColor",			"Handle|TreeLeaf",	"szLineColor",		""},	-- String : szColor	26
-	
+
 	--TreeLeaf
 	{"IconWidth",	"TreeLeaf",	"nIconWidth",	0},	-- Integer : &nValue	84
 	{"IconHeight",	"TreeLeaf",	"nIconHeight",	0},	-- Integer : &nValue	85

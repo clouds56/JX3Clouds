@@ -57,7 +57,7 @@ function UIEditor.OnCheckBoxCheck()
 	if UIEditor.bCheckBoxSystemAction then
 		return
 	end
-	
+
 	UIEditor.OnCheckBoxCheck_SettingPanel()
 end
 
@@ -101,7 +101,7 @@ function UIEditor.OnLButtonClick()
 	elseif szName == "Btn_Tool" then
 		UIEditor.PopToolMenu()
 	end
-	
+
 	UIEditor.OnLButtonClick_SettingPanel()
 end
 
@@ -141,12 +141,12 @@ end
 function UIEditor.OpenPanel()
 	local frame = Station.Lookup("Topmost/UIEditor")
 	if not frame then
-		frame = Wnd.OpenWindow("Interface\\UIEditor\\UIEditor.ini", "UIEditor")
+		frame = Wnd.OpenWindow("Interface\\UIEditor\\UIEditor\\UIEditor.ini", "UIEditor")
 	end
 	frame:Show()
 
 	UIEditor.frameSelf = frame
-	
+
 	-- ÈÝÆ÷
 	UIEditor.handleMain = frame:Lookup("", "")
 	UIEditor.handleBG = frame:Lookup("", "Handle_BG")
@@ -154,28 +154,28 @@ function UIEditor.OpenPanel()
 	UIEditor.handleFontSelector = frame:Lookup("", "Handle_FontOrColorSelector")
 	UIEditor.handleHoverSelectEffect = frame:Lookup("", "Handle_HoverSelectEffect")
 	UIEditor.handleHelpGridLine = frame:Lookup("", "Handle_HelpGridLine")
-	
+
 	UIEditor.handleUITree = frame:Lookup("", "Handle_UITree")
 	UIEditor.handleUIContent = frame:Lookup("", "Handle_UIContent")
-	
+
 	UIEditor.imageHoverBox = UIEditor.handleHoverSelectEffect:Lookup("Image_HoverSelectBox")
 	UIEditor.imageSelectedMask = UIEditor.handleHoverSelectEffect:Lookup("Image_SelectedNodeMask")
 
 	-- Ì“´°¿Ú
 	UIEditor.wndSetting = frame:Lookup("Wnd_Setting")
 	UIEditor.wndSettingCommon = UIEditor.wndSetting:Lookup("Wnd_Setting_Common")
-	
+
 	UIEditor.wndSCCommon = UIEditor.wndSettingCommon:Lookup("Wnd_SC_Common")
 	UIEditor.wndSCPos = UIEditor.wndSettingCommon:Lookup("Wnd_SC_Pos")
 	UIEditor.wndSCSize = UIEditor.wndSettingCommon:Lookup("Wnd_SC_Size")
 	UIEditor.wndSCEvent = UIEditor.wndSettingCommon:Lookup("Wnd_SC_Event")
-	
+
 	UIEditor.wndSettingImage = UIEditor.wndSetting:Lookup("Wnd_Setting_Image")
 	UIEditor.wndSICommon = UIEditor.wndSettingImage:Lookup("Wnd_SI_Common")
-	
+
 	UIEditor.wndSettingText = UIEditor.wndSetting:Lookup("Wnd_Setting_Text")
 	UIEditor.wndSTCommon = UIEditor.wndSettingText:Lookup("Wnd_ST_Common")
-	
+
 	UIEditor.wndSettingShadow = UIEditor.wndSetting:Lookup("Wnd_Setting_Shadow")
 	UIEditor.wndSSCommon = UIEditor.wndSettingShadow:Lookup("Wnd_SS_Common")
 

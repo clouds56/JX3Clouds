@@ -1,6 +1,6 @@
 UIEditor_Debug = {}
 
-UIEditor_Debug.szIni = "interface\\UIEditor\\UIEditor_Debug.ini"
+UIEditor_Debug.szIni = "interface\\UIEditor\\UIEditor\\UIEditor_Debug.ini"
 
 function UIEditor_Debug.show()
 	local frame = Station.Lookup("Topmost/UIEditor_Debug")

@@ -35,7 +35,7 @@ end
 
 function UIEditor.OnItemRButtonClick_TreeNode()
 	local szName = this:GetName()
-	
+
 	if szName:match("^TreeNode_") then
 		UIEditor.PopTreeNodeMenu(this)
 	end
@@ -43,14 +43,14 @@ end
 
 function UIEditor.OnItemMouseEnter_TreeNode()
 	local szName = this:GetName()
-	
+
 	if szName:match("^TreeNode_") then
 		local tNodeInfo = this.tInfo
 		local img = this:Lookup("ImageLeafCover_" .. tNodeInfo.nLevel)
 		if img then
 			img:Show()
 		end
-		
+
 		if tNodeInfo and IsCtrlKeyDown() then
 			local nMouseX, nMouseY = Cursor.GetPos()
 			local szTipInfo = "<Text>text=" .. EncodeComponentsString("　 类　型：") .. " font=162 </text>" ..
@@ -60,7 +60,7 @@ function UIEditor.OnItemMouseEnter_TreeNode()
 			szTipInfo = szTipInfo .. "<Text>text=" .. EncodeComponentsString("\n　 名　称：") .. " font=162 </text>" ..
 				"<Text>text=" .. EncodeComponentsString(tNodeInfo.szName) .. " font=100 </text>"
 			szTipInfo = szTipInfo .. "<Text>text=" .. EncodeComponentsString("\n－－－－－－－－－－－") .. " font=162 </text>"
-			
+
 			if this.parent and this.parent.tInfo then
 				szTipInfo = szTipInfo .. "<Text>text=" .. EncodeComponentsString("\n　 父节点：") .. " font=162 </text>" ..
 					"<Text>text=" .. EncodeComponentsString(this.parent.tInfo.szName or "[未知父节点]") .. " font=100 </text>"
@@ -83,7 +83,7 @@ function UIEditor.OnItemMouseEnter_TreeNode()
 					szTipInfo = szTipInfo .. "<Text>text=" .. EncodeComponentsString("\n 　　……") .. " font=100 </text>"
 				end
 			end
-			
+
 			OutputTip(szTipInfo, 1000, {nMouseX - 15, nMouseY - 20, 0, 0})
 		end
 	end
@@ -101,7 +101,7 @@ function UIEditor.OnItemMouseLeave_TreeNode()
 			end
 		end
 	end
-	
+
 	HideTip()
 end
 
@@ -113,7 +113,7 @@ function UIEditor.CalculateNodeName(szBaseName)
 	if not UIEditor.handleUITree then
 		return szBaseName
 	end
-	
+
 	local nCount = UIEditor.handleUITree:GetItemCount()
 	local nNewAutoIndex = 0
 	local bFound = false
@@ -124,7 +124,7 @@ function UIEditor.CalculateNodeName(szBaseName)
 			if szName == szBaseName then
 				bFound = true
 			end
-			
+
 			local szNameIndex = szName:match("^" .. szBaseName .. "_(%d*)")
 			if szNameIndex then
 				local nNameIndex = tonumber(szNameIndex)
@@ -134,7 +134,7 @@ function UIEditor.CalculateNodeName(szBaseName)
 			end
 		end
 	end
-	
+
 	if bFound then
 		return szBaseName .. "_" .. (nNewAutoIndex + 1)
 	end
@@ -146,9 +146,9 @@ function UIEditor.GetTreeAllInfo(nStackLevelShift)
 	nStackLevelShift = nStackLevelShift or 0
 	local nUndoStackLevelBak = UIEditor.nUndoStackLevel
 	if nStackLevelShift > 0 then
-		UIEditor.nUndoStackLevel = math.min(UIEditor.nUndoStackLevel + nStackLevelShift, #UIEditor.tUndoStack)	
+		UIEditor.nUndoStackLevel = math.min(UIEditor.nUndoStackLevel + nStackLevelShift, #UIEditor.tUndoStack)
 	elseif nStackLevelShift < 0 then
-		UIEditor.nUndoStackLevel = math.max(UIEditor.nUndoStackLevel + nStackLevelShift, 1)	
+		UIEditor.nUndoStackLevel = math.max(UIEditor.nUndoStackLevel + nStackLevelShift, 1)
 	end
 
 	-- 获取树结构数据表, 不存在就嘗試獲取當前的
@@ -165,7 +165,7 @@ function UIEditor.ExpandTreeNode(treeNode)
 	if not treeNode then
 		return
 	end
-	
+
 	local parent = treeNode.parent
 	for k = 0, 15 do
 		if parent then
@@ -199,10 +199,10 @@ function UIEditor.SelectTreeNode(treeNode)
 	if img then
 		img:Show()
 	end
-	
+
 	UIEditor.ExpandTreeNode(treeNode)
 	UIEditor.RefreshSettingPanel(treeNode)
-	
+
 	UIEditor.CloseAllSelector()
 end
 
@@ -219,15 +219,15 @@ function UIEditor.CreateTree(tTreeInfo, treeNodeParent, szExpandNodeName, tSelec
 		elseif tNodeInfo and tNodeInfo.nLevel and tNodeInfo.szType and tNodeInfo.szType ~= "" and tNodeInfo.szName and tNodeInfo.szName ~= "" then
 			local nIndex = UIEditor.handleUITree:GetItemCount()
 			local node = UIEditor.handleUITree:AppendItemFromIni(UIEditor.szINIPath, "TreeLeaf_" .. tNodeInfo.nLevel, "TreeNode_" .. nIndex)
-			
+
 			if node then
 				-- 給樹節點掛接數據
 				node.parent = treeNodeParent
 				node.tInfo = tNodeInfo
-				
+
 				-- 節點是否需要展開
 				local bNeedExpand = false
-				
+
 				-- 這裡設置樹節點的文字(控件名字)
 				if tNodeInfo.szLayer and tNodeInfo.szLayer ~= "" then
 					node:Lookup("TextLeaf_" .. tNodeInfo.nLevel):SetText(tNodeInfo.szName .. " (" .. tNodeInfo.szLayer .. ")")
@@ -235,43 +235,43 @@ function UIEditor.CreateTree(tTreeInfo, treeNodeParent, szExpandNodeName, tSelec
 				else
 					node:Lookup("TextLeaf_" .. tNodeInfo.nLevel):SetText(tNodeInfo.szName)
 				end
-				
+
 				-- 下面處理展開(更新Setting面板)
 				if node.parent and node.parent.szType == "Frame" then
 					bNeedExpand = true
 				end
-				
+
 				if szExpandNodeName and szExpandNodeName == tNodeInfo.szName then
 					bNeedExpand = true
 				end
-				
+
 				for _, szSNName in ipairs(tSelectedNodeName or {}) do
 					if szSNName and szSNName == tNodeInfo.szName then
 						bNeedExpand = true
 						UIEditor.SelectTreeNode(node)
 						break
-					end						
+					end
 				end
-				
+
 				if bNeedExpand then
 					UIEditor.ExpandTreeNode(node)
 				end
-				
+
 				-- 掛接父節點的子節點(自己)
 				if treeNodeParent then
 					treeNodeParent.child = treeNodeParent.child or {}
 					table.insert(treeNodeParent.child, node)
 				end
-				
+
 				-- 自己沒有子節點則不顯示樹圖標
 				if not tNodeInfo.tChild or #tNodeInfo.tChild == 0 then
 					node:SetNodeIconSize(1, 1)
 				end
-				
+
 				-- 這裡創建可見的對象內容
 				UIEditor.AppendUIContent(node)
 
-				-- 繼續遞歸			
+				-- 繼續遞歸
 				UIEditor.CreateTree(tNodeInfo.tChild, node, szExpandNodeName, tSelectedNodeName)
 			end
 		end
@@ -284,7 +284,7 @@ function UIEditor.RefreshTree(nStackLevelShift, szExpandNodeName)
 	if not tTreeInfo then
 		return
 	end
-	
+
 	-- 刷新撤銷數量顯示
 	UIEditor.frameSelf:Lookup("Btn_Refresh"):Lookup("", "Text_Refresh"):SetText(UIEditor.nUndoStackLevel .. "/" .. #UIEditor.tUndoStack)
 
@@ -296,7 +296,7 @@ function UIEditor.RefreshTree(nStackLevelShift, szExpandNodeName)
 		table.insert(tSelectedNodeName, UIEditor.treeNodeSelected.tInfo.szName)
 	end
 	UIEditor.SelectTreeNode(nil)
-	
+
 	-- 根据树结构数据表生成树节点 (递归)
 	UIEditor.handleUITree:Clear()
 	UIEditor.handleUIContent:Clear()
@@ -304,7 +304,7 @@ function UIEditor.RefreshTree(nStackLevelShift, szExpandNodeName)
 	UIEditor.CreateTree(tTreeInfo, nil, szExpandNodeName, tSelectedNodeName)
 	UIEditor.handleUITree:FormatAllItemPos()
 	UIEditor.handleUIContent:FormatAllItemPos()
-	
+
 	if not UIEditor.treeNodeSelected then
 		UIEditor.RefreshSettingPanel(nil)
 	end
@@ -324,7 +324,7 @@ function UIEditor.AppendTreeNode(treeNode, szType)
 	local tNewNodeInfo = {
 		nLevel = tNodeInfo.nLevel + 1,
 		szType = szType,
-		szName = szNewNodeName,	
+		szName = szNewNodeName,
 		nWidth = 40,
 		nHeight = 20,
 		tChild = {},
@@ -345,7 +345,7 @@ function UIEditor.ModifyWindowLayer(treeNode, szLayer)
 	if not tNodeInfo then
 		return
 	end
-	
+
 	UIEditor.UndoScopeStart()
 	tNodeInfo.szLayer = szLayer
 	UIEditor.UndoScopeEnd(tNodeInfo.szName)
@@ -368,7 +368,7 @@ function UIEditor.MoveTreeNode(treeNode, nShift)
 	if not tParentInfo then
 		return
 	end
-	
+
 	-- 找到當前節點的索引位置
 	local nThisIndex = -1
 	for i = 1, #tParentInfo.tChild do
@@ -379,14 +379,14 @@ function UIEditor.MoveTreeNode(treeNode, nShift)
 	end
 	if nThisIndex <= 0 then
 		return
-	end	
-	
+	end
+
 	-- 計算新的索引位置
 	local nNewIndex = math.min(math.max(nThisIndex + nShift, 1), #tParentInfo.tChild)
 	if nThisIndex == nNewIndex then
 		return
 	end
-	
+
 	-- 交換所在位置和當前位置
 	UIEditor.UndoScopeStart()
 	tParentInfo.tChild[nThisIndex], tParentInfo.tChild[nNewIndex] = tParentInfo.tChild[nNewIndex], tParentInfo.tChild[nThisIndex]
@@ -422,7 +422,7 @@ function UIEditor.DeleteTreeNode(treeNode)
 	if nThisIndex <= 0 then
 		return
 	end
-	
+
 	UIEditor.UndoScopeStart()
 	table.remove(tParentInfo.tChild, nThisIndex)
 	UIEditor.UndoScopeEnd(tParentInfo.szName)
@@ -437,7 +437,7 @@ function UIEditor.CopyTreeNode(treeNode)
 	if not tNodeInfo then
 		return
 	end
-	
+
 	-- TODO: 這裡還有別的拷貝限制可能
 	if tNodeInfo.szType == "Frame" then
 		return
@@ -507,12 +507,12 @@ function UIEditor.PasteTreeNode(treeNode)
 	if not UIEditor.tCopyTableCache then
 		return
 	end
-	
+
 	-- 這裡判斷是否能粘貼的指定位置
 	if not UIEditor.CheckPaste(tNodeInfo, UIEditor.tCopyTableCache.szType) then
 		return
 	end
-	
+
 	UIEditor.UndoScopeStart()
 	--treeNode.child = treeNode.child or {}
 	local tClone = UIEditor.CloneTable(UIEditor.tCopyTableCache)		-- 可能多次粘貼, 所以 Clone 避免污染之後可能的粘貼
