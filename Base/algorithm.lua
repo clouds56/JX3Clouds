@@ -45,7 +45,7 @@ _t = {
         end
       end
       return s
-    end
+    end,
   },
 
   frame = {
@@ -187,7 +187,14 @@ _t.table_to_string = function(t, mode, index, visited, path)
       empty=false
       local value
       if type(v) == "table" then
-        value = _t.table_to_string(v, mode, index+1, visited, string.format("%s[%s]",path,tostring(t)))
+        local keystring = tostring(i)
+        if type(i)=='string' then
+          keystring = string.format("'%s'", tostring(i))
+        elseif (type(i)=='number' or type(i)=='boolean' or type(i)=='nil') then
+        else
+          keystring = string.format('"%s"', tostring(i))
+        end
+        value = _t.table_to_string(v, mode, index+1, visited, string.format("%s['%s']",path,keystring))
       else
         value = _t.object_to_string(v, mode, index+1)
       end

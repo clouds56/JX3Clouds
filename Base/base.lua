@@ -31,6 +31,7 @@ Clouds_Base = {
   DEBUG = false,
   LEVEL = _level,
   LEVEL_CURRENT = _level.WARNING,
+  LEVEL_LOG = _level.VERBOSE,
 
   tag_base = {},
   decode_tag = function(tag)
@@ -48,7 +49,7 @@ Clouds_Base = {
       h = tostring(h)
       return function(level, tag, format, ...)
         local s = string.format("[%s](%s) ", h, tag) .. string.format(format, ...) .. "\n"
-        if module.DEBUG then
+        if module.DEBUG and module.LEVEL_LOG <= level then
           Trace(string.format("[%s:%s]", module.NAME, module.LEVEL.leveltostring(level)) .. s)
         end
         if module.LEVEL_CURRENT <= level then

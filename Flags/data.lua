@@ -31,11 +31,21 @@ _t = {
   --- @param(id): player id
   --- @param(type): NPC or Player
   RecordPlayer = function(self, playerid)
+    if playerid == nil then
+      return nil
+    end
     local t = {type = IsPlayerExist(playerid), id = playerid, tostring = self.PlayerToString}
     if t.type == true then
       t.t = GetPlayer(t.id)
+      if t.t then
+        -- TODO: xinfa
+        t.force = t.t.dwForceID
+      end
     else
       t.t = GetNpc(t.id)
+      if t.t then
+        t.force = t.t.dwTemplateID
+      end
     end
     if t.t then
       t.name = t.t.szName
@@ -54,6 +64,9 @@ _t = {
   --- _skills[id] = {type, id, level, [name, school,] }
   _skills = {},
   RecordSkill = function(self, skillid)
+    if skillid == nil then
+      return nil
+    end
     local index = table.concat(skillid, "|")
     local t = {type = skillid[1], id = skillid[2], level = skillid[3], tostring = self.SkillToString}
     if t.type == SKILL_EFFECT_TYPE.SKILL then
@@ -99,7 +112,7 @@ _t = {
   _compat = {
     --- skill[i] = { time=, src=, dst=, skill=, damage=, health=, }
     skill = {},
-    --- buff[i] = { time=, [src=,] dst=, buff=, isadd=, }
+    --- buff[i] = { time=, src=, dst=, buff=, isadd=, lasttime=}
     buff = {},
     damage = {},
     status = {},
@@ -107,8 +120,39 @@ _t = {
   RecordSkillEffect = function(self, timestamp, sourceid, destid, skillid, damage, health)
     table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(skillid), damage=damage, health=health})
   end,
-  RecordBuffLog = function(self, timestamp, sourceid, destid, buffid, isadd)
-    table.insert(self._compat.buff, {time=timestamp, dst=self:GetPlayer(destid), buff=self:GetBuff(buffid), isadd=isadd})
+  RecordBuffLog = function(self, timestamp, sourceid, destid, buffid, isadd, lasttime)
+    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(buffid), isadd=isadd, lasttime=lasttime})
+  end,
+
+  iter_compat = function(compat)
+    local idx, tmp = {}, {}
+    for x, v in pairs(compat) do
+      idx[x] = 0
+      if #v > 0 then
+        tmp[x] = v[1]
+      end
+    end
+    local iter = function(_compat, total)
+      if not total then
+        total = 0
+        for _, i in pairs(idx) do total = total + i end
+      end
+      local tp, value
+      for k, v in pairs(tmp) do
+        if not tp or value.time > v.time then
+          tp, value = k, v
+        end
+      end
+      if not tp then return end
+      idx[tp] = idx[tp]+1
+      if #compat[tp] > idx[tp] then
+        tmp[tp] = compat[tp][idx[tp]+1]
+      else
+        tmp[tp] = nil
+      end
+      return total+1, tp, value
+    end
+    return iter, compat, 0
   end
 }
 

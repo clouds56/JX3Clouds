@@ -116,7 +116,7 @@ _t = {
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d", tostring(bCanCancel), dwID, nLevel, tostring(bAddOrDel), dwTarget))
-    _t.module.data:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
+    -- _t.module.data:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 
   OnBuffImmunity = function(dwTarget, bCanCancel, dwID, nLevel)
@@ -132,6 +132,17 @@ _t = {
   OnSkillRespond = function(nRespondCode)
     --local szMsg = GlobalEventHandler.GetSkillRespondText(nRespondCode);OutputMessage("MSG_ANNOUNCE_RED", szMsg)
     --if nRespondCode == SKILL_RESULT_CODE.FORCE_EFFECT then OutputMessage("MSG_SKILL_SELF_FAILED", szMsg..g_tStrings.STR_FULL_STOP.."\n") end
+  end,
+
+  OnBuffUpdate = function(dwPlayerID, bAddOrDel, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
+    local now = GetLogicFrameCount()
+    -- _t.Output_verbose(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d by %d",
+    --   tostring(bCanCancel), dwBuffID, nBuffLevel, tostring(bAddOrDel), dwPlayerID, dwSkillSrcID))
+    -- out(dwPlayerID, bAddOrDel, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, nBuffLevel, dwSkillSrcID)
+    if dwBuffID == 0 then return end
+    if nEndFrame - now > 2*60*60*16 then return end
+    if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
+    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, {bCanCancel, dwBuffID, nBuffLevel}, bAddOrDel, nEndFrame - now)
   end,
 }
 
@@ -209,6 +220,12 @@ Clouds_Base.event.Add("SYS_MSG", function()
   elseif event == "UI_OME_SKILL_RESPOND" then _t.OnSkillRespond(arg1)
   end
 end, "Clouds_Flags_record")
+
+Clouds_Base.event.Add("BUFF_UPDATE", function()
+  _t.OnBuffUpdate(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+end, "Clouds_Flags_record")
+
+--SYNC_ROLE_DATA_END
 
 --[[
 
