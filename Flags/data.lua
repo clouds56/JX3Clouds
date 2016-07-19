@@ -61,7 +61,7 @@ _t = {
   end,
 
   --- cache for Table_Skill...
-  --- _skills[id] = {type, id, level, [name, school,] }
+  --- _skills[id] = {type=, id=, level=, [name=, school,] }
   _skills = {},
   RecordSkill = function(self, skillid)
     if skillid == nil then

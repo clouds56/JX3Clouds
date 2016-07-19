@@ -5,7 +5,7 @@ _t = {
   NAME = "lang",
   -- strings = {},
   L = function(name)
-    return _t.strings[name]
+    return _t.strings[name] or name
   end,
 }
 

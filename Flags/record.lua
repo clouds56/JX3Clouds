@@ -142,7 +142,7 @@ _t = {
     if dwBuffID == 0 then return end
     if nEndFrame - now > 2*60*60*16 then return end
     if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
-    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, {bCanCancel, dwBuffID, nBuffLevel}, bAddOrDel, nEndFrame - now)
+    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, {bCanCancel, dwBuffID, nBuffLevel}, not bAddOrDel, nEndFrame - now)
   end,
 }
 
