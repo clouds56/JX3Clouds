@@ -8,7 +8,9 @@ Clouds_Flags = {
 
 local _t
 _t = {
+  NAME = "base",
   gen_msg = Clouds_Base.module_gen_msg(Clouds_Flags),
+  gen_all_msg = Clouds_Base.base.gen_all_msg
 }
 
 _t.module = Clouds_Flags

@@ -42,7 +42,7 @@ function EasyManager:OnScript(event)
 end
 
 function EasyManager:Init()
-  local frame = self:Append("Frame", "EasyManager", {title = _L("EasyManagerTitle"), style = "NORMAL"})
+  local frame = self:CreateMainFrame({title = _L("EasyManagerTitle"), style = "NORMAL"})
 
   -- Tab BgImage
   local imgTab = self:Append("Image", frame,"TabImg",{w = 770,h = 33,x = 0,y = 50})

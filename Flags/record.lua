@@ -51,13 +51,35 @@ _t = {
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_MANA], SKILL_RESULT_TYPE.TRANSFER_MANA)
     local verbose = ""
     if _t.module.DEBUG then verbose = string.format("verbose: %s", xv.object_to_string(tResult, {oneline=true})) end
-    _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
-    local damage, therapy = 0, tResult[SKILL_RESULT_TYPE.THERAPY] or 0
-    for i, t in ipairs({"PHYSICS_DAMAGE", "SOLAR_MAGIC_DAMAGE", "NEUTRAL_MAGIC_DAMAGE", "LUNAR_MAGIC_DAMAGE", "POISON_DAMAGE"}) do
-      damage = damage + (tResult[SKILL_RESULT_TYPE[t]] or 0)
+    _t.Output_verbose(--[[tag]]0, string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
+    local damage = {
+      damage     = 0,
+      therapy    = tResult[SKILL_RESULT_TYPE.THERAPY] or 0,
+      effective_damage  = tResult[SKILL_RESULT_TYPE.EFFECTIVE_DAMAGE] or 0,
+      effective_therapy = tResult[SKILL_RESULT_TYPE.EFFECTIVE_THERAPY] or 0,
+
+      physics    = tResult[SKILL_RESULT_TYPE.PHYSICS_DAMAGE] or 0,
+      solar      = tResult[SKILL_RESULT_TYPE.SOLAR_MAGIC_DAMAGE] or 0,
+      neutral    = tResult[SKILL_RESULT_TYPE.NEUTRAL_MAGIC_DAMAGE] or 0,
+      lunar      = tResult[SKILL_RESULT_TYPE.LUNAR_MAGIC_DAMAGE] or 0,
+      poison     = tResult[SKILL_RESULT_TYPE.POISON_DAMAGE] or 0,
+
+      reflectied = tResult[SKILL_RESULT_TYPE.REFLECTIED_DAMAGE] or 0,
+      steal      = tResult[SKILL_RESULT_TYPE.STEAL_LIFE] or 0,
+      absorb     = tResult[SKILL_RESULT_TYPE.ABSORB_DAMAGE] or 0,
+      parry      = tResult[SKILL_RESULT_TYPE.PARRY_DAMAGE] or 0,
+      insight    = tResult[SKILL_RESULT_TYPE.INSIGHT_DAMAGE] or 0,
+
+      transfer_life = tResult[SKILL_RESULT_TYPE.TRANSFER_LIFE] or 0,
+      transfer_mana = tResult[SKILL_RESULT_TYPE.TRANSFER_MANA] or 0,
+    }
+    for i, t in ipairs({"physics", "solar", "neutral", "lunar", "poison"}) do
+      damage.damage = damage.damage + damage[t]
     end
-    if damage ~= 0 or therapy ~= 0 then
-      _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, {nEffectType, dwID, dwLevel}, damage, therapy)
+    if nEffectType == SKILL_EFFECT_TYPE.SKILL then
+      _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage)
+    elseif nEffectType == SKILL_EFFECT_TYPE.BUFF then
+      _t.module.data:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage)
     end
   end,
 
@@ -134,23 +156,22 @@ _t = {
     --if nRespondCode == SKILL_RESULT_CODE.FORCE_EFFECT then OutputMessage("MSG_SKILL_SELF_FAILED", szMsg..g_tStrings.STR_FULL_STOP.."\n") end
   end,
 
-  OnBuffUpdate = function(dwPlayerID, bAddOrDel, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
+  OnBuffUpdate = function(dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
     local now = GetLogicFrameCount()
     -- _t.Output_verbose(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d by %d",
-    --   tostring(bCanCancel), dwBuffID, nBuffLevel, tostring(bAddOrDel), dwPlayerID, dwSkillSrcID))
-    -- out(dwPlayerID, bAddOrDel, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, nBuffLevel, dwSkillSrcID)
+    --   tostring(bCanCancel), dwBuffID, nBuffLevel, tostring(bRemove), dwPlayerID, dwSkillSrcID))
+    -- out(dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, nBuffLevel, dwSkillSrcID)
     if dwBuffID == 0 then return end
     if nEndFrame - now > 2*60*60*16 then return end
     if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
-    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, {bCanCancel, dwBuffID, nBuffLevel}, not bAddOrDel, nEndFrame - now)
+    local action = bRemove and _t.module.data.ACTION_TYPE.BUFF_REMOVE or _t.module.data.ACTION_TYPE.BUFF_ADD
+    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
   end,
 }
 
 _t.module = Clouds_Flags
 Clouds_Flags.record = _t
-_t.Output = Clouds_Flags.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
-_t.Output_ex = function(...) _t.Output(_t.module.LEVEL.VERBOSEEX, ...) end
+_t.module.base.gen_all_msg(_t)
 
 _t.GetSkillRespondText=function(nRespondCode)
   if nRespondCode == SKILL_RESULT_CODE.INVALID_CAST_MODE then return "INVALID_CAST_MODE"

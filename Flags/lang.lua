@@ -11,9 +11,7 @@ _t = {
 
 _t.module = Clouds_Flags
 Clouds_Flags.lang = _t
-_t.Output = Clouds_Flags.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
-_t.Output_ex = function(...) _t.Output(_t.module.LEVEL.VERBOSEEX, ...) end
+_t.module.base.gen_all_msg(_t)
 
 _t.strings = {
   BattleLog = "Õ½¶·¼ÇÂ¼",

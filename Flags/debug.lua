@@ -13,3 +13,4 @@ _t = {
 
 _t.module = Clouds_Flags
 Clouds_Flags.debug = _t
+_t.module.base.gen_all_msg(_t)

@@ -9,6 +9,24 @@ local SKILL_EFFECT_TYPE = SKILL_EFFECT_TYPE
 
 local _t
 _t = {
+  NAME = "data",
+
+  ACTION_TYPE = {
+    BUFF_ADD = 100,
+    BUFF_REMOVE = 101,
+    BUFF_ACTION = 102,
+
+    SKILL_EFFECT = 200,
+
+    tostring = function(self)
+      for i, v in pairs(_t.ACTION_TYPE) do
+        if self == v then
+          return i
+        end
+      end
+      return tostring(self)
+    end
+  },
   PLAYER_TYPE = {
     DAXIA = 0,
     QIXIU = 1,
@@ -34,7 +52,7 @@ _t = {
     if playerid == nil then
       return nil
     end
-    local t = {type = IsPlayerExist(playerid), id = playerid, tostring = self.PlayerToString}
+    local t = {type = IsPlayerExist(playerid), id = playerid, __tostring = self.PlayerToString}
     if t.type == true then
       t.t = GetPlayer(t.id)
       if t.t then
@@ -63,36 +81,29 @@ _t = {
   --- cache for Table_Skill...
   --- _skills[id] = {type=, id=, level=, [name=, school,] }
   _skills = {},
-  RecordSkill = function(self, skillid)
-    if skillid == nil then
-      return nil
-    end
-    local index = table.concat(skillid, "|")
-    local t = {type = skillid[1], id = skillid[2], level = skillid[3], tostring = self.SkillToString}
-    if t.type == SKILL_EFFECT_TYPE.SKILL then
-      t.t = Table_GetSkill(t.id, t.level)
-    elseif t.type == SKILL_EFFECT_TYPE.BUFF then
-      t.t = Table_GetBuff(t.id, t.level)
-    end
+  RecordSkill = function(self, id, level)
+    assert(id ~= nil, "id should not be null")
+    local index = id .. "|" .. level
+    local t = {id = id, level = level, __tostring = self.SkillToString}
+    t.t = Table_GetSkill(t.id, t.level)
     if t.t then
       t.name = t.t.szName
     end
     self._skills[index] = t
     return t
   end,
-  GetSkill = function(self, skillid)
-    local index = table.concat(skillid, "|")
-    return self._skills[index] or self:RecordSkill(skillid)
+  GetSkill = function(self, id, level)
+    local index = id .. "|" .. level
+    return self._skills[index] or self:RecordSkill(id, level)
   end,
   SkillToString = function(self)
-    local t = self.type == SKILL_EFFECT_TYPE.BUFF and "B:" or ""
-    return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
+    return string.format("%s(%d,%d)", self.name or "Unknown", self.id, self.level)
   end,
 
   _buffs = {},
-  RecordBuff = function(self, buffid)
-    local index = table.sconcat(buffid, "|")
-    local t = {type = buffid[1], id = buffid[2], level = buffid[3], tostring = self.SkillToString}
+  RecordBuff = function(self, id, level, type)
+    local index = id .. "|" .. level
+    local t = {type = type, id = id, level = level, __tostring = self.BuffToString}
     t.t = Table_GetBuff(t.id, t.level)
     if t.t then
       t.name = t.t.szName
@@ -100,28 +111,41 @@ _t = {
     self._buffs[index] = t
     return t
   end,
-  GetBuff = function(self, buffid)
-    local index = table.sconcat(buffid, "|")
-    return self._buffs[index] or self:RecordBuff(buffid)
+  GetBuff = function(self, id, level, type)
+    local index = id .. "|" .. level
+    local buff = self._buffs[index] or self:RecordBuff(id, level, type)
+    if not buff.type then buff.type = type end
+    if type and buff.type ~= type then
+      _t.Output_warn(--[[tag]]0, "type of %d changed from %s to %s", id, tostring(buff.type), tostring(type))
+    end
+    return buff
   end,
   BuffToString = function(self)
-    local t = self.type and "" or "D:"
+    local t = self.type==false and "~" or ""
     return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
   end,
 
   _compat = {
-    --- skill[i] = { time=, src=, dst=, skill=, damage=, health=, }
+    --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data }
     skill = {},
-    --- buff[i] = { time=, src=, dst=, buff=, isadd=, lasttime=}
+    --- buff[i] = { time=, src=, dst=, buff=, act=, lasttime?=, damage?= }
+    --- lasttime when act = ADD
+    --- damage when act = ACTION
     buff = {},
     damage = {},
     status = {},
   },
-  RecordSkillEffect = function(self, timestamp, sourceid, destid, skillid, damage, health)
-    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(skillid), damage=damage, health=health})
+  RecordSkillLog = function(self, timestamp, sourceid, destid, id, level, act, data)
+    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=act, data=data})
   end,
-  RecordBuffLog = function(self, timestamp, sourceid, destid, buffid, isadd, lasttime)
-    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(buffid), isadd=isadd, lasttime=lasttime})
+  RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage)
+    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), damage=damage})
+  end,
+  RecordBuffLog = function(self, timestamp, sourceid, destid, id, level, type, act, data)
+    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level, type), act=act, data=data})
+  end,
+  RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage)
+    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage})
   end,
 
   iter_compat = function(compat)
@@ -158,3 +182,4 @@ _t = {
 
 _t.module = Clouds_Flags
 Clouds_Flags.data = _t
+_t.module.base.gen_all_msg(_t)

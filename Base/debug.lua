@@ -28,7 +28,12 @@ _t.out = function(...)
   print(s)
 end
 
-xv.debug = _t
+xv.debug = {
+  object_to_string = _t.object_to_string,
+  var2str = _t.var2str,
+  dumpstr = _t.dumpstr,
+  out = _t.out,
+}
 
 if _t.module.DEBUG then
   _var2str = _t.var2str

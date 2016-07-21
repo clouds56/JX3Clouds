@@ -58,25 +58,28 @@ _t.RenderBattleLog = function(tp, value)
     'Clouds_Flags.ui.BattleLogRegisterPrefix(this)', "type"))
   table.insert(ss, GetFormatText(string.format("[%d] ", value.time), nil, 255, 255, 0))
   if tp == "skill" then
-    local script = value.skill.type==SKILL_EFFECT_TYPE.SKILL and
-      string.format('Clouds_Flags.ui.BattleLogRegisterSkill(this,%d,%d)', value.skill.id, value.skill.level) or
-      string.format('Clouds_Flags.ui.BattleLogRegisterBuff(this,%d,%d)', value.skill.id, value.skill.level)
-    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.skill)), 10, 0, 128, 255, 256, script, "skill"))
+    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.skill)), nil, 0, 255, 255, 256,
+      string.format('Clouds_Flags.ui.BattleLogRegisterSkill(this,%d,%d)', value.skill.id, value.skill.level), "skill"))
   elseif tp == "buff" then
-    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.buff)), nil, 0, 255, 255, 256,
+    local r, g, b = 0, 255, 0
+    if value.buff.type == false then
+      r, g, b = 255, 0, 0
+    end
+    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.buff)), nil, r, g, b, 256,
       string.format('Clouds_Flags.ui.BattleLogRegisterBuff(this,%d,%d)', value.buff.id, value.buff.level), "buff"))
   end
   if tp == "skill" or tp == "buff" then
     table.insert(ss, GetFormatText(" : "))
-    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.src)), nil, 0, 255, 0))
+    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.src)), nil, 0, 128, 255))
     table.insert(ss, GetFormatText(" => "))
-    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.dst)), nil, 255, 128, 192))
+    table.insert(ss, GetFormatText(string.format("%s", xv.object_to_string(value.dst)), nil, 255, 128, 0))
+    -- table.insert(ss, GetFormatText(string.format(" (%s)", _t.module.data.ACTION_TYPE.tostring(value.act))))
   end
   return ss
 end
 
 function _t.BattleLog:Init()
-  local frame = self:Append("Frame", "BattleLog", {title = _L("BattleLogTitle"), style = "NORMAL"})
+  local frame = self:CreateMainFrame({title = _L("BattleLogTitle"), style = "NORMAL"})
 
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 400})
   local btnRefresh = self:Append("Button", window, "ButtonRefresh", {x = 50, y = 20, w = 200, h = 30, text = _L("Refresh")})

@@ -63,6 +63,12 @@ Clouds_Base = {
 local _t
 _t = {
   gen_msg = Clouds_Base.module_gen_msg(Clouds_Base),
+  gen_all_msg = function(t)
+    t.Output = t.module.base.gen_msg(t.NAME)
+    t.Output_verbose = function(...) t.Output(t.module.LEVEL.VERBOSE, ...) end
+    t.Output_ex = function(...) t.Output(t.module.LEVEL.VERBOSEEX, ...) end
+    t.Output_warn = function(...) t.Output(t.module.LEVEL.WARNING, ...) end
+  end,
 }
 
 local tag_basestring = "0123456789abcdefghijklmnopqrstuvwxyz"

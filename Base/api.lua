@@ -6,17 +6,12 @@ local _t
 _t = {
   NAME = "api",
   Buff_ToString = function(self)
-    local id, level, isbuff, endframe, index, stacknum, skillid, flag1, flag2 = unpack(self)
-    if flag1 ~= true or flag2 ~= false then
-      _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "Buff flag1(%s) and flag2(%s)", tostring(flag1), tostring(flag2))
-    end
-    local name, debuffheader = Table_GetBuffName(id, level) or "", isbuff and "" or "D:"
-    local endtime = endframe >= 2^31-1 and "never" or xv.frame.tostring(endframe-GetLogicFrameCount())
-    local s = string.format("{ %s%s(%d,%d), endtime: %s, index: %d, stacknum: %d, skillid: %d }",
-      debuffheader, name, id, level, endtime, index, stacknum, skillid)
-    if flag1 ~= true or flag2 ~= false then
-      _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "Buff flag1(%s) and flag2(%s) in %s", tostring(flag1), tostring(flag2), s)
-    end
+    local id, level, isbuff, endframe, index, stacknum, srcid, valid, stackable = unpack(self)
+    local name, debuffheader = Table_GetBuffName(id, level) or "", isbuff and "" or "~"
+    local endtime = endframe >= 2^31-1 and "forever" or xv.frame.tostring(endframe-GetLogicFrameCount())
+    local stack = (stackable~=false or stacknum~=1) and string.format("x%d", stacknum) or ""
+    local s = string.format("{ [%d]: %s%s(%d,%d) %s, last: %s, src: %d }",
+      index, debuffheader, name, id, level, stack, endtime, srcid)
     return s
   end,
   GetBuffList = function(target)
@@ -27,7 +22,7 @@ _t = {
     local buffs = {}
     local count = target.GetBuffCount()
     for i = 0, count - 1 do
-      table.insert(buffs, { tostring = _t.Buff_ToString, target.GetBuff(i) })
+      table.insert(buffs, { __tostring = _t.Buff_ToString, target.GetBuff(i) })
     end
     return buffs
   end
@@ -37,4 +32,7 @@ _t.module = Clouds_Base
 Clouds_Base.api = _t
 _t.Output = Clouds_Base.base.gen_msg(_t.NAME)
 _t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
-xv.api = _t
+
+xv.api = {
+  GetBuffList = _t.GetBuffList
+}

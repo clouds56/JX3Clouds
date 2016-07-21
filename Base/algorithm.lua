@@ -51,6 +51,9 @@ _t = {
   frame = {
     tostring = function(self)
       local t = self
+      if type(t) ~= "number" then
+        return nil
+      end
       if t >= 2^31-1 then
         return "never"
       end
@@ -88,7 +91,7 @@ _t = {
 
 _t.module = Clouds_Base
 Clouds_Base.algorithm = _t
-_t.Output = _t.module.base.gen_msg(_t.NAME)
+_t.module.base.gen_all_msg(_t)
 
 _t.object_to_string = function(o, mode, index)
   index = index or 0
@@ -100,8 +103,9 @@ _t.object_to_string = function(o, mode, index)
   elseif type(o) == "boolean" then
     return tostring(o)
   elseif type(o) == "table" then
-    if o.tostring then
-      return o:tostring()
+    local s = _t.table_tostring_to_string(o)
+    if s then
+      return s
     end
     return _t.table_to_string(o, mode, index)
   elseif type(o) == "userdata" then
@@ -132,6 +136,17 @@ _t.function_to_string = function(f, mode)
   end
 end
 
+_t.table_tostring_to_string = function(t)
+  if t.__tostring then
+    local b, s = pcall(t.__tostring, t)
+    if b and type(s) == "string" then
+      return s
+    else
+      _t.Output_warn(--[[tag]]0, "error calling __tostring with %s, result %s, %s", tostring(t), tostring(b), tostring(s))
+    end
+  end
+end
+
 _t.table_to_string = function(t, mode, index, visited, path)
   index = index or 0
   visited = visited or {}
@@ -140,8 +155,11 @@ _t.table_to_string = function(t, mode, index, visited, path)
   if mode.table then
     return mode:table(t) or ""
   end
-  if t.tostring then
-    return t:tostring()
+  if t.__tostring then
+    local s = _t.table_tostring_to_string(t)
+    if s then
+      return s
+    end
   end
 
   if mode.tab or (visited and visited[t]) then
@@ -178,10 +196,9 @@ _t.table_to_string = function(t, mode, index, visited, path)
       end
     elseif type(i)=="string" then
       key = i
-    elseif type(i)=="table" and i.tostring then
-      key = ("[table: %s]"):format(i:tostring())
-    else
-      key = ("[%s]"):format(tostring(i))
+    elseif type(i)=="table" then
+      local s = _t.table_tostring_to_string(i)
+      key = s and ("[table: %s]"):format(s) or ("[%s]"):format(tostring(i))
     end
     if key then
       empty=false

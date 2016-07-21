@@ -75,10 +75,11 @@ local _AppendWnd = function(__parent, __type, __name)
 	if __parent.__addon then
 		__parent = __parent:GetSelf()
 	end
-	local hwnd = Wnd.OpenWindow(string.format(__ini, __type), __name):Lookup(__type)
+	local rand_name = "EASYUI_" .. math.random()
+	local hwnd = Wnd.OpenWindow(string.format(__ini, __type), rand_name):Lookup(__type)
 	hwnd:ChangeRelation(__parent, true, true)
 	hwnd:SetName(__name)
-	Wnd.CloseWindow(__name)
+	Wnd.CloseWindow(rand_name)
 	return hwnd
 end
 
@@ -1139,15 +1140,7 @@ end
 
 function WndScroll:AddItem(__name)
 	assert(false, "do not use this api")
-	local __item = ScrollItems.new(self:GetHandle(), "Handle_Item", "Item_" .. __name)
-	__item:Show()
-	local __cover = __item:GetSelf():Lookup("Image_Cover")
-	__item.OnEnter = function()
-		__cover:Show()
-	end
-	__item.OnLeave = function()
-		__cover:Hide()
-	end
+	local __item = nil
 	return __item
 end
 
@@ -2331,6 +2324,7 @@ end
 function CreateAddon:ctor(__name)
 	self.__listeners = {self}
 
+	self.__name = __name
 	-- Store UI Object By Name
 	self.__items = {}
 
@@ -2375,48 +2369,53 @@ function CreateAddon:Fetch(__name)
 	return nil
 end
 
-function CreateAddon:Append(__type, ...)
+function CreateAddon:CreateMainFrame(__data)
+	local __h = WndFrame.new(self.__name, __data)
+
+	-- TODO: not use __items
+	self.__items[self.__name] = __h
+	return __h
+end
+
+function CreateAddon:Append(__type, __parent, __name, __data)
 	local __h = nil
-	if __type == "Frame" then
-		__h = WndFrame.new(...)
-	elseif __type == "Window" then
-		__h = WndWindow.new(...)
+	if __type == "Window" then
+		__h = WndWindow.new(__parent, __name, __data)
 	elseif __type == "PageSet" then
-		__h = WndPageSet.new(...)
+		__h = WndPageSet.new(__parent, __name, __data)
 	elseif __type == "Button" then
-		__h = WndButton.new(...)
+		__h = WndButton.new(__parent, __name, __data)
 	elseif __type == "Edit" then
-		__h = WndEdit.new(...)
+		__h = WndEdit.new(__parent, __name, __data)
 	elseif __type == "CheckBox" then
-		__h = WndCheckBox.new(...)
+		__h = WndCheckBox.new(__parent, __name, __data)
 	elseif __type == "ComboBox" then
-		__h = WndComboBox.new(...)
+		__h = WndComboBox.new(__parent, __name, __data)
 	elseif __type == "RadioBox" then
-		__h = WndRadioBox.new(...)
+		__h = WndRadioBox.new(__parent, __name, __data)
 	elseif __type == "CSlider" then
-		__h = WndCSlider.new(...)
+		__h = WndCSlider.new(__parent, __name, __data)
 	elseif __type == "ColorBox" then
-		__h = WndColorBox.new(...)
+		__h = WndColorBox.new(__parent, __name, __data)
 	elseif __type == "Scroll" then
-		__h = WndScroll.new(...)
+		__h = WndScroll.new(__parent, __name, __data)
 	elseif __type == "UICheckBox" then
-		__h = WndUICheckBox.new(...)
+		__h = WndUICheckBox.new(__parent, __name, __data)
 	elseif __type == "Handle" then
-		__h = ItemHandle.new(...)
+		__h = ItemHandle.new(__parent, __name, __data)
 	elseif __type == "Text" then
-		__h = ItemText.new(...)
+		__h = ItemText.new(__parent, __name, __data)
 	elseif __type == "Image" then
-		__h = ItemImage.new(...)
+		__h = ItemImage.new(__parent, __name, __data)
 	elseif __type == "Animate" then
-		__h = ItemAnimate.new(...)
+		__h = ItemAnimate.new(__parent, __name, __data)
 	elseif __type == "Shadow" then
-		__h = ItemShadow.new(...)
+		__h = ItemShadow.new(__parent, __name, __data)
 	elseif __type == "Box" then
-		__h = ItemBox.new(...)
+		__h = ItemBox.new(__parent, __name, __data)
 	elseif __type == "TreeLeaf" then
-		__h = ItemTreeLeaf.new(...)
+		__h = ItemTreeLeaf.new(__parent, __name, __data)
 	end
-	local __name = __h:GetName()
 	self.__items[__name] = __h
 	return __h
 end
