@@ -16,7 +16,9 @@ _t = {
     BUFF_REMOVE = 101,
     BUFF_ACTION = 102,
 
-    SKILL_EFFECT = 200,
+    SKILL_EFFECT = 209,
+    SKILL_LOG = 201,
+    SKILL_CASTED = 202,
 
     tostring = function(self)
       for i, v in pairs(_t.ACTION_TYPE) do
@@ -125,10 +127,12 @@ _t = {
     return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
   end,
 
+  --- {starttime =,}
   _compat = {
-    --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data }
+    __starttime = GetLogicFrameCount(),
+    --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data, oops?= }
     skill = {},
-    --- buff[i] = { time=, src=, dst=, buff=, act=, lasttime?=, damage?= }
+    --- buff[i] = { time=, src=, dst=, buff=, act=, lasttime?=, damage?=, oops?=}
     --- lasttime when act = ADD
     --- damage when act = ACTION
     buff = {},
@@ -136,24 +140,26 @@ _t = {
     status = {},
   },
   RecordSkillLog = function(self, timestamp, sourceid, destid, id, level, act, data)
-    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=act, data=data})
+    table.insert(self._compat.skill, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=act, data=data})
   end,
-  RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage)
-    table.insert(self._compat.skill, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), damage=damage})
+  RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+    table.insert(self._compat.skill, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=_t.ACTION_TYPE.SKILL_EFFECT, damage=damage, oops=oops})
   end,
   RecordBuffLog = function(self, timestamp, sourceid, destid, id, level, type, act, data)
-    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level, type), act=act, data=data})
+    table.insert(self._compat.buff, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level, type), act=act, data=data})
   end,
-  RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage)
-    table.insert(self._compat.buff, {time=timestamp, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage})
+  RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+    table.insert(self._compat.buff, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
   end,
 
   iter_compat = function(compat)
     local idx, tmp = {}, {}
     for x, v in pairs(compat) do
-      idx[x] = 0
-      if #v > 0 then
-        tmp[x] = v[1]
+      if x:sub(0,2) ~= "__" then
+        idx[x] = 0
+        if #v > 0 then
+          tmp[x] = v[1]
+        end
       end
     end
     local iter = function(_compat, total)

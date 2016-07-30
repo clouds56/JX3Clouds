@@ -1,4 +1,4 @@
-Clouds_Base = { base = {gen_msg=function()end} }
+Clouds_Base = { base = {gen_msg=function()end,gen_all_msg=function()end} }
 
 function assert_equals(a, b)
   if a ~= b then

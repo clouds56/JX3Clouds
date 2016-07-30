@@ -64,6 +64,8 @@ _t = {
       lunar      = tResult[SKILL_RESULT_TYPE.LUNAR_MAGIC_DAMAGE] or 0,
       poison     = tResult[SKILL_RESULT_TYPE.POISON_DAMAGE] or 0,
 
+      other      = 0,
+
       reflectied = tResult[SKILL_RESULT_TYPE.REFLECTIED_DAMAGE] or 0,
       steal      = tResult[SKILL_RESULT_TYPE.STEAL_LIFE] or 0,
       absorb     = tResult[SKILL_RESULT_TYPE.ABSORB_DAMAGE] or 0,
@@ -76,10 +78,18 @@ _t = {
     for i, t in ipairs({"physics", "solar", "neutral", "lunar", "poison"}) do
       damage.damage = damage.damage + damage[t]
     end
+    for i, t in ipairs({"reflectied", "steal", "absorb", "parry", "insight", "transfer_life"}) do
+      damage.other = damage.other + damage[t]
+    end
     if nEffectType == SKILL_EFFECT_TYPE.SKILL then
-      _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage)
+      if damage.damage == 0 and damage.therapy == 0 and damage.effective_damage == 0 and damage.effective_therapy == 0 and
+        damage.other == 0 and damage.transfer_mana == 0 then
+        _t.module.data:RecordSkillLog(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, dwCaster~=dwTarget and _t.module.data.ACTION_TYPE.SKILL_CASTED or _t.module.data.ACTION_TYPE.SKILL_LOG)
+      else
+        _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+      end
     elseif nEffectType == SKILL_EFFECT_TYPE.BUFF then
-      _t.module.data:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage)
+      _t.module.data:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
     end
   end,
 

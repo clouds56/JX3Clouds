@@ -49,8 +49,9 @@ _t = {
   },
 
   frame = {
-    tostring = function(self)
+    tostring = function(self, width)
       local t = self
+      width = width or -1
       if type(t) ~= "number" then
         return nil
       end
@@ -63,28 +64,23 @@ _t = {
         t = -t
       end
       t = t/16
-      local milliseconds, seconds = string.format("%.3f", t%1):sub(3)
-      if t > 60 then
-        seconds = string.format("%02d.%s", math.floor(t%60), milliseconds)
-        t = math.floor(t/60)
-      else
-        return string.format("%s%.3f", minus, t)
+      if (width == -1 and t < 60) or width == 0 then
+        return minus .. string.format("%.3f", t)
       end
-      local minutes = t
-      if minutes > 60 then
-        minutes = minutes % 60
-        t = math.floor(t/60)
-      else
-        return string.format("%s%d:%s", minus, minutes, seconds)
+      local milliseconds = string.format("%.2f", t%1):sub(3)
+      local seconds = string.format("%02d.%s", math.floor(t%60), milliseconds)
+      t = math.floor(t/60)
+      if (width == -1 and t < 60) or width == 1 then
+        return minus .. string.format("%d:%s", t, seconds)
       end
-      local hours = t
-      if hours > 100 then
-        hours = hours % 24
-        local day = math.floor(t/24)
-        return string.format("%s%dd%02d:%02d:%s", minus, day, hours, minutes, seconds)
-      else
-        return string.format("%s%d:%02d:%s", minus, hours, minutes, seconds)
+      local minutes = t % 60
+      t = math.floor(t/60)
+      if (width == -1 and t < 100) or width == 2 then
+        return minus .. string.format("%d:%02d:%s", t, minutes, seconds)
       end
+      local hours = t % 24
+      t = math.floor(t/24)
+      return minus .. string.format("%dd%02d:%02d:%s", t, hours, minutes, seconds)
     end,
   },
 }
@@ -261,5 +257,7 @@ _t.xxd = function(a, unit, line)
 end
 
 table.sconcat = _t.table.sconcat
-xv.frame = _t.frame
 xv.object_to_string = _t.object_to_string
+xv.algo = {
+  frame = _t.frame,
+}
