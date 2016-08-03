@@ -157,7 +157,7 @@ function _t.RemoveDelay(tag)
   _t.delaycalls[tag] = nil
 end
 
-Clouds_Base_Event = {}
+_G.Clouds_Base_Event = {}
 function Clouds_Base_Event.OnFrameBreathe()
   FireUIEvent("CLOUDS_FRAME_BREATHE")
   local now = GetLogicFrameCount()

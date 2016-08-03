@@ -1,5 +1,9 @@
 local _L = Clouds_Flags.lang.L
 local CreateAddon = EasyUI.CreateAddon
+local xv = Clouds_Base.xv
+local out = xv.out
+
+local OutputSkillTip, OutputBuffTip, HideTip = OutputSkillTip, OutputBuffTip, HideTip
 
 local _t
 _t = {
@@ -135,7 +139,6 @@ _t.RenderBattleLog = function(tp, value)
           table.insert(ss, xv.api.GetFormatText("!!", 0xFF8000))
         end
         if value.damage.effective_damage ~= value.damage.damage then
-          effective = string.format("(%s)", tostring(value.damage.effective_damage))
           table.insert(ss, xv.api.GetFormatText(string.format("%s", tostring(value.damage.damage)), 0x800000))
           table.insert(ss, xv.api.GetFormatText(string.format("(%s) ", tostring(value.damage.effective_damage)), value.damage.effective_damage==0 and 0xFFFFFF or 0xFF0000))
         else
@@ -165,38 +168,54 @@ _t.RenderBattleLog = function(tp, value)
   return ss
 end
 
+_t.BattleLog.width = 480
+
+function _t.BattleLog:AppendBattleItem(tp, item)
+  local scroll = self.scrollLog
+  local h = self:Append("Handle", scroll, "h"..tostring(item), {w=self.width,h=22,postype=8})
+  local img = self:Append("Image", h, "img"..tostring(item),{w=self.width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
+  local hh = self:Append("Handle", h, "hh"..tostring(item), {w=self.width,h=22,postype=0,handletype=3})
+
+  local hhraw = hh:GetSelf()
+  for i, s in ipairs(_t.RenderBattleLog(tp, item)) do
+    hhraw:AppendItemFromString(s)
+  end
+
+  hh:FormatAllItemPos():SetSizeByAllItemSize()
+  img:SetSize(hh:GetSize())
+  h:FormatAllItemPos():SetSizeByAllItemSize()
+  hh.OnEnter = function() img:Show() end
+  hh.OnLeave = function() img:Hide() end
+end
+
+function _t.BattleLog:RefreshBattle(compat)
+  local scroll = self.scrollLog
+  scroll:GetHandle():Clear()
+  for i, t, v in xv.algo.table.iter_subtables(compat and compat.logs or {}) do
+    self:AppendBattleItem(t, v)
+  end
+  scroll:UpdateList()
+end
+
 function _t.BattleLog:Init()
-  local width = 480
+  local compat = _t.module.data.current_compat
   local frame = self:CreateMainFrame({title = _L("BattleLogTitle"), style = "NORMAL"})
+  frame:RegisterEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", function()
+    if arg0 == compat then
+      self:AppendBattleItem(arg1, arg2)
+      self.scrollLog:UpdateList()
+    end
+  end)
 
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 400})
   local btnRefresh = self:Append("Button", window, "ButtonRefresh", {x = 50, y = 20, w = 200, h = 30, text = _L("Refresh")})
-  local scroll2 = self:Append("Scroll", window, "ScrollTest", {x = 50,y = 50,w = width+20,h = 350})
+  local scrollLog = self:Append("Scroll", window, "ScrollLog", {x = 50,y = 50,w = self.width+20,h = 350})
+  self.scrollLog = scrollLog
+
   btnRefresh.OnClick = function()
-    scroll2:GetHandle():Clear()
-    for i, t, v in _t.module.data.iter_compat(_t.module.data._compat) do
-      local h = self:Append("Handle", scroll2, "h"..i, {w=width,h=22,postype=8})
-      local img = self:Append("Image", h, "img"..i,{w=width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
-      local hh = self:Append("Handle", h, "hh"..i, {w=width,h=22,postype=0,handletype=3})
-      -- local txt = self:Append("Text", hh, "txt"..i, {w=180,h=22,text=str}):SetMultiLine(true):AutoSize()
-
-      local hhraw = hh:GetSelf()
-      for i, s in ipairs(_t.RenderBattleLog(t, v)) do
-        hhraw:AppendItemFromString(s)
-      end
-
-      hh:FormatAllItemPos():SetSizeByAllItemSize()
-      img:SetSize(hh:GetSize())
-      h:FormatAllItemPos():SetSizeByAllItemSize()
-      -- hh.OnClick = function()
-      --   out(this:GetTreePath())
-      -- end
-      hh.OnEnter = function() img:Show() end
-      hh.OnLeave = function() img:Hide() end
-    end
-    scroll2:UpdateList()
+    self:RefreshBattle(compat)
   end
-  btnRefresh.OnClick()
+  self:RefreshBattle(compat)
 
   return frame
 end
@@ -211,7 +230,7 @@ function _t.BattleLog:OpenPanel()
 end
 
 local function init()
-  local Graphics = Clouds_Graphics
+  local Graphics = _G.Clouds_Graphics
   _t.Output_verbose(--[[tag]]0, "Hello Graphics => %s", tostring(Graphics))
   local tConfig = {
     szName = "BattleLog",
@@ -230,9 +249,14 @@ local function init()
     },
   }
   Graphics.manager.EasyManager:RegisterPanel(tConfig)
-  if _t.module.DEBUG then
-    _t.BattleLog:OpenPanel()
-  end
 end
 
-Clouds_Base.event.Add("LOGIN_GAME", init)
+local Base = Clouds_Base
+Base.event.Add("LOGIN_GAME", init, "Clouds_Flags_ui")
+
+Base.event.Add("LOADING_END", function()
+  if _t.module.DEBUG then
+    _t.Output_verbose(--[[tag]]0, "Open BattleLog Panel")
+    Base.event.Delay(1, function()_t.BattleLog:OpenPanel()end, "Clouds_Flags_ui_open")
+  end
+end, "Clouds_Flags_ui")

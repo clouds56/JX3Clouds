@@ -6,6 +6,11 @@ local Table_GetSkill = Table_GetSkill
 local Table_GetBuffName = Table_GetBuffName
 local Table_GetSkillName = Table_GetSkillName
 local SKILL_EFFECT_TYPE = SKILL_EFFECT_TYPE
+local SaveLUAData = SaveLUAData
+local GetClientPlayer = GetClientPlayer
+local GetCurrentTime = GetCurrentTime
+local GetLogicFrameCount = GetLogicFrameCount
+local FireUIEvent = FireUIEvent
 
 local _t
 _t = {
@@ -127,63 +132,72 @@ _t = {
     return string.format("%s%s(%d,%d)", t, self.name or "Unknown", self.id, self.level)
   end,
 
-  --- {starttime =,}
-  _compat = {
-    __starttime = GetLogicFrameCount(),
-    --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data, oops?= }
-    skill = {},
-    --- buff[i] = { time=, src=, dst=, buff=, act=, lasttime?=, damage?=, oops?=}
-    --- lasttime when act = ADD
-    --- damage when act = ACTION
-    buff = {},
-    damage = {},
-    status = {},
-  },
-  RecordSkillLog = function(self, timestamp, sourceid, destid, id, level, act, data)
-    table.insert(self._compat.skill, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=act, data=data})
+  DataFolder = "interface/Clouds/Flags/_data",
+  SaveCompat = function(compat)
+    SaveLUAData(string.format("%s/%s", _t.DataFolder, tostring(compat.__name)), compat)
   end,
-  RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
-    table.insert(self._compat.skill, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), skill=self:GetSkill(id, level), act=_t.ACTION_TYPE.SKILL_EFFECT, damage=damage, oops=oops})
+  CreateCompat = function()
+    local me, id = GetClientPlayer()
+    local time, date = GetLogicFrameCount(), GetCurrentTime()
+    if me then
+      id = me.dwID or 0
+    end
+    --- {starttime =,}
+    local compat = {
+      metadata = {
+        name = string.format("%d_%d", id, date),
+        date =  date,
+        starttime = time,
+        endtime = time,
+        me = id,
+      },
+      logs = {
+        --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data, oops?= }
+        skill = {},
+        --- buff[i] = { time=, src=, dst=, buff=, act=, lasttime?=, damage?=, oops?=}
+        --- lasttime when act = ADD
+        --- damage when act = ACTION
+        buff = {},
+        damage = {},
+        status = {},
+      },
+      data = {
+        players = {},
+      },
+    }
+    setmetatable(compat, { __index = _t.compat_method})
+    return compat
   end,
-  RecordBuffLog = function(self, timestamp, sourceid, destid, id, level, type, act, data)
-    table.insert(self._compat.buff, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level, type), act=act, data=data})
+  StartNewCompat = function(self)
+    if self.current_compat then
+      self.SaveCompat(self.current_compat)
+    end
+    self.current_compat = self.CreateCompat()
+    table.insert(self.compats, self.current_compat)
+    return self.current_compat
   end,
-  RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
-    table.insert(self._compat.buff, {time=timestamp-self._compat.__starttime, src=self:GetPlayer(sourceid), dst=self:GetPlayer(destid), buff=self:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
-  end,
+  compats = {},
+  current_compat = nil,
 
-  iter_compat = function(compat)
-    local idx, tmp = {}, {}
-    for x, v in pairs(compat) do
-      if x:sub(0,2) ~= "__" then
-        idx[x] = 0
-        if #v > 0 then
-          tmp[x] = v[1]
-        end
-      end
-    end
-    local iter = function(_compat, total)
-      if not total then
-        total = 0
-        for _, i in pairs(idx) do total = total + i end
-      end
-      local tp, value
-      for k, v in pairs(tmp) do
-        if not tp or value.time > v.time then
-          tp, value = k, v
-        end
-      end
-      if not tp then return end
-      idx[tp] = idx[tp]+1
-      if #compat[tp] > idx[tp] then
-        tmp[tp] = compat[tp][idx[tp]+1]
-      else
-        tmp[tp] = nil
-      end
-      return total+1, tp, value
-    end
-    return iter, compat, 0
-  end
+  compat_method = {
+    record = function(self, time, t, i)
+      table.insert(self.logs[t], i)
+      self.metadata.endtime = time
+      FireUIEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", self, t, i)
+    end,
+    RecordSkillLog = function(self, timestamp, sourceid, destid, id, level, act, data)
+      self:record(timestamp, "skill", {time=timestamp-self.metadata.starttime, src=_t:GetPlayer(sourceid), dst=_t:GetPlayer(destid), skill=_t:GetSkill(id, level), act=act, data=data})
+    end,
+    RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+      self:record(timestamp, "skill", {time=timestamp-self.metadata.starttime, src=_t:GetPlayer(sourceid), dst=_t:GetPlayer(destid), skill=_t:GetSkill(id, level), act=_t.ACTION_TYPE.SKILL_EFFECT, damage=damage, oops=oops})
+    end,
+    RecordBuffLog = function(self, timestamp, sourceid, destid, id, level, type, act, data)
+      self:record(timestamp, "buff", {time=timestamp-self.metadata.starttime, src=_t:GetPlayer(sourceid), dst=_t:GetPlayer(destid), buff=_t:GetBuff(id, level, type), act=act, data=data})
+    end,
+    RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+      self:record(timestamp, "buff", {time=timestamp-self.metadata.starttime, src=_t:GetPlayer(sourceid), dst=_t:GetPlayer(destid), buff=_t:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
+    end,
+  },
 }
 
 _t.module = Clouds_Flags

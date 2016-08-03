@@ -2,6 +2,7 @@ local GetLogicFrameCount = GetLogicFrameCount
 local SKILL_EFFECT_TYPE = SKILL_EFFECT_TYPE
 local SKILL_RESULT_TYPE = SKILL_RESULT_TYPE
 local SKILL_RESULT_CODE = SKILL_RESULT_CODE
+local Table_BuffIsVisible = Table_BuffIsVisible
 
 local _t
 _t = {
@@ -34,6 +35,9 @@ _t = {
   --- @param(tResult): effect value table? { [13]=EFFECTIVE_DAMAGE, [14]=EFFECTIVE_THERAPY }
   OnSkillEffectLog = function(dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult)
     if dwID == 7513 and dwLevel == 10 then return end
+    local compat = _t.module.data.current_compat
+    if not compat then return end
+
     --local nValue = tResult[SKILL_RESULT_TYPE.PHYSICS_DAMAGE]
     --PHYSICS_DAMAGE, SOLAR_MAGIC_DAMAGE, NEUTRAL_MAGIC_DAMAGE, LUNAR_MAGIC_DAMAGE, POISON_DAMAGE
     --szDamage = szDamage..FormatString(g_tStrings.SKILL_DAMAGE, nValue, g_tStrings.STR_SKILL_PHYSICS_DAMAGE)
@@ -50,8 +54,8 @@ _t = {
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_LIFE], SKILL_RESULT_TYPE.TRANSFER_LIFE)
     --GlobalEventHandler.OnSkillDamageTransferLog(dwCaster, dwTarget, nEffectType, dwID, dwLevel, tResult[SKILL_RESULT_TYPE.TRANSFER_MANA], SKILL_RESULT_TYPE.TRANSFER_MANA)
     local verbose = ""
-    if _t.module.DEBUG then verbose = string.format("verbose: %s", xv.object_to_string(tResult, {oneline=true})) end
-    _t.Output_verbose(--[[tag]]0, string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
+    -- if _t.module.DEBUG then verbose = string.format("verbose: %s", xv.object_to_string(tResult, {oneline=true})) end
+    -- _t.Output_verbose(--[[tag]]0, string.format("%d casted (%d, %d), effect %d. %s", dwCaster, dwID, dwLevel, dwTarget, verbose))
     local damage = {
       damage     = 0,
       therapy    = tResult[SKILL_RESULT_TYPE.THERAPY] or 0,
@@ -84,12 +88,12 @@ _t = {
     if nEffectType == SKILL_EFFECT_TYPE.SKILL then
       if damage.damage == 0 and damage.therapy == 0 and damage.effective_damage == 0 and damage.effective_therapy == 0 and
         damage.other == 0 and damage.transfer_mana == 0 then
-        _t.module.data:RecordSkillLog(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, dwCaster~=dwTarget and _t.module.data.ACTION_TYPE.SKILL_CASTED or _t.module.data.ACTION_TYPE.SKILL_LOG)
+        compat:RecordSkillLog(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, dwCaster~=dwTarget and _t.module.data.ACTION_TYPE.SKILL_CASTED or _t.module.data.ACTION_TYPE.SKILL_LOG)
       else
-        _t.module.data:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+        compat:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
       end
     elseif nEffectType == SKILL_EFFECT_TYPE.BUFF then
-      _t.module.data:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+      compat:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
     end
   end,
 
@@ -148,7 +152,7 @@ _t = {
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d", tostring(bCanCancel), dwID, nLevel, tostring(bAddOrDel), dwTarget))
-    -- _t.module.data:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
+    -- _t.module.data.current_compat:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 
   OnBuffImmunity = function(dwTarget, bCanCancel, dwID, nLevel)
@@ -167,6 +171,9 @@ _t = {
   end,
 
   OnBuffUpdate = function(dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
+    local compat = _t.module.data.current_compat
+    if not compat then return end
+
     local now = GetLogicFrameCount()
     -- _t.Output_verbose(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d by %d",
     --   tostring(bCanCancel), dwBuffID, nBuffLevel, tostring(bRemove), dwPlayerID, dwSkillSrcID))
@@ -175,7 +182,7 @@ _t = {
     if nEndFrame - now > 2*60*60*16 then return end
     if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
     local action = bRemove and _t.module.data.ACTION_TYPE.BUFF_REMOVE or _t.module.data.ACTION_TYPE.BUFF_ADD
-    _t.module.data:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
+    compat:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
   end,
 }
 
@@ -254,6 +261,11 @@ end, "Clouds_Flags_record")
 
 Clouds_Base.event.Add("BUFF_UPDATE", function()
   _t.OnBuffUpdate(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+end, "Clouds_Flags_record")
+
+Clouds_Base.event.Add("LOADING_END", function()
+  _t.Output_verbose(--[[tag]]0, "StartNewCompat")
+  _t.module.data:StartNewCompat()
 end, "Clouds_Flags_record")
 
 --SYNC_ROLE_DATA_END

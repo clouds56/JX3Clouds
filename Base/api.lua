@@ -2,6 +2,7 @@ local Table_GetBuffName = Table_GetBuffName
 local GetLogicFrameCount = GetLogicFrameCount
 local GetClientPlayer = GetClientPlayer
 local GetFormatText = GetFormatText
+local xv = Clouds_Base.xv
 
 local _t
 _t = {

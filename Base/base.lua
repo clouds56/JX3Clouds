@@ -26,7 +26,8 @@ _level.leveltostring = function(level)
   end
 end
 
-Clouds_Base = {
+local base
+base = {
   NAME = "Clouds_Base",
   DEBUG = false,
   LEVEL = _level,
@@ -39,7 +40,7 @@ Clouds_Base = {
     if tag == 0 then return "0" end
     while tag ~= 0 do
       local i = tag % 36
-      s = Clouds_Base.tag_base[i+1] .. s
+      s = base.tag_base[i+1] .. s
       tag = (tag - i) / 36
     end
   end,
@@ -59,6 +60,7 @@ Clouds_Base = {
     end
   end,
 }
+_G.Clouds_Base = base
 
 local _t
 _t = {

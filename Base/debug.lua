@@ -28,15 +28,19 @@ _t.out = function(...)
   print(s)
 end
 
-xv.debug = {
+Clouds_Base.xv.debug = {
   object_to_string = _t.object_to_string,
   var2str = _t.var2str,
   dumpstr = _t.dumpstr,
   out = _t.out,
 }
 
+-- RegisterEvent("CALL_LUA_ERROR", function()
+--   out(arg0)
+-- end)
+
 if _t.module.DEBUG then
-  _var2str = _t.var2str
-  _dumpstr = _t.dumpstr
-  out = _t.out
+  _G._var2str = _t.var2str
+  _G._dumpstr = _t.dumpstr
+  _G.out = _t.out
 end

@@ -1,4 +1,5 @@
-xv = {}
+local xv = {}
+Clouds_Base.xv = xv
 
 local _t
 _t = {
@@ -45,6 +46,39 @@ _t = {
         end
       end
       return s
+    end,
+
+    iter_subtables = function(tall)
+      local idx, tmp = {}, {}
+      for x, v in pairs(tall) do
+        if type(v) == "table" then
+          idx[x] = 0
+          if #v > 0 then
+            tmp[x] = v[1]
+          end
+        end
+      end
+      local iter = function(_tall, total)
+        if not total then
+          total = 0
+          for _, i in pairs(idx) do total = total + i end
+        end
+        local tp, value
+        for k, v in pairs(tmp) do
+          if not tp or value.time > v.time then
+            tp, value = k, v
+          end
+        end
+        if not tp then return end
+        idx[tp] = idx[tp]+1
+        if #tall[tp] > idx[tp] then
+          tmp[tp] = tall[tp][idx[tp]+1]
+        else
+          tmp[tp] = nil
+        end
+        return total+1, tp, value
+      end
+      return iter, tall, 0
     end,
   },
 
@@ -260,4 +294,9 @@ table.sconcat = _t.table.sconcat
 xv.object_to_string = _t.object_to_string
 xv.algo = {
   frame = _t.frame,
+  table = _t.table
 }
+
+if _t.module.DEBUG then
+  _G.xv = xv
+end

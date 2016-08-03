@@ -1,4 +1,5 @@
 local Wnd, Station = Wnd, Station
+local gl
 
 local _t
 _t = {
@@ -34,8 +35,8 @@ _t.GetHandle = function(name)
   return h
 end
 
-Clouds_Graphics_Draw = {}
-Clouds_Graphics_Draw.OnFrameCreate = function()
+_G.Clouds_Graphics_Draw = {}
+_G.Clouds_Graphics_Draw.OnFrameCreate = function()
   _t.Output_ex(--[[tag]]0, "on frame create")
   -- _t.ui.handle = this:Lookup("", "")
 end
@@ -52,8 +53,11 @@ local init = function()
   _t.Output_verbose(--[[tag]]0, "init successfully: %s", tostring(_t.ui))
 end
 
-gl = _t
-local _gl = {
+init()
+
+gl = {
   GetHandle = _t.GetHandle,
 }
-init()
+if _t.module.DEBUG then
+  _G.gl = gl
+end
