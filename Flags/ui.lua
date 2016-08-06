@@ -92,13 +92,14 @@ _t.PlayerToString = function(player)
   return _t.tostring_cache[player]
 end
 
-_t.RenderBattleLog = function(tp, value)
+_t.RenderBattleLog = function(compat, tp, value)
   local ss = {}
   table.insert(ss, xv.api.GetFormatText(tp..": ", {0xFFFFFF,10}, 515,
     'Clouds_Flags.ui.BattleLogRegisterPrefix(this)', "type"))
   table.insert(ss, xv.api.GetFormatText(string.format("[%s] ", xv.algo.frame.tostring(value.time, 2)), 0xFFFF00))
   if tp == "skill" or tp == "buff" then
-    table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(value.dst), 0xFF8000))
+    local dst = compat:GetPlayer(value.dst)
+    table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(dst), 0xFF8000))
 
     if value.act == _t.module.data.ACTION_TYPE.SKILL_EFFECT then
       table.insert(ss, xv.api.GetFormatText(" <= ", 0x808080))
@@ -161,7 +162,8 @@ _t.RenderBattleLog = function(tp, value)
 
     if value.act ~= _t.module.data.ACTION_TYPE.SKILL_LOG then
       table.insert(ss, xv.api.GetFormatText(" @", 0x808080))
-      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(value.src), 0x0080FF))
+      local src = compat:GetPlayer(value.src)
+      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(src), 0x0080FF))
     end
     -- table.insert(ss, xv.api.GetFormatText(string.format(" (%s)", _t.module.data.ACTION_TYPE.tostring(value.act))))
   end
@@ -170,14 +172,14 @@ end
 
 _t.BattleLog.width = 480
 
-function _t.BattleLog:AppendBattleItem(tp, item)
+function _t.BattleLog:AppendBattleItem(compat, tp, item)
   local scroll = self.scrollLog
   local h = self:Append("Handle", scroll, "h"..tostring(item), {w=self.width,h=22,postype=8})
   local img = self:Append("Image", h, "img"..tostring(item),{w=self.width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
   local hh = self:Append("Handle", h, "hh"..tostring(item), {w=self.width,h=22,postype=0,handletype=3})
 
   local hhraw = hh:GetSelf()
-  for i, s in ipairs(_t.RenderBattleLog(tp, item)) do
+  for i, s in ipairs(_t.RenderBattleLog(compat, tp, item)) do
     hhraw:AppendItemFromString(s)
   end
 
@@ -192,7 +194,7 @@ function _t.BattleLog:RefreshBattle(compat)
   local scroll = self.scrollLog
   scroll:GetHandle():Clear()
   for i, t, v in xv.algo.table.iter_subtables(compat and compat.logs or {}) do
-    self:AppendBattleItem(t, v)
+    self:AppendBattleItem(compat, t, v)
   end
   scroll:UpdateList()
 end
@@ -202,18 +204,27 @@ function _t.BattleLog:Init()
   local frame = self:CreateMainFrame({title = _L("BattleLogTitle"), style = "NORMAL"})
   frame:RegisterEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", function()
     if arg0 == compat then
-      self:AppendBattleItem(arg1, arg2)
+      self:AppendBattleItem(arg0, arg1, arg2)
       self.scrollLog:UpdateList()
     end
   end)
 
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 400})
-  local btnRefresh = self:Append("Button", window, "ButtonRefresh", {x = 50, y = 20, w = 200, h = 30, text = _L("Refresh")})
+  local btnRefresh = self:Append("Button", window, "ButtonRefresh", {x = 50, y = 20, w = 100, h = 30, text = _L("Refresh")})
+  local btnNew = self:Append("Button", window, "ButtonNew", {x = 160, y = 20, w = 100, h = 30, text = _L("New")})
+  local btnReload = self:Append("Button", window, "ButtonReload", {x = 270, y = 20, w = 100, h = 30, text = _L("Reload")})
   local scrollLog = self:Append("Scroll", window, "ScrollLog", {x = 50,y = 50,w = self.width+20,h = 350})
   self.scrollLog = scrollLog
 
   btnRefresh.OnClick = function()
     self:RefreshBattle(compat)
+  end
+  btnNew.OnClick = function()
+    compat = _t.module.data:StartNewCompat()
+    self:RefreshBattle(compat)
+  end
+  btnReload.OnClick = function()
+    xv.api.ReloadUIAddon()
   end
   self:RefreshBattle(compat)
 

@@ -55,6 +55,13 @@ _t = {
     local r, g, b = _t.ColorToRGB(color)
     return GetFormatText(text, f, r, g, b, eventid, script, name)
   end,
+  reload_keep = {},
+  ReloadUIAddon = function()
+    local str = "keep"
+    _G.out(str)
+    _G.ReloadUIAddon()
+    _G.out(str)
+  end,
 }
 
 _t.module = Clouds_Base
@@ -64,7 +71,8 @@ _t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
 
 xv.api = {
   GetBuffList = _t.GetBuffList,
-  COLOR = COLOR,
-  ColorToRGB = ColorToRGB,
+  COLOR = _t.COLOR,
+  ColorToRGB = _t.ColorToRGB,
   GetFormatText = _t.GetFormatText,
+  ReloadUIAddon = _t.ReloadUIAddon,
 }
