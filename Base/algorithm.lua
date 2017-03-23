@@ -203,6 +203,7 @@ _t.table_to_string = function(t, mode, index, visited, path)
   local s = "{"
   local empty = true
   local newline = not mode.oneline and '\n'..mode.suffix:rep(index+1) or " "
+  local tt = {}
   for i = 1, #t do
     local v = t[i]
     empty = false
@@ -212,8 +213,9 @@ _t.table_to_string = function(t, mode, index, visited, path)
     else
       value = _t.object_to_string(v, mode, index+1)
     end
-    s = s .. newline .. value .. ","
+    tt.insert(newline .. value .. ",")
   end
+  s = s .. table.concat(tt)
 
   if mode.tabcard and not empty then
     s=s..newline..(mode.oneline and "--[[%d]]" or "-- # : %d"):format(#t)
