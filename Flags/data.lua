@@ -1,4 +1,4 @@
-local IsPlayerExist = IsPlayerExist
+local IsPlayer = IsPlayer
 local GetPlayer = GetPlayer
 local GetNpc = GetNpc
 local Table_GetBuff = Table_GetBuff
@@ -192,10 +192,11 @@ _t = {
     --- @param(id): player id
     --- @param(type): NPC or Player
     RecordPlayer = function(self, playerid)
+      local me = GetClientPlayer()
       if playerid == nil then
         return nil
       end
-      local t = {type = IsPlayerExist(playerid), id = playerid}
+      local t = {type = IsPlayer(playerid), id = playerid}
       setmetatable(t, { __index = self.player_method })
       local d
       if t.type == true then
@@ -203,6 +204,9 @@ _t = {
         if d then
           -- TODO: xinfa
           t.force = d.dwForceID
+          if me then
+            t.party = me.IsInParty(t.id)
+          end
         end
       else
         d = GetNpc(t.id)

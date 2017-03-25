@@ -17,7 +17,6 @@ EasyManager:BindEvent("OnFrameDestroy", "OnDestroy")
 _t.EasyManager = EasyManager
 
 EasyManager.tAddonClass = {
-  {"All", _L("All")},
   {"Combat", _L("Combat")},
   {"Raid", _L("Raid")},
   {"Other", _L("Other")},
@@ -148,8 +147,14 @@ end
 
 function EasyManager:AppendAddonInfo(hWin, tWidget)
   for k, v in pairs(tWidget) do
+    if v ~= nil and v.rect ~= nil then
+      if v.rect.x ~= nil then v.x = v.rect.x end
+      if v.rect.y ~= nil then v.y = v.rect.y end
+      if v.rect.w ~= nil then v.w = v.rect.w end
+      if v.rect.h ~= nil then v.h = v.rect.h end
+    end
     if v.type == "Text" then
-      self:Append("Text", hWin, v.name, {w = v.w, h = v.h, x = v.x, y = v.y, text = v.text, font = v.font})
+      self:Append("Text", hWin, v.name, {w = v.w, h = v.h, x = v.x, y = v.y, rect = v.rect, text = v.text, font = v.font})
     elseif v.type == "TextButton" then
       local handle = self:Append("Handle", hWin, v.name, {w = v.w, h = v.h, x = v.x, y = v.y})
       local text = self:Append("Text", handle, "t_" .. v.name, {w = v.w, h = v.h, text = v.text, font = v.font})

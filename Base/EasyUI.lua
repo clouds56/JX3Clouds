@@ -66,6 +66,40 @@ local NAME_INDEX = 1
 -- Wnd Type Controls
 ----------------------------------------------
 
+local Pos = class()
+function Pos:ctor(left, top, space, width)
+	self.left = left
+	self.top = top
+	self.space = space or 5
+	self.width = width or -1
+	self:Reset()
+end
+
+function Pos:Reset(x, y)
+	self.x = x or self.left
+	self.y = y or self.top
+	self.last = 0
+end
+
+function Pos:Next(w, h)
+	if self.width > 0 and self.x <= self.left and self.x + w > self.width then
+		self:NextLine()
+	end
+	local rect = { x = self.x, y = self.y, w = w, h = h }
+	self.x = self.x + w + self.space
+	if self.last < h then
+		self.last = h
+	end
+	return rect
+end
+
+function Pos:NextLine(space)
+	self.x = self.left
+	if space or self.last ~= 0 then
+		self.y = self.y + self.last + (space or self.space)
+	end
+end
+
 -- Append Control
 local _AppendWnd = function(__parent, __type, __name)
 	if not __name then
@@ -2379,6 +2413,12 @@ end
 
 function CreateAddon:Append(__type, __parent, __name, __data)
 	local __h = nil
+	if __data ~= nil and __data.rect ~= nil then
+		if __data.rect.x ~= nil then __data.x = __data.rect.x end
+		if __data.rect.y ~= nil then __data.y = __data.rect.y end
+		if __data.rect.w ~= nil then __data.w = __data.rect.w end
+		if __data.rect.h ~= nil then __data.h = __data.rect.h end
+	end
 	if __type == "Window" then
 		__h = WndWindow.new(__parent, __name, __data)
 	elseif __type == "PageSet" then
@@ -2424,6 +2464,7 @@ end
 -- GUI Global Interface
 ----------------------------------------------
 local _API = {
+	NewPos = Pos.new,
 	CreateFrame = WndFrame.new,
 	CreateWindow = WndWindow.new,
 	CreatePageSet = WndPageSet.new,

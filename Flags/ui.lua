@@ -91,6 +91,16 @@ _t.PlayerToString = function(player)
   return _t.tostring_cache[player]
 end
 
+_t.PlayerToColor = function(player)
+  if _t.tocolor_cache[player] then
+    return _t.tocolor_cache[player]
+  end
+  if not player.force then
+    return 0xFFFFFF
+  end
+  return player.force
+end
+
 _t.RenderBattleLog = function(compat, tp, value)
   local ss = {}
   table.insert(ss, xv.api.GetFormatText(string.format("[%s] ", xv.algo.frame.tostring(value.time, 2)), 0xFFFF00))
@@ -213,10 +223,12 @@ function _t.BattleLog:Init()
   end)
 
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 400})
-  local btnRefresh = self:Append("Button", window, "ButtonRefresh", {x = 50, y = 20, w = 100, h = 30, text = _L("Refresh")})
-  local btnNew = self:Append("Button", window, "ButtonNew", {x = 160, y = 20, w = 100, h = 30, text = _L("New")})
-  local btnReload = self:Append("Button", window, "ButtonReload", {x = 270, y = 20, w = 100, h = 30, text = _L("Reload")})
-  local scrollLog = self:Append("Scroll", window, "ScrollLog", {x = 50,y = 50,w = self.width+20,h = 350})
+  local pos = EasyUI.NewPos(50, 20, 5)
+  local btnRefresh = self:Append("Button", window, "ButtonRefresh", {rect = pos:Next(100, 30), text = _L("Refresh")})
+  local btnNew = self:Append("Button", window, "ButtonNew", {rect = pos:Next(100, 30), text = _L("New")})
+  local btnReload = self:Append("Button", window, "ButtonReload", {rect = pos:Next(100, 30), text = _L("Reload")})
+  pos:NextLine()
+  local scrollLog = self:Append("Scroll", window, "ScrollLog", {rect = pos:Next(self.width+20, 350)})
   self.scrollLog = scrollLog
 
   btnRefresh.OnClick = function()
@@ -259,6 +271,8 @@ local function init()
         callback = function()
           _t.BattleLog:OpenPanel()
         end
+      },{
+        name = "M_Options", type = "Text", rect = { w = 100, h = 25, x = 0, y = 90 }, text = "Options", font = 140,
       }
     },
   }
