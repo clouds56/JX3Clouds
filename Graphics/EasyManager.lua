@@ -45,8 +45,8 @@ function EasyManager:Init()
   local frame = self:CreateMainFrame({title = _L("EasyManagerTitle"), style = "NORMAL"})
 
   -- Tab BgImage
-  local imgTab = self:Append("Image", frame,"TabImg",{w = 770,h = 33,x = 0,y = 50})
-    imgTab:SetImage("ui\\Image\\UICommon\\ActivePopularize2.UITex",46)
+  local imgTab = self:Append("Image", frame, "TabImg", {w = 770, h = 33, x = 0, y = 50})
+  imgTab:SetImage("ui\\Image\\UICommon\\ActivePopularize2.UITex",46)
   imgTab:SetImageType(11)
 
   local imgSplit = self:Append("Image", frame, "SplitImg", {w = 5, h = 400, x = 188, y = 100})

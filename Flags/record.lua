@@ -88,6 +88,9 @@ _t = {
     if nEffectType == SKILL_EFFECT_TYPE.SKILL then
       if damage.damage == 0 and damage.therapy == 0 and damage.effective_damage == 0 and damage.effective_therapy == 0 and
         damage.other == 0 and damage.transfer_mana == 0 then
+        if dwID == 2341 then -- MingDongSiFang
+          return
+        end
         compat:RecordSkillLog(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, dwCaster~=dwTarget and _t.module.data.ACTION_TYPE.SKILL_CASTED or _t.module.data.ACTION_TYPE.SKILL_LOG)
       else
         compat:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)

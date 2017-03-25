@@ -213,7 +213,7 @@ _t.table_to_string = function(t, mode, index, visited, path)
     else
       value = _t.object_to_string(v, mode, index+1)
     end
-    tt.insert(newline .. value .. ",")
+    table.insert(tt, newline .. value .. ",")
   end
   s = s .. table.concat(tt)
 

@@ -44,7 +44,7 @@ function _t.GenNewMonitor(event)
         v[3] = v[3] + 1
         if not b then
           FireUIEvent("CALL_LUA_ERROR", s)
-          _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, s)
+          _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "LUA_ERROR: " .. s)
           v[4] = v[4] + 1
           v[5] = s
         end

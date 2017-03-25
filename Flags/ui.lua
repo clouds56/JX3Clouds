@@ -1,7 +1,6 @@
 local _L = Clouds_Flags.lang.L
 local CreateAddon = EasyUI.CreateAddon
 local xv = Clouds_Base.xv
-local out = xv.out
 
 local OutputSkillTip, OutputBuffTip, HideTip = OutputSkillTip, OutputBuffTip, HideTip
 
@@ -29,9 +28,9 @@ _t.BattleLogRegisterPrefix = function(self)
     for i = 0, hh:GetItemCount() - 1 do
       s = s .. hh:Lookup(i):GetText()
     end
-    out(s, this:GetTreePath())
+    xv.debug.out(s, this:GetTreePath())
   end
-  -- out(self)
+  -- xv.debug.out(self)
 end
 
 _t.BattleLogRegisterSkill = function(self, id, level)
@@ -94,46 +93,37 @@ end
 
 _t.RenderBattleLog = function(compat, tp, value)
   local ss = {}
+  table.insert(ss, xv.api.GetFormatText(string.format("[%s] ", xv.algo.frame.tostring(value.time, 2)), 0xFFFF00))
   table.insert(ss, xv.api.GetFormatText(tp..": ", {0xFFFFFF,10}, 515,
     'Clouds_Flags.ui.BattleLogRegisterPrefix(this)', "type"))
-  table.insert(ss, xv.api.GetFormatText(string.format("[%s] ", xv.algo.frame.tostring(value.time, 2)), 0xFFFF00))
   if tp == "skill" or tp == "buff" then
-    local dst = compat:GetPlayer(value.dst)
-    table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(dst), 0xFF8000))
-
-    if value.act == _t.module.data.ACTION_TYPE.SKILL_EFFECT then
-      table.insert(ss, xv.api.GetFormatText(" <= ", 0x808080))
-    elseif value.act == _t.module.data.ACTION_TYPE.SKILL_LOG then
-      table.insert(ss, xv.api.GetFormatText(" => ", 0xFFFFFF))
-    elseif value.act == _t.module.data.ACTION_TYPE.SKILL_CASTED then
-      table.insert(ss, xv.api.GetFormatText(" <= ", 0xFFFFFF))
-    elseif not value.act then
-      table.insert(ss, xv.api.GetFormatText(" : ", 0x808080))
+    if value.act ~= _t.module.data.ACTION_TYPE.SKILL_LOG then
+      local src = compat:GetPlayer(value.src)
+      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(src), 0x0080FF))
+      table.insert(ss, xv.api.GetFormatText("@", 0x808080))
+    else
+      local dst = compat:GetPlayer(value.dst)
+      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(dst), 0xFF8000))
+      table.insert(ss, xv.api.GetFormatText("@", 0x808080))
     end
 
     if tp == "skill" then
       table.insert(ss, xv.api.GetFormatText(string.format("%s", _t.SkillToString(value.skill)), 0x00FFFF, 256,
         string.format('Clouds_Flags.ui.BattleLogRegisterSkill(this,%d,%d)', value.skill.id, value.skill.level), "skill"))
     elseif tp == "buff" then
-      local act_string
-      if value.act == _t.module.data.ACTION_TYPE.BUFF_ADD then
-        act_string = xv.api.GetFormatText(" +++ ", value.buff.type~=false and 0x00FF00 or 0xFF0000)
-      elseif value.act == _t.module.data.ACTION_TYPE.BUFF_REMOVE then
-        act_string = xv.api.GetFormatText(" --- ", value.buff.type==false and 0x00FF00 or 0xFF0000)
-      else
-        table.insert(ss, xv.api.GetFormatText(" <= ", 0x808080))
-      end
-      if act_string then
-        table.insert(ss, act_string)
-      end
       table.insert(ss, xv.api.GetFormatText(string.format("%s", _t.BuffToString(value.buff)), value.buff.type ~= false and 0x00FF00 or 0xFF0000, 256,
         string.format('Clouds_Flags.ui.BattleLogRegisterBuff(this,%d,%d)', value.buff.id, value.buff.level), "buff"))
-      if act_string then
-        table.insert(ss, act_string)
+      if value.act == _t.module.data.ACTION_TYPE.BUFF_ADD then
+        table.insert(ss, xv.api.GetFormatText(" +++ ", value.buff.type~=false and 0x00FF00 or 0xFF0000))
+      elseif value.act == _t.module.data.ACTION_TYPE.BUFF_REMOVE then
+        table.insert(ss, xv.api.GetFormatText(" --- ", value.buff.type==false and 0x00FF00 or 0xFF0000))
+      else
+        --table.insert(ss, xv.api.GetFormatText(" => ", 0x808080))
       end
     end
 
     if value.damage and value.damage.therapy+value.damage.damage ~= 0 then
+      -- { !!100 (10) }
       table.insert(ss, xv.api.GetFormatText(" { ", 0x808080))
       if value.damage.damage ~= 0 then
         if value.oops then
@@ -160,12 +150,22 @@ _t.RenderBattleLog = function(compat, tp, value)
       table.insert(ss, xv.api.GetFormatText("}", 0x808080))
     end
 
-    if value.act ~= _t.module.data.ACTION_TYPE.SKILL_LOG then
-      table.insert(ss, xv.api.GetFormatText(" @", 0x808080))
-      local src = compat:GetPlayer(value.src)
-      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(src), 0x0080FF))
+    if value.act ~= _t.module.data.ACTION_TYPE.SKILL_LOG and value.dst ~= value.src then
+      if value.act == _t.module.data.ACTION_TYPE.SKILL_EFFECT or value.act == _t.module.data.ACTION_TYPE.BUFF_ACTION then
+        table.insert(ss, xv.api.GetFormatText(" => ", 0x808080))
+      elseif value.act == _t.module.data.ACTION_TYPE.SKILL_LOG then
+        table.insert(ss, xv.api.GetFormatText(" => ", 0xFFFFFF))
+      elseif value.act == _t.module.data.ACTION_TYPE.SKILL_CASTED then
+        table.insert(ss, xv.api.GetFormatText(" => ", 0xFFFFFF))
+      elseif not value.act then
+        table.insert(ss, xv.api.GetFormatText(" : ", 0x808080))
+      end
+      local dst = compat:GetPlayer(value.dst)
+      table.insert(ss, xv.api.GetFormatText(_t.PlayerToString(dst), 0xFF8000))
     end
+
     -- table.insert(ss, xv.api.GetFormatText(string.format(" (%s)", _t.module.data.ACTION_TYPE.tostring(value.act))))
+    -- table.insert(ss, xv.api.GetFormatText("\n", 0xFFFFFF))
   end
   return ss
 end
@@ -184,8 +184,11 @@ function _t.BattleLog:AppendBattleItem(compat, tp, item)
   end
 
   hh:FormatAllItemPos():SetSizeByAllItemSize()
-  img:SetSize(hh:GetSize())
+  local hhw, hhh = hh:GetSize()
+  img:SetSize(self.width, hhh)
   h:FormatAllItemPos():SetSizeByAllItemSize()
+  h.OnEnter = function() img:Show() end
+  h.OnLeave = function() img:Hide() end
   hh.OnEnter = function() img:Show() end
   hh.OnLeave = function() img:Hide() end
 end
