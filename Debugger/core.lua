@@ -4,14 +4,39 @@ local out = Clouds_Base.xv.debug.out
 local _t
 _t = {
   NAME = "core",
+  inputs = {},
+  results = {},
+  allResults = false,
+  outformat = "_d%s",
+  outlast = "_d",
+  outbox = {},
+  index = 1,
 }
 
 _t.RegisterCode = function(_this, index, func)
+  _t.inputs[index] = func
+end
+
+_t.RegisterRunCode = function(_this, index)
+  local subIndex = 1
+  if _t.allResults then
+    _t.allResults[index] = {}
+  end
   _this.OnItemLButtonDown = function(self)
     self = self or this
-    local hh, s = self:GetParent(), Clouds_Base.debug.var2str(func())
+    local func = _t.inputs[index]
+    if not func then return end
+    local result = {func()}
+    _t.results[index] = result
+    if _t.allResults then
+      _t.allResults[index][subIndex] = result
+    end
+    _t.outbox[_t.outlast] = result[1]
+    _t.outbox[_t.outformat:format(index)] = result[1]
+    local hh, s = self:GetParent(), Clouds_Base.debug.var2str(unpack(result))
     hh:AppendItemFromString(xv.api.GetFormatText(string.format("Out[%d]: %s\n", index, s), 0x00FFFF, nil, nil, "out"))
     hh:resize()
+    subIndex = subIndex + 1
   end
 end
 
@@ -28,17 +53,47 @@ _t.RegisterClearCode = function(_this)
   end
 end
 
-function _t.RenderCode(index, code)
-  local itemCount = 3
-  local ss = {}
-  table.insert(ss, xv.api.GetFormatText(string.format("In [%d]: %s", index, code), 0xFFFFFF, 771))
-  table.insert(ss, xv.api.GetFormatText(" *Run* ", 0x0000FF, 771,
-      string.format('local func=function()return %s end\nClouds_Debugger.core.RegisterCode(this, %d, func)', code, index), "code"))
-  table.insert(ss, xv.api.GetFormatText(" *Clear* \n", 0x0000FF, 771,
-      string.format('Clouds_Debugger.core.RegisterClearCode(this, %d)', itemCount), "code"))
-  return ss
+_t.RegisterRemoveCode = function(_this)
+  _this.OnItemLButtonDown = function(self)
+    self = self or this
+    local hh = self:GetParent()
+    hh:remove()
+  end
+end
+
+function _t.RenderCode(hh, code, callbacks)
+  local codeTrim = code:trim()
+  local head, rtn = codeTrim:match("(.*)[;\n](.*)")
+  if not rtn then
+    head, rtn = "", codeTrim
+  end
+  local codeExec = head .. ("\nreturn " .. rtn)
+  hh:AppendItemFromString(xv.api.GetFormatText(string.format("In [%d]: %s", _t.index, codeTrim), 0xFFFFFF, 0,
+      string.format('local func=function() %s end\nClouds_Debugger.core.RegisterCode(this, %d, func)', codeExec, _t.index), "in"))
+  hh:AppendItemFromString(xv.api.GetFormatText(" *Run ", 0x0000FF, 771,
+      string.format('Clouds_Debugger.core.RegisterRunCode(this, %d)', _t.index), "code"))
+  hh:AppendItemFromString(xv.api.GetFormatText("Clear* ", 0x0000FF, 771,
+      string.format('Clouds_Debugger.core.RegisterClearCode(this, %d)', _t.index), "code"))
+  hh:AppendItemFromString(xv.api.GetFormatText("*X*\n", 0xFF0000, 771,
+      string.format('Clouds_Debugger.core.RegisterRemoveCode(this, %d)', _t.index), "code"))
+  hh.resize = callbacks.resize
+  hh.remove = callbacks.remove
+  hh.run = function(self)
+    self:Lookup(1):OnItemLButtonDown()
+  end
+  hh.clear = function(self)
+    self:Lookup(2):OnItemLButtonDown()
+  end
+  _t.index = _t.index + 1
 end
 
 _t.module = Clouds_Debugger
 Clouds_Debugger.core = _t
 _t.module.base.gen_all_msg(_t)
+
+if _t.module.DEBUG then
+  _G["_dout"] = _t.results
+  _G["_din"] = _t.inputs
+  _t.outbox = _G
+  _t.allResults = {}
+end

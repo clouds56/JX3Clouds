@@ -20,27 +20,26 @@ end
 function _t.panel:New()
   local width = self.width
   local scroll = self.scroll
-  local h = self:Append("Handle", scroll, "h" .. self.index, {w=width,h=22,postype=8})
-  local img = self:Append("Image", h, "img" .. self.index,{w=width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
-  local hh = self:Append("Handle", h, "hh" .. self.index, {w=width,h=22,postype=0,handletype=3})
+  local h = self:Append("Handle", scroll, "h" .. _t.module.core.index, {w=width,h=22,postype=8})
+  local img = self:Append("Image", h, "img" .. _t.module.core.index,{w=width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
+  local hh = self:Append("Handle", h, "hh" .. _t.module.core.index, {w=width,h=22,postype=0,handletype=3})
 
   local hhraw = hh:GetSelf()
-  for i, s in ipairs(_t.module.core.RenderCode(self.index, self.edit:GetText())) do
-    hhraw:AppendItemFromString(s)
-  end
-  hhraw.resize = function(self)
-    hh:FormatAllItemPos():SetSizeByAllItemSize()
-    local hhw, hhh = hh:GetSize()
-    img:SetSize(width, hhh)
-    h:FormatAllItemPos():SetSizeByAllItemSize()
-    scroll:UpdateList()
-  end
-  hhraw.run = function(self)
-    self:Lookup(1):OnItemLButtonDown()
-  end
-  hhraw.clear = function(self)
-    self:Lookup(2):OnItemLButtonDown()
-  end
+  _t.module.core.RenderCode(hhraw, self.edit:GetText(), {
+    resize = function(self)
+      hh:FormatAllItemPos():SetSizeByAllItemSize()
+      local hhw, hhh = hh:GetSize()
+      img:SetSize(width, hhh)
+      h:FormatAllItemPos():SetSizeByAllItemSize()
+      scroll:UpdateList()
+    end,
+    remove = function(self)
+      scroll.__handle:RemoveItem(h:GetSelf())
+      -- TODO: fix destroy
+      -- h:Destroy()
+      scroll:UpdateList()
+    end
+  })
   hhraw:run()
 
   h.OnEnter = function() img:Show() end
@@ -48,12 +47,10 @@ function _t.panel:New()
   hh.OnEnter = function() img:Show() end
   hh.OnLeave = function() img:Hide() end
 
-  self.index = self.index + 1
   return hh
 end
 
 function _t.panel:Init()
-  self.index = 0
   local frame = self:CreateMainFrame({title = "Debugger", style="LARGER"})
 
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 1000})
@@ -63,7 +60,7 @@ function _t.panel:Init()
   local btnClear = self:Append("Button", window, "ButtonClear", {rect = pos:Next(80, 30), text = "Clear"})
   local btnReload = self:Append("Button", window, "ButtonReload", {rect = pos:Next(80, 30), text = "Reload"})
   pos:NextLine()
-  local edit = self:Append("Edit", window, "edit" .. self.index, {rect = pos:Next(self.width, 150), multi = true, limit = 10*1000*1000})
+  local edit = self:Append("Edit", window, "edit", {rect = pos:Next(self.width, 150), multi = true, limit = 10*1000*1000})
   pos:NextLine()
   local scroll = self:Append("Scroll", window, "ScrollLog", {rect = pos:Next(self.width + 20, 350)})
   self.edit = edit
