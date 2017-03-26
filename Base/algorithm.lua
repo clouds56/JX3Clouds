@@ -117,6 +117,12 @@ _t = {
       return minus .. string.format("%dd%02d:%02d:%s", t, hours, minutes, seconds)
     end,
   },
+
+  string = {
+    trim = function(s)
+      return s:match("^%s*(.-)%s*$")
+    end,
+  },
 }
 
 _t.module = Clouds_Base
@@ -223,7 +229,7 @@ _t.table_to_string = function(t, mode, index, visited, path)
   for i, v in pairs(t) do
     local key
     if type(i)=="number" then
-      if i > #t then
+      if i > #t or i < 1 then
         key = ("[%d]"):format(i)
       end
     elseif type(i)=="string" then
