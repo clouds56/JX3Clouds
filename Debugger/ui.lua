@@ -20,6 +20,7 @@ end
 function _t.panel:New()
   local width = self.width
   local scroll = self.scroll
+  local edit = self.edit
   local h = self:Append("Handle", scroll, "h" .. _t.module.core.index, {w=width,h=22,postype=8})
   local img = self:Append("Image", h, "img" .. _t.module.core.index,{w=width,h=22,image="ui\\Image\\Common\\TextShadow.UITex",frame=2,lockshowhide=1})
   local hh = self:Append("Handle", h, "hh" .. _t.module.core.index, {w=width,h=22,postype=0,handletype=3})
@@ -38,6 +39,9 @@ function _t.panel:New()
       -- TODO: fix destroy
       -- h:Destroy()
       scroll:UpdateList()
+    end,
+    edit = function(self)
+      edit:SetText(hh:GetSelf():Lookup(0).data)
     end
   })
   hhraw:run()
@@ -56,7 +60,7 @@ function _t.panel:Init()
   local window = self:Append("Window", frame, "WindowMain", {x = 0,y = 50,w = 768,h = 1000})
   local pos = EasyUI.NewPos(50, 20, 5)
   local btnNew = self:Append("Button", window, "ButtonNew", {rect = pos:Next(80, 30), text = "New"})
-  local btnRun = self:Append("Button", window, "ButtonRun", {rect = pos:Next(80, 30), text = "Run"})
+--  local btnRun = self:Append("Button", window, "ButtonRun", {rect = pos:Next(80, 30), text = "Run"})
   local btnClear = self:Append("Button", window, "ButtonClear", {rect = pos:Next(80, 30), text = "Clear"})
   local btnReload = self:Append("Button", window, "ButtonReload", {rect = pos:Next(80, 30), text = "Reload"})
   pos:NextLine()
@@ -66,9 +70,9 @@ function _t.panel:Init()
   self.edit = edit
   self.scroll = scroll
 
-  btnRun.OnClick = function()
-    self:Run()
-  end
+--  btnRun.OnClick = function()
+--    self:Run()
+--  end
   btnNew.OnClick = function()
     self.selected = self:New()
   end
