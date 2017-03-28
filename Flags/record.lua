@@ -271,6 +271,7 @@ end, "Clouds_Flags_record")
 
 Clouds_Base.event.Add("LOADING_END", function()
   _t.Output_verbose(--[[tag]]0, "StartNewCompat")
+  -- TODO: check in jjc
   _t.module.data:StartNewCompat()
 end, "Clouds_Flags_record")
 

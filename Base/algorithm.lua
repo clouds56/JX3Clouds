@@ -123,6 +123,27 @@ _t = {
       return s:match("^%s*(.-)%s*$")
     end,
   },
+
+  timestamp = {
+    tostring = function(self, format)
+      format = format or "%yy-%MM-%ddT%HH:%mm:%ss"
+      local date = TimeToDate(self)
+      date.Hour, date.hour, date.designator = date.hour, (date.hour + 11) % 12 + 1, date.hour >= 12 and "P" or "A"
+      format = format:gsub("%%yyyy", date.year):gsub("%%yy", ("%02d"):format(date.year%100))
+      format = format:gsub("%%MMM", _t.timestamp.month_name[date.month])
+      format = format:gsub("%%MM", ("%02d"):format(date.month)):gsub("%%M", date.month)
+      format = format:gsub("%%dd", ("%02d"):format(date.day)):gsub("%%d", date.day)
+      format = format:gsub("%%HH", ("%02d"):format(date.Hour)):gsub("%%H", date.Hour)
+      format = format:gsub("%%hh", ("%02d"):format(date.hour)):gsub("%%h", date.hour)
+      format = format:gsub("%%mm", ("%02d"):format(date.minute)):gsub("%%m", date.minute)
+      format = format:gsub("%%ss", ("%02d"):format(date.second)):gsub("%%s", date.second)
+      format = format:gsub("%%tt", date.designator .. "M"):gsub("%%t", date.designator)
+      return format
+    end,
+    month_name = {
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    }
+  },
 }
 
 _t.module = Clouds_Base
@@ -301,6 +322,7 @@ end
 table.sconcat = _t.table.sconcat
 xv.object_to_string = _t.object_to_string
 xv.algo = {
+  timestamp = _t.timestamp,
   frame = _t.frame,
   table = _t.table
 }

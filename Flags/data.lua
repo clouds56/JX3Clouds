@@ -11,6 +11,7 @@ local GetClientPlayer = GetClientPlayer
 local GetCurrentTime = GetCurrentTime
 local GetLogicFrameCount = GetLogicFrameCount
 local FireUIEvent = FireUIEvent
+local xv = Clouds_Base.xv
 
 local _t
 _t = {
@@ -124,6 +125,7 @@ _t = {
     local compat = {
       metadata = _t.module.sql.init_compat({
         name = string.format("%d_%d", id, date),
+        dbname = xv.algo.timestamp.tostring(date, "%yyyy%MM%dd"),
         date =  date,
         starttime = time,
         endtime = time,
@@ -151,7 +153,7 @@ _t = {
     _t:EndCompat()
     self.current_compat = self.CreateCompat()
     _t.module.sql.begin_transaction(self.current_compat.metadata)
-    table.insert(self.compats, self.current_compat)
+--    table.insert(self.compats, self.current_compat)
     return self.current_compat
   end,
   EndCompat = function(self)
@@ -161,7 +163,7 @@ _t = {
     end
     self.current_compat = nil
   end,
-  compats = {},
+--  compats = {},
   current_compat = nil,
 
   compat_method = {
