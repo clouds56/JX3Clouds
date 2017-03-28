@@ -57,10 +57,8 @@ _t = {
   end,
   reload_keep = {},
   ReloadUIAddon = function()
-    local str = "keep"
-    _G.out(str)
+    FireUIEvent("DISCONNECT")
     _G.ReloadUIAddon()
-    _G.out(str)
   end,
 }
 

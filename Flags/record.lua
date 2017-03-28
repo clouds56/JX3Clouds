@@ -38,6 +38,7 @@ _t = {
     local compat = _t.module.data.current_compat
     if not compat then return end
 
+    local raw_data = {dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult}
     --local nValue = tResult[SKILL_RESULT_TYPE.PHYSICS_DAMAGE]
     --PHYSICS_DAMAGE, SOLAR_MAGIC_DAMAGE, NEUTRAL_MAGIC_DAMAGE, LUNAR_MAGIC_DAMAGE, POISON_DAMAGE
     --szDamage = szDamage..FormatString(g_tStrings.SKILL_DAMAGE, nValue, g_tStrings.STR_SKILL_PHYSICS_DAMAGE)
@@ -91,12 +92,12 @@ _t = {
         if dwID == 2341 then -- MingDongSiFang
           return
         end
-        compat:RecordSkillLog(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, dwCaster~=dwTarget and _t.module.data.ACTION_TYPE.SKILL_CASTED or _t.module.data.ACTION_TYPE.SKILL_LOG)
+        compat:RecordSkillLog(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, _t.module.data.ACTION_TYPE.SKILL_LOG)
       else
-        compat:RecordSkillEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+        compat:RecordSkillEffect(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
       end
     elseif nEffectType == SKILL_EFFECT_TYPE.BUFF then
-      compat:RecordBuffEffect(GetLogicFrameCount(), dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+      compat:RecordBuffEffect(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
     end
   end,
 
@@ -154,8 +155,9 @@ _t = {
     --local szBuffName = Table_GetBuffName(dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
+    local raw_data = {dwTarget, bCanCancel, dwID, bAddOrDel, nLevel}
     _t.Output_ex(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d", tostring(bCanCancel), dwID, nLevel, tostring(bAddOrDel), dwTarget))
-    -- _t.module.data.current_compat:RecordBuffLog(GetLogicFrameCount(), nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
+    -- _t.module.data.current_compat:RecordBuffLog(GetLogicFrameCount(), raw_data, nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 
   OnBuffImmunity = function(dwTarget, bCanCancel, dwID, nLevel)
@@ -184,8 +186,9 @@ _t = {
     if dwBuffID == 0 then return end
     if nEndFrame - now > 2*60*60*16 then return end
     if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
+    local raw_data = {dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID}
     local action = bRemove and _t.module.data.ACTION_TYPE.BUFF_REMOVE or _t.module.data.ACTION_TYPE.BUFF_ADD
-    compat:RecordBuffLog(now, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
+    compat:RecordBuffLog(now, raw_data, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
   end,
 }
 
@@ -269,6 +272,11 @@ end, "Clouds_Flags_record")
 Clouds_Base.event.Add("LOADING_END", function()
   _t.Output_verbose(--[[tag]]0, "StartNewCompat")
   _t.module.data:StartNewCompat()
+end, "Clouds_Flags_record")
+
+Clouds_Base.event.Add("DISCONNECT", function()
+  _t.Output_verbose(--[[tag]]0, "EndCompat")
+  _t.module.data:EndCompat()
 end, "Clouds_Flags_record")
 
 --SYNC_ROLE_DATA_END

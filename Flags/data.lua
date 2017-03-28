@@ -17,13 +17,14 @@ _t = {
   NAME = "data",
 
   ACTION_TYPE = {
-    BUFF_ADD = 100,
-    BUFF_REMOVE = 101,
-    BUFF_ACTION = 102,
+    BUFF_ADD = 8,
+    BUFF_REMOVE = 8 + 4,
+    BUFF_ACTION = 8 + 2,
+    BUFF_CRITICAL_ACTION = 8 + 2 + 1,
 
-    SKILL_EFFECT = 209,
-    SKILL_LOG = 201,
-    SKILL_CASTED = 202,
+    SKILL_LOG = 16,
+    SKILL_EFFECT = 16 + 2,
+    SKILL_EFFECT_CRITICAL = 16 + 2 + 1,
 
     tostring = function(self)
       for i, v in pairs(_t.ACTION_TYPE) do
@@ -121,13 +122,13 @@ _t = {
     end
     --- {starttime =,}
     local compat = {
-      metadata = {
+      metadata = _t.module.sql.init_compat({
         name = string.format("%d_%d", id, date),
         date =  date,
         starttime = time,
         endtime = time,
         me = id,
-      },
+      }),
       logs = {
         --- skill[i] = { time=, src=, dst=, skill=, damage?={}, data?=data, oops?= }
         skill = {},
@@ -147,15 +148,15 @@ _t = {
     return compat
   end,
   StartNewCompat = function(self)
-    if self.current_compat then
-      self.SaveCompat(self.current_compat)
-    end
+    _t:EndCompat()
     self.current_compat = self.CreateCompat()
+    _t.module.sql.begin_transaction(self.current_compat.metadata)
     table.insert(self.compats, self.current_compat)
     return self.current_compat
   end,
   EndCompat = function(self)
     if self.current_compat then
+      _t.module.sql.end_transaction()
       self.SaveCompat(self.current_compat)
     end
     self.current_compat = nil
@@ -164,30 +165,46 @@ _t = {
   current_compat = nil,
 
   compat_method = {
-    _record = function(self, time, t, i)
+    _record = function(self, time, t, data, i)
       table.insert(self.logs[t], i)
+      local id, level, name
+      local damage, damage_effect = 0, 0
+      local act = i.act
+      if i.damage then
+        damage = i.damage.therapy - i.damage.damage
+        damage_effect = i.damage.effective_therapy - i.damage.effective_damage
+      end
+      if i.oops then
+        act = act + 1
+      end
+      if t == "skill" then
+        name, id, level = AnsiToUTF8(_t.module.ui.SkillToString(i.skill)), i.skill.id, i.skill.level
+      elseif t == "buff" then
+        name, id, level = AnsiToUTF8(_t.module.ui.BuffToString(i.buff)), i.buff.id, i.buff.level
+      end
+      _t.module.sql.insert_damage(self.metadata.db_bind.damage, {i.src, i.dst, i.time, self.metadata.id, i.act, name, id, level, damage, damage_effect, _t.stringify(data)})
       self.metadata.endtime = time
       FireUIEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", self, t, i)
     end,
-    RecordSkillLog = function(self, timestamp, sourceid, destid, id, level, act, data)
+    RecordSkillLog = function(self, timestamp, raw_data, sourceid, destid, id, level, act, data)
       self:GetPlayer(sourceid)
       self:GetPlayer(destid)
-      self:_record(timestamp, "skill", {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, skill=_t:GetSkill(id, level), act=act, data=data})
+      self:_record(timestamp, "skill", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, skill=_t:GetSkill(id, level), act=act, data=data})
     end,
-    RecordSkillEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+    RecordSkillEffect = function(self, timestamp, raw_data, sourceid, destid, id, level, damage, oops)
       self:GetPlayer(sourceid)
       self:GetPlayer(destid)
-      self:_record(timestamp, "skill", {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, skill=_t:GetSkill(id, level), act=_t.ACTION_TYPE.SKILL_EFFECT, damage=damage, oops=oops})
+      self:_record(timestamp, "skill", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, skill=_t:GetSkill(id, level), act=_t.ACTION_TYPE.SKILL_EFFECT, damage=damage, oops=oops})
     end,
-    RecordBuffLog = function(self, timestamp, sourceid, destid, id, level, type, act, data)
+    RecordBuffLog = function(self, timestamp, raw_data, sourceid, destid, id, level, type, act, data)
       self:GetPlayer(sourceid)
       self:GetPlayer(destid)
-      self:_record(timestamp, "buff", {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, buff=_t:GetBuff(id, level, type), act=act, data=data})
+      self:_record(timestamp, "buff", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, buff=_t:GetBuff(id, level, type), act=act, data=data})
     end,
-    RecordBuffEffect = function(self, timestamp, sourceid, destid, id, level, damage, oops)
+    RecordBuffEffect = function(self, timestamp, raw_data, sourceid, destid, id, level, damage, oops)
       self:GetPlayer(sourceid)
       self:GetPlayer(destid)
-      self:_record(timestamp, "buff", {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, buff=_t:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
+      self:_record(timestamp, "buff", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, buff=_t:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
     end,
     --- @param(id): player id
     --- @param(type): NPC or Player
@@ -229,6 +246,9 @@ _t = {
       end,
     },
   },
+  stringify = function(s)
+    return Clouds_Base.xv.debug.object_to_string(s, {oneline=true})
+  end
 }
 
 _t.module = Clouds_Flags

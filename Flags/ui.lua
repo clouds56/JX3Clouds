@@ -165,8 +165,6 @@ _t.RenderBattleLog = function(compat, tp, value)
         table.insert(ss, xv.api.GetFormatText(" => ", 0x808080))
       elseif value.act == _t.module.data.ACTION_TYPE.SKILL_LOG then
         table.insert(ss, xv.api.GetFormatText(" => ", 0xFFFFFF))
-      elseif value.act == _t.module.data.ACTION_TYPE.SKILL_CASTED then
-        table.insert(ss, xv.api.GetFormatText(" => ", 0xFFFFFF))
       elseif not value.act then
         table.insert(ss, xv.api.GetFormatText(" : ", 0x808080))
       end
