@@ -8,15 +8,15 @@ local _t
 _t = {
   NAME = "record",
 
-  OnEvent = function()
+  OnEvent = function(now)
     _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, string.format("%s %s %s %s", tostring(arg0), tostring(arg1), tostring(arg2), tostring(arg3)))
   end,
 
-  OnSkillCast = function(dwCaster, dwSkillID, dwLevel)
+  OnSkillCast = function(now, dwCaster, dwSkillID, dwLevel)
     _t.Output_ex(--[[tag]]0, string.format("%d casting (%d, %d)", dwCaster, dwSkillID, dwLevel))
   end,
 
-  OnSkillCastRespond=function(dwCaster, dwSkillID, dwLevel, nRespond)
+  OnSkillCastRespond=function(now, dwCaster, dwSkillID, dwLevel, nRespond)
     --local szCasterName = GlobalEventHandler.GetCharacterTipInfo(dwCaster)
     --local szSkillName = Table_GetSkillName(dwSkillID, dwLevel)
     --szRespond = GlobalEventHandler.GetSkillRespondText(nRespond)
@@ -33,12 +33,12 @@ _t = {
   --- @param(bCriticalStrike): is the value of effect doubled
   --- @param(nCount): #tResult
   --- @param(tResult): effect value table? { [13]=EFFECTIVE_DAMAGE, [14]=EFFECTIVE_THERAPY }
-  OnSkillEffectLog = function(dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult)
+  OnSkillEffectLog = function(now, dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult)
     if dwID == 7513 and dwLevel == 10 then return end
     local compat = _t.module.data.current_compat
     if not compat then return end
 
-    local raw_data = {dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult}
+    local raw_data = {now, dwCaster, dwTarget, bReact, nEffectType, dwID, dwLevel, bCriticalStrike, nCount, tResult}
     --local nValue = tResult[SKILL_RESULT_TYPE.PHYSICS_DAMAGE]
     --PHYSICS_DAMAGE, SOLAR_MAGIC_DAMAGE, NEUTRAL_MAGIC_DAMAGE, LUNAR_MAGIC_DAMAGE, POISON_DAMAGE
     --szDamage = szDamage..FormatString(g_tStrings.SKILL_DAMAGE, nValue, g_tStrings.STR_SKILL_PHYSICS_DAMAGE)
@@ -92,32 +92,32 @@ _t = {
         if dwID == 2341 then -- MingDongSiFang
           return
         end
-        compat:RecordSkillLog(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, _t.module.data.ACTION_TYPE.SKILL_LOG)
+        compat:RecordSkillLog(now, raw_data, dwCaster, dwTarget, dwID, dwLevel, _t.module.data.ACTION_TYPE.SKILL_LOG)
       else
-        compat:RecordSkillEffect(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+        compat:RecordSkillEffect(now, raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
       end
     elseif nEffectType == SKILL_EFFECT_TYPE.BUFF then
-      compat:RecordBuffEffect(GetLogicFrameCount(), raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
+      compat:RecordBuffEffect(now, raw_data, dwCaster, dwTarget, dwID, dwLevel, damage, bCriticalStrike)
     end
   end,
 
-  OnCommonHealthLog=function(dwTarget, nDeltaLife)
+  OnCommonHealthLog=function(now, dwTarget, nDeltaLife)
     --szMsg = FormatString(g_tStrings.STR_SKILL_COMMON_DAMAGE_LOG_MSG, szTargetName, -nDeltaLife)
     --szMsg = FormatString(g_tStrings.STR_SKILL_COMMON_THERAPY_LOG_MSG, szTargetName, nDeltaLife)
     _t.Output_verbose(--[[tag]]0, string.format("%d get %d health", dwTarget, nDeltaLife))
   end,
 
-  OnSkillBlockLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel, dwDamageType)
+  OnSkillBlockLog=function(now, dwCaster, dwTarget, nEffectType, dwID, dwLevel, dwDamageType)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_BLOCK_LOG_MSG, szCasterName, szSkillName, GlobalEventHandler.g_DamageType[dwDamageType], szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d) to %d, blocked", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
-  OnSkillShieldLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
+  OnSkillShieldLog=function(now, dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_SHIELD_LOG_MSG, szCasterName, szSkillName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d) to %d, shield", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
-  OnSkillMissLog=function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
+  OnSkillMissLog=function(now, dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_MISS_LOG_MSG, szCasterName, szSkillName)
     _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d) to %d, missed", dwCaster, dwID, dwLevel, dwTarget))
   end,
@@ -127,19 +127,19 @@ _t = {
   --- @param(nEffectType): SKILL_EFFECT_TYPE.SKILL or BUFF
   --- @param(dwID): skill id
   --- @param(dwLevel): skill level
-  OnSkillHitLog = function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
+  OnSkillHitLog = function(now, dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     -- the message is null
     --local szMsg = FormatString(g_tStrings.STR_SKILL_HIT_LOG_MSG, szCasterName, szSkillName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d), hit %d", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
-  OnSkillDodgeLog = function(dwCaster, dwTarget, nEffectType, dwID, dwLevel)
+  OnSkillDodgeLog = function(now, dwCaster, dwTarget, nEffectType, dwID, dwLevel)
     --local szMsg = FormatString(g_tStrings.STR_SKILL_DODGE_LOG_MSG, szCasterName, szSkillName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("%d casted (%d, %d) to %d, dodged", dwCaster, dwID, dwLevel, dwTarget))
   end,
 
   --- TODO: remove
-  OnExpLog = function(dwPlayerID, nAddExp)
+  OnExpLog = function(now, dwPlayerID, nAddExp)
     --local szMsg = FormatString(g_tStrings.STR_EXP_YOU_GET_EXP_MSG, nAddExp)
     --OutputMessage("MSG_EXP", szMsg)
     _t.Output_ex(--[[tag]]0, string.format("%d get %d exp", dwPlayerID, nAddExp))
@@ -150,43 +150,42 @@ _t = {
   --- @param(dwID): buff id
   --- @param(bAddOrDel): (it's a int) add(1) or remove(0)
   --- @param(nLevel): buff level
-  OnBuffLog = function(dwTarget, bCanCancel, dwID, bAddOrDel, nLevel)
+  OnBuffLog = function(now, dwTarget, bCanCancel, dwID, bAddOrDel, nLevel)
     --Table_BuffIsVisible(dwID, nLevel)
     --local szBuffName = Table_GetBuffName(dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_YOU_GET_SOME_EFFECT_MSG, szTargetName, szBuffName)
     --szMsg = FormatString(g_tStrings.STR_YOU_LOSE_SOME_EFFECT_MSG, szBuffName, szTargetName)
-    local raw_data = {dwTarget, bCanCancel, dwID, bAddOrDel, nLevel}
+    local raw_data = {now, dwTarget, bCanCancel, dwID, bAddOrDel, nLevel}
     _t.Output_ex(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d", tostring(bCanCancel), dwID, nLevel, tostring(bAddOrDel), dwTarget))
-    -- _t.module.data.current_compat:RecordBuffLog(GetLogicFrameCount(), raw_data, nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
+    -- _t.module.data.current_compat:RecordBuffLog(now, raw_data, nil, dwTarget, {bCanCancel, dwID, nLevel}, bAddOrDel)
   end,
 
-  OnBuffImmunity = function(dwTarget, bCanCancel, dwID, nLevel)
+  OnBuffImmunity = function(now, dwTarget, bCanCancel, dwID, nLevel)
     --szMsg = FormatString(g_tStrings.STR_BUFF_IMMUNITY_LOG_MSG, szBuffName, szTargetName)
     _t.Output_ex(--[[tag]]0, string.format("buff (%d, %d) to %d, immunity", dwID, nLevel, dwTarget))
   end,
 
-  OnDeathNotify = function(dwID, nLeftReviveFrame, szKiller)
+  OnDeathNotify = function(now, dwID, nLeftReviveFrame, szKiller)
     ----CreateRevivePanel(nLeftReviveFrame / GLOBAL.GAME_FPS)
     _t.Output_verbose(--[[tag]]0, string.format("%s killed %d, revive in %d", szKiller or "#nil", dwID, nLeftReviveFrame))
   end,
 
-  OnSkillRespond = function(nRespondCode)
+  OnSkillRespond = function(now, nRespondCode)
     --local szMsg = GlobalEventHandler.GetSkillRespondText(nRespondCode);OutputMessage("MSG_ANNOUNCE_RED", szMsg)
     --if nRespondCode == SKILL_RESULT_CODE.FORCE_EFFECT then OutputMessage("MSG_SKILL_SELF_FAILED", szMsg..g_tStrings.STR_FULL_STOP.."\n") end
   end,
 
-  OnBuffUpdate = function(dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
+  OnBuffUpdate = function(now, dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID)
     local compat = _t.module.data.current_compat
     if not compat then return end
 
-    local now = GetLogicFrameCount()
     -- _t.Output_verbose(--[[tag]]0, string.format("buff(%s) (%d, %d) affact(%s) on %d by %d",
     --   tostring(bCanCancel), dwBuffID, nBuffLevel, tostring(bRemove), dwPlayerID, dwSkillSrcID))
     -- out(dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, nBuffLevel, dwSkillSrcID)
     if dwBuffID == 0 then return end
     if nEndFrame - now > 2*60*60*16 then return end
     if not Table_BuffIsVisible(dwBuffID, nBuffLevel) then return end
-    local raw_data = {dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID}
+    local raw_data = {now, dwPlayerID, bRemove, nIndex, bCanCancel, dwBuffID, nCount, nEndFrame, bInit, nBuffLevel, dwSkillSrcID}
     local action = bRemove and _t.module.data.ACTION_TYPE.BUFF_REMOVE or _t.module.data.ACTION_TYPE.BUFF_ADD
     compat:RecordBuffLog(now, raw_data, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
   end,
@@ -249,24 +248,25 @@ _t.GetSkillRespondText=function(nRespondCode)
 end
 
 Clouds_Base.event.Add("SYS_MSG", function()
+  local now = GetLogicFrameCount()
   local event = arg0
-  if event == "UI_OME_SKILL_CAST_LOG" then _t.OnSkillCast(arg1, arg2, arg3)
-  elseif event == "UI_OME_SKILL_CAST_RESPOND_LOG" then _t.OnSkillCastRespond(arg1, arg2, arg3, arg4)
-  elseif event == "UI_OME_SKILL_EFFECT_LOG" then _t.OnSkillEffectLog(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-  elseif event == "UI_OME_SKILL_BLOCK_LOG" then _t.OnSkillBlockLog(arg1, arg2, arg3, arg4, arg5, arg6)
-  elseif event == "UI_OME_SKILL_SHIELD_LOG" then _t.OnSkillShieldLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_MISS_LOG" then _t.OnSkillMissLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_HIT_LOG" then _t.OnSkillHitLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_SKILL_DODGE_LOG" then _t.OnSkillDodgeLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_COMMON_HEALTH_LOG" then _t.OnCommonHealthLog(arg1, arg2)
-  elseif event == "UI_OME_BUFF_LOG" then _t.OnBuffLog(arg1, arg2, arg3, arg4, arg5)
-  elseif event == "UI_OME_BUFF_IMMUNITY" then _t.OnBuffImmunity(arg1, arg2, arg3, arg4)
-  elseif event == "UI_OME_SKILL_RESPOND" then _t.OnSkillRespond(arg1)
+  if event == "UI_OME_SKILL_CAST_LOG" then _t.OnSkillCast(now, arg1, arg2, arg3)
+  elseif event == "UI_OME_SKILL_CAST_RESPOND_LOG" then _t.OnSkillCastRespond(now, arg1, arg2, arg3, arg4)
+  elseif event == "UI_OME_SKILL_EFFECT_LOG" then _t.OnSkillEffectLog(now, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+  elseif event == "UI_OME_SKILL_BLOCK_LOG" then _t.OnSkillBlockLog(now, arg1, arg2, arg3, arg4, arg5, arg6)
+  elseif event == "UI_OME_SKILL_SHIELD_LOG" then _t.OnSkillShieldLog(now, arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_MISS_LOG" then _t.OnSkillMissLog(now, arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_HIT_LOG" then _t.OnSkillHitLog(now, arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_SKILL_DODGE_LOG" then _t.OnSkillDodgeLog(now, arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_COMMON_HEALTH_LOG" then _t.OnCommonHealthLog(now, arg1, arg2)
+  elseif event == "UI_OME_BUFF_LOG" then _t.OnBuffLog(now, arg1, arg2, arg3, arg4, arg5)
+  elseif event == "UI_OME_BUFF_IMMUNITY" then _t.OnBuffImmunity(now, arg1, arg2, arg3, arg4)
+  elseif event == "UI_OME_SKILL_RESPOND" then _t.OnSkillRespond(now, arg1)
   end
 end, "Clouds_Flags_record")
 
 Clouds_Base.event.Add("BUFF_UPDATE", function()
-  _t.OnBuffUpdate(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+  _t.OnBuffUpdate(GetLogicFrameCount(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 end, "Clouds_Flags_record")
 
 Clouds_Base.event.Add("LOADING_END", function()
@@ -275,10 +275,14 @@ Clouds_Base.event.Add("LOADING_END", function()
   _t.module.data:StartNewCompat()
 end, "Clouds_Flags_record")
 
-Clouds_Base.event.Add("DISCONNECT", function()
+_t.OnExit = function()
   _t.Output_verbose(--[[tag]]0, "EndCompat")
   _t.module.data:EndCompat()
-end, "Clouds_Flags_record")
+end
+
+Clouds_Base.event.Add("DISCONNECT", _t.OnExit, "Clouds_Flags_record")
+Clouds_Base.event.Add("GAME_EXIT", _t.OnExit, "Clouds_Flags_record")
+Clouds_Base.event.Add("PLAYER_EXIT_GAME", _t.OnExit, "Clouds_Flags_record")
 
 --SYNC_ROLE_DATA_END
 

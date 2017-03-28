@@ -184,7 +184,7 @@ _t = {
       elseif t == "buff" then
         name, id, level = AnsiToUTF8(_t.module.ui.BuffToString(i.buff)), i.buff.id, i.buff.level
       end
-      _t.module.sql.insert_damage(self.metadata.db_bind.damage, {i.src, i.dst, i.time, self.metadata.id, i.act, name, id, level, damage, damage_effect, _t.stringify(data)})
+      _t.module.sql.insert_damage(self.metadata.db_bind.damage, {i.src, i.dst, i.time, self.metadata.id, act, name, id, level, damage, damage_effect, _t.stringify(data)})
       self.metadata.endtime = time
       FireUIEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", self, t, i)
     end,
