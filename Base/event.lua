@@ -42,7 +42,7 @@ function _t.GenNewMonitor(event)
       if v[2] then
         local b, s = pcall(v[1], ...)
         v[3] = v[3] + 1
-        if not b then
+        if not b and event ~= "CALL_LUA_ERROR" then
           FireUIEvent("CALL_LUA_ERROR", s)
           _t.Output(_t.module.LEVEL.WARNING, --[[tag]]0, "LUA_ERROR: " .. s)
           v[4] = v[4] + 1
@@ -134,7 +134,7 @@ function _t.Every(everytime, func, tag)
   end
   _t.Add("CLOUDS_FRAME_BREATHE", function(...)
     if (GetLogicFrameCount()-starttime)%everytime==0 then
-      pcall(func, ...)
+      func(...)
     end
   end, tag)
 end

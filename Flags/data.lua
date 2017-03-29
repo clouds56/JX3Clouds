@@ -169,24 +169,28 @@ _t = {
   compat_method = {
     _record = function(self, time, t, data, i)
       table.insert(self.logs[t], i)
-      local id, level, name
-      local damage, damage_effect = 0, 0
-      local act = i.act
-      if i.damage then
-        damage = i.damage.therapy - i.damage.damage
-        damage_effect = i.damage.effective_therapy - i.damage.effective_damage
-      end
-      if i.oops then
-        act = act + 1
-      end
-      if t == "skill" then
-        name, id, level = AnsiToUTF8(_t.module.ui.SkillToString(i.skill)), i.skill.id, i.skill.level
-      elseif t == "buff" then
-        name, id, level = AnsiToUTF8(_t.module.ui.BuffToString(i.buff)), i.buff.id, i.buff.level
-      end
-      _t.module.sql.insert_damage(self.metadata.db_bind.damage, {i.src, i.dst, i.time, self.metadata.id, act, name, id, level, damage, damage_effect, _t.stringify(data)})
       self.metadata.endtime = time
-      FireUIEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", self, t, i)
+      if t == "status" then
+        _t.module.sql.execute(self.metadata.db_bind.status, {i.src, i.time, self.metadata.id, i.pos.x, i.pos.y, i.pos.z, i.pos.face, i.life, i.mana.main, i.mana[1], i.status, i.buff_count})
+      else
+        local id, level, name
+        local damage, damage_effect = 0, 0
+        local act = i.act
+        if i.damage then
+          damage = i.damage.therapy - i.damage.damage
+          damage_effect = i.damage.effective_therapy - i.damage.effective_damage
+        end
+        if i.oops then
+          act = act + 1
+        end
+        if t == "skill" then
+          name, id, level = AnsiToUTF8(_t.module.ui.SkillToString(i.skill)), i.skill.id, i.skill.level
+        elseif t == "buff" then
+          name, id, level = AnsiToUTF8(_t.module.ui.BuffToString(i.buff)), i.buff.id, i.buff.level
+        end
+        _t.module.sql.execute(self.metadata.db_bind.damage, {i.src, i.dst, i.time, self.metadata.id, act, name, id, level, damage, damage_effect, _t.stringify(data)})
+      end
+      --FireUIEvent("Clouds_Flags_record_CURRENT_COMPAT_UPDATE", self, t, i)
     end,
     RecordSkillLog = function(self, timestamp, raw_data, sourceid, destid, id, level, act, data)
       self:GetPlayer(sourceid)
@@ -207,6 +211,10 @@ _t = {
       self:GetPlayer(sourceid)
       self:GetPlayer(destid)
       self:_record(timestamp, "buff", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, dst=destid, buff=_t:GetBuff(id, level), act=_t.ACTION_TYPE.BUFF_ACTION, damage=damage, oops=oops})
+    end,
+    RecordStatus = function(self, timestamp, raw_data, sourceid, pos, life, mana, status, buff_count)
+      self:GetPlayer(sourceid)
+      self:_record(timestamp, "status", raw_data, {time=timestamp-self.metadata.starttime, src=sourceid, pos=pos, life=life, mana=mana, status=status, buff_count=buff_count})
     end,
     --- @param(id): player id
     --- @param(type): NPC or Player

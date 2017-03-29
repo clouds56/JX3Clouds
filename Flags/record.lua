@@ -265,6 +265,8 @@ Clouds_Base.event.Add("SYS_MSG", function()
   end
 end, "Clouds_Flags_record")
 
+Clouds_Base.event.Add("")
+
 Clouds_Base.event.Add("BUFF_UPDATE", function()
   _t.OnBuffUpdate(GetLogicFrameCount(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 end, "Clouds_Flags_record")
@@ -272,7 +274,7 @@ end, "Clouds_Flags_record")
 Clouds_Base.event.Add("LOADING_END", function()
   _t.Output_verbose(--[[tag]]0, "StartNewCompat")
   -- TODO: check in jjc
-  _t.module.data:StartNewCompat()
+--  _t.module.data:StartNewCompat()
 end, "Clouds_Flags_record")
 
 _t.OnExit = function()

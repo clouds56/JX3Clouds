@@ -41,6 +41,7 @@ _t = {
       pos_x REAL,
       pos_y REAL,
       pos_z REAL,
+      pos_face INTEGER,
       life INTEGER,
       mana INTEGER,
       status INTEGER,
@@ -51,8 +52,8 @@ _t = {
                     VALUES             (        ?,      ?,      ?,         ?,          ?)]],
   INSERT_DAMAGE = [[INSERT INTO %s (src_id, dest_id, time, compat_id, type, skill_name, skill_id, skill_level, damage, damage_effect, data)
                     VALUES         (     ?,       ?,    ?,         ?,    ?,          ?,        ?,           ?,      ?,             ?,    ?)]],
-  INSERT_STATUS = [[INSERT INTO %s (src_id, time, compat_id, pos_x, pos_y, pos_z, life, mana, mana_extra, status, buff_count)
-                    VALUES         (     ?,    ?,         ?,     ?,     ?,     ?,    ?,    ?,          ?,      ?,          ?)]],
+  INSERT_STATUS = [[INSERT INTO %s (src_id, time, compat_id, pos_x, pos_y, pos_z, pos_face, life, mana, mana_extra, status, buff_count)
+                    VALUES         (     ?,    ?,         ?,     ?,     ?,     ?,        ?,    ?,    ?,          ?,      ?,          ?)]],
 
   db = SQLite3_Open('interface/Clouds/Flags/_data/data.db'),
 
@@ -85,10 +86,6 @@ _t = {
   end,
   end_transaction = function()
     _t.db:Execute("END TRANSACTION")
-  end,
-  -- TODO: release db
-  insert_damage = function(bind_dmage, i)
-    _t.execute(bind_dmage, i)
   end,
   execute = function(bind, i)
     bind:ClearBindings()

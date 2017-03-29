@@ -122,6 +122,14 @@ _t = {
     trim = function(s)
       return s:match("^%s*(.-)%s*$")
     end,
+    split = function(s, delimeter)
+      delimeter = delimeter or ","
+      local t = {}
+      for i in (s .. delimeter):gmatch("(.-)" .. delimeter) do
+        table.insert(t, i)
+      end
+      return t
+    end
   },
 
   timestamp = {
