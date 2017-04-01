@@ -44,9 +44,9 @@ _t = {
       pos_face INTEGER,
       life INTEGER,
       mana INTEGER,
+      mana_extra INTEGER,
       status INTEGER,
-      buff_count INTEGER,
-      mana_extra INTEGER
+      buff_count INTEGER
     )]],
   INSERT_COMPAT = [[INSERT INTO compat (compat_id, src_id, dbname, timestamp, startframe)
                     VALUES             (        ?,      ?,      ?,         ?,          ?)]],
@@ -76,7 +76,7 @@ _t = {
 
     return {
       damage = _t.db:Prepare(_t.INSERT_DAMAGE:format("damage_log_" .. name)),
-      status = _t.db:Prepare(_t.INSERT_DAMAGE:format("status_log_" .. name)),
+      status = _t.db:Prepare(_t.INSERT_STATUS:format("status_log_" .. name)),
       -- TODO: player
     }
   end,

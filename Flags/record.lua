@@ -189,6 +189,20 @@ _t = {
     local action = bRemove and _t.module.data.ACTION_TYPE.BUFF_REMOVE or _t.module.data.ACTION_TYPE.BUFF_ADD
     compat:RecordBuffLog(now, raw_data, dwSkillSrcID, dwPlayerID, dwBuffID, nBuffLevel, bCanCancel, action, {lasttime=nEndFrame - now})
   end,
+
+  OnStatusUpdate = function(now, bIsPlayer, dwPlayerID)
+    local player = bIsPlayer and GetPlayer(dwPlayerID) or GetNpc(dwPlayerID)
+    if not player then return end
+    local compat = _t.module.data.current_compat
+    if not compat then return end
+    local raw_data = {now, dwPlayerID }
+    local mana = player.nCurrentMana or 0
+    local energy, rage = player.nCurrentEnergy or 0, player.nCurrentRage or 0 -- tangmen, cangjian
+    local stamina, thew = player.nCurrentStamina or 0, player.nCurrentThew or 0 -- mingjiao?
+    if energy > 0 then mana = energy end
+    if rage > 0 then mana = rage end
+    compat:RecordStatus(now, raw_data, dwPlayerID, {x=player.nX, y=player.nY, z=player.nZ, face=player.nFaceDirection}, player.nCurrentLife, {main=mana,0}, player.nMoveState, player:GetBuffCount())
+  end,
 }
 
 _t.module = Clouds_Flags
@@ -265,7 +279,14 @@ Clouds_Base.event.Add("SYS_MSG", function()
   end
 end, "Clouds_Flags_record")
 
-Clouds_Base.event.Add("")
+Clouds_Base.event.Every(4, function()
+  if _t.module.data.current_compat then
+    local now = GetLogicFrameCount()
+    for i, v in pairs(_t.module.data.current_compat.data.players) do
+      _t.OnStatusUpdate(now, v.type, i)
+    end
+  end
+end, "Clouds_Flags_record")
 
 Clouds_Base.event.Add("BUFF_UPDATE", function()
   _t.OnBuffUpdate(GetLogicFrameCount(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
