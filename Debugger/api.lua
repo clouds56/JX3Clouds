@@ -1,5 +1,6 @@
 -- Basic
-local me = GetClientPlayer();
+local me = GetClientPlayer(); -- UI_GetClientPlayerID
+local id = GetControlPlayerID(); -- 平沙?
 
 -- Skill
 local school = me.GetSchoolList();
@@ -52,6 +53,23 @@ Hand_Clear()
 box:GetObject()
 
 -- System
+local tMenu = {
+  function()
+    return {{
+      szOption = "Hello",
+      fnAction = function(...) out(...) --[[{nil, true}]] end,
+      {
+        szOption = "Sub1",
+        fnDisable = function() return true end,
+      },{ bDevide = true },{
+        szOption = "checkbox",
+        bCheck = true, bChecked = false,
+        -- bMCheck = true
+      }
+    }}
+  end,
+}
+local other_api = { TraceButton_AppendAddonMenu(tMenu), TraceButton_GetAddonMenu() }
 
 -- Player
 
@@ -75,4 +93,11 @@ local event = {
     elseif event == "UI_OME_SKILL_RESPOND" then OnSkillRespond(arg1) --nRespondCode
     end
   end,
+  ["DO_SKILL_CAST"] = function()
+    OnDoSkillCast(arg0, arg1, arg2) --dwCaster, dwSkillID, dwLevel
+  end
 }
+
+RegisterEvent('GAME_EXIT', OnExit)
+RegisterEvent('PLAYER_EXIT_GAME', OnExit)
+RegisterEvent('RELOAD_UI_ADDON_BEGIN', OnExit)

@@ -211,7 +211,7 @@ function EasyManager:OnDestroy()
 end
 
 function EasyManager:OpenPanel()
-  local frame = self:Fetch("EasyManager")
+  local frame = self:Fetch("CloudsEasyManager")
   if frame and frame:IsValid() and frame:IsVisible() then
     frame:Destroy()
   else
@@ -220,26 +220,6 @@ function EasyManager:OpenPanel()
   end
 end
 
-RegisterEvent("LOADING_END", function()
-  local hWnd = Station.Lookup("Normal/Minimap/Wnd_Minimap/Wnd_Over")
-  local btn = hWnd:Lookup("Btn_CloudsEasyManager")
-  if btn then
-    btn.__reference = EasyManager
-  else
-    local uiBtn = EasyUI.CreateUIButton(hWnd, "Btn_CloudsEasyManager", {w = 34, h = 34, x = 30, y = 160, ani = {"ui\\Image\\Button\\SystemButton.UITex", 39, 40, 41, 42}})
-    uiBtn:GetSelf().__reference = EasyManager
-    uiBtn.OnClick = function()
-      -- When ReloadUIAddon() called, the _G and EasyManager would not be update here
-      this.__reference:OpenPanel()
-    end
-    uiBtn.OnEnter = function()
-      local x, y = this:GetAbsPos()
-      local w, h = this:GetSize()
-      local szTip = GetFormatText(_L("EasyManagerBtnTipTitle"), 163) .. GetFormatText("\n".._L("EasyManagerBtnTipDesc"), 162)
-      OutputTip(szTip, 400, {x, y, w, h})
-    end
-    uiBtn.OnLeave = function()
-      HideTip()
-    end
-  end
-end)
+TraceButton_AppendAddonMenu( { function()
+  return {{szOption = "Clouds", fnAction = function() EasyManager:OpenPanel() end}}
+end } )

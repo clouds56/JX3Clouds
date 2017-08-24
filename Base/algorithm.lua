@@ -26,6 +26,17 @@ _t = {
   end,
 
   table = {
+    clone = function(t, deep)
+      local t1 = {}
+      for i, v in pairs(t) do
+        if type(v) == "table" and deep then
+          t1[i] = _t.table.clone(v)
+        else
+          t1[i] = v
+        end
+      end
+      return t1
+    end,
     sconcat = function(t, sep, i, j)
       local s = ""
       local first = true
@@ -329,12 +340,57 @@ _t.xxd = function(a, unit, line)
   return s
 end
 
+_t.ordered_hash = {
+  new = function(hash_function, t)
+    if not t then t = {} end
+    local o = {}
+    setmetatable(t, {
+      __index = {
+        push = function(self, x)
+          local k = hash_function(x)
+          if o[k] then
+            self[o[k]] = x
+          else
+            table.insert(self, x)
+            o[hash_function(x)] = table.getn(t)
+          end
+          return o[k]
+        end,
+        get = function(self, k)
+          if o[k] then
+            return self[o[k]]
+          end
+        end,
+        rehash = function(self)
+          o = {}
+          for i, v in pairs(self) do
+            o[hash_function(v)] = i
+          end
+        end,
+        remove = function(self, k)
+          self:remove_i(o[k])
+        end,
+        remove_i = function(self, i)
+          table.remove(self, i)
+          self:rehash()
+        end,
+        get_orderedlist = function(self)
+          return o
+        end,
+      },
+    })
+    t:rehash()
+    return t
+  end
+}
+
 table.sconcat = _t.table.sconcat
 xv.object_to_string = _t.object_to_string
 xv.algo = {
   timestamp = _t.timestamp,
   frame = _t.frame,
-  table = _t.table
+  table = _t.table,
+  ordered_hash = _t.ordered_hash
 }
 
 if _t.module.DEBUG then

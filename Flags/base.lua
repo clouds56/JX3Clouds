@@ -1,7 +1,7 @@
 local flags
 flags = {
   NAME = "Clouds_Flags",
-  DEBUG = Clouds_Base.DEBUG,
+  DEBUG = false,-- Clouds_Base.DEBUG,
   LEVEL = Clouds_Base.LEVEL,
   LEVEL_CURRENT = Clouds_Base.LEVEL_CURRENT,
   LEVEL_LOG = Clouds_Base.LEVEL_LOG,

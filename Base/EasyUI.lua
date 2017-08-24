@@ -93,10 +93,13 @@ function Pos:Next(w, h)
 	return rect
 end
 
-function Pos:NextLine(space)
+function Pos:NextLine(space, w, h)
 	self.x = self.left
 	if space or self.last ~= 0 then
 		self.y = self.y + self.last + (space or self.space)
+	end
+	if w and h then
+		return self:Next(w, h)
 	end
 end
 
