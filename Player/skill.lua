@@ -2,18 +2,27 @@ local _t
 _t = {
   NAME = "skill",
 
-  SkillSpeak = function(from, to, name)
+  SkillSpeak = function(from, to, id, level)
     if _t.module.ui and _t.module.ui.tSkillSpeak then
       local me = GetClientPlayer()
-      local name = Table_GetSkillName(id, level)
-      local t = _t.module.ui.tSkillSpeak:get(name)
+      local skill = Table_GetSkill(id, level)
+      if not skill or skill.szSpecialDesc == "" then
+        return
+      end
+      local t = _t.module.ui.tSkillSpeak:get(skill.szName)
+      local action = ""
       if t then
-        if t.action == "hit" and from == me.dwID then
-          _t.Output_verbose(--[[tag]]1001, tostring(t.text))
-        elseif t.action == "got" and to == me.dwID then
-          _t.Output_verbose(--[[tag]]1002, tostring(t.text))
-        elseif t.action == "casting" and from == me.dwID then
-          _t.Output_verbose(--[[tag]]1003, tostring(t.text))
+        if from == me.dwID then
+          action = "hit"
+        elseif to == me.dwID then
+          action = "got"
+        elseif from == nil then
+          action = "casting"
+        end
+        _t.Output_verbose(--[[tag]]1000, string.format("%s %s(%d)", action, tostring(name), id))
+        if t[action] and #t[action] ~= 0 then
+          local i = math.floor(math.random()*(#t[action]))+1
+          _t.Output_verbose(--[[tag]]1001, tostring(t[action][i].text))
         end
       end
     end
@@ -25,6 +34,8 @@ _t = {
       _t.cast_list[from] = {}
     end
     _t.cast_list[from][id] = now
+
+    _t.SkillSpeak(from, to, id, level)
   end,
 
   cast_list = {},

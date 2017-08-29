@@ -29,3 +29,8 @@ ordered_hash:remove(18) -- { 10, 21, 32, 30 }
 -- out(ordered_hash:get_orderedlist())
 assert_equals(ordered_hash:get(18), nil)
 assert_equals(ordered_hash:get(60), 30)
+
+local to_remove = {11, 22, 33, c=22}
+assert_equals(xv.algo.table.remove_v(to_remove, 22), 2)
+assert_equals(xv.algo.table.remove_v(to_remove, 22), "c")
+assert_equals(xv.algo.table.remove_v(to_remove, 22), nil)

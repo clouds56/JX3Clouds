@@ -37,6 +37,22 @@ _t = {
       end
       return t1
     end,
+
+    remove_v = function(t, v)
+      for i, _v in ipairs(t) do
+        if _v == v then
+          table.remove(t, i)
+          return i
+        end
+      end
+      for i, _v in pairs(t) do
+        if _v == v then
+          t[i] = nil
+          return i
+        end
+      end
+    end,
+
     sconcat = function(t, sep, i, j)
       local s = ""
       local first = true
