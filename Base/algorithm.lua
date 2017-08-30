@@ -26,6 +26,19 @@ _t = {
   end,
 
   table = {
+    in_ = function(t, v)
+      for _, k in ipairs(t) do
+        if k == v then
+          return true
+        end
+      end
+      for k, _v in pairs(t) do
+        if k == v then
+          return true
+        end
+      end
+    end,
+
     clone = function(t, deep)
       local t1 = {}
       for i, v in pairs(t) do

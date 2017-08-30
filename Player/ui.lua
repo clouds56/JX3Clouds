@@ -9,13 +9,24 @@ local _t
 _t = {
   NAME = "ui",
   -- szIni = "interface/Clouds/Flags/ui.ini",
-  current_name = nil,
-  current = {action = "hit", text = "", enabled = true},
-  default = {action = "hit", text = "", enabled = true},
+  current_name = "",
+  current = nil,
+  old_name = nil,
+  old = nil,
+  modified = false,
+  default = {action = "hit", text = "", enable = true},
+  true_f = function() return true end,
   hash_function = function(x) return x.name end,
   ui_manager = Clouds_Graphics.manager.EasyManager,
 
   type_sets = { "hit", "got", "casting" },
+
+  reset = function()
+      _t.current = xv.algo.table.clone(_t.default)
+      _t.current_name = ""
+      _t.old = nil
+      _t.old_name = nil
+  end,
 
   rehash = function(v)
     if not v then
@@ -34,15 +45,16 @@ _t = {
     end
   end,
 
-  add_text = function(t, action, text, disable)
-    local x = {action = action, text = text, enabled = not disable}
+  add_text = function(t, x)
+    x = xv.algo.table.clone(x)
     table.insert(t, x)
-    if not t[action] then
-      t[action] = {}
+    if not t[x.action] then
+      t[x.action] = {}
     end
     if x.enabled then
-      table.insert(t[action], x)
+      table.insert(t[x.action], x)
     end
+    return x
   end,
 
   update_text = function()
@@ -51,6 +63,7 @@ _t = {
     for i, v in ipairs(_t.type_sets) do
       _t.ui_manager:Fetch("M_SkillSpeak_Type_" .. v):Check(_t.current.action == v)
     end
+    _t.notify_modified()
   end,
 
   remove = function(v, k)
@@ -67,7 +80,10 @@ _t = {
     if not m then
       m = {}
     end
-    table.insert(m, { szOption = "Add", fnDisable = function() return true end })
+    table.insert(m, { szOption = _L("New"), fnAction = function()
+      _t.reset()
+      _t.update_text()
+    end})
     table.insert(m, { bDevide = true }) -- Divide
     for i, v in ipairs(_t.tSkillSpeak) do
       local menuSkill = {
@@ -81,7 +97,13 @@ _t = {
           szOption = "Delete", fnAction = function() _t.tSkillSpeak:remove_i(i) end,
         },
       }
+      for _, a in ipairs(_t.type_sets) do
+        if #v >= 5 then
+          table.insert(menuSkill, { bDevide = true }) -- Divide
+          table.insert(menuSkill, { szOption = _L(a), fnDisable = _t.true_f })
+        end
       for _, k in ipairs(v) do
+      if k.action == a then
         if #v < 5 then
           table.insert(menuSkill, { bDevide = true }) -- Divide
         end
@@ -106,16 +128,18 @@ _t = {
         table.insert(menuSkill, menuSpeak)
         if #v < 5 then
           menuSpeak = menuSkill
+          table.insert(menuSpeak, {
+            szOption = "  " .. _L(k.action),
+            fnDisable = _t.true_f,
+          })
         end
-        table.insert(menuSpeak, {
-          szOption = "  " .. _L(k.action),
-          fnDisable = function() return true end,
-        })
         table.insert(menuSpeak, {
           szOption = "  " .. _L("Modify"),
           fnAction = function()
-            _t.current = k
+            _t.current = xv.algo.table.clone(k)
+            _t.old = k
             _t.current_name = v.name
+            _t.old_name = v.name
             _t.update_text()
           end
         })
@@ -129,12 +153,22 @@ _t = {
           end
         })
       end
+      end
+      end
       table.insert(m, menuSkill)
     end
     return m
+  end,
+
+  notify_modified = function()
+    if _t.old then
+      _t.modified = _t.old_name ~= _t.current_name or _t.old.text ~= _t.current.text or _t.old.action ~= _t.current.action
+    end
+    _t.ui_manager:Fetch("M_SkillSpeak_Save"):Enable(_t.old ~= nil and _t.modified)
   end
 }
 
+_t.reset()
 _t.tSkillSpeak = xv.algo.ordered_hash.new(_t.hash_function, {
   {name = "Test1", {text = "Hello", action = "hit", enabled = true},},
   {name = "Test2", },
@@ -175,9 +209,32 @@ local function init()
       },{
         name = "M_SkillSpeak_Name", type = "Edit", rect = pos:Next(160, 25), font = 140, default =  function() return _t.current_name end, callback = function(n)
           _t.current_name = n
+          _t.notify_modified()
         end,
       },{
-        name = "M_SkillSpeak_Add", type = "Button", rect = pos:Next(80, 25), text = _L("Add"), font = 140, callback = function(n)
+        name = "M_SkillSpeak_TypeText", type = "Text", rect = pos:NextLine(nil, 120, 25), text = _L("SkillAction"), font = 140,
+      },{
+        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Hit"), font = 140, default =  function() return _t.current.action == "hit" end, callback = function(n)
+          _t.current.action = "hit"
+          _t.notify_modified()
+        end, group = "SkillSpeak_type",
+      },{
+        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Got"), font = 140, default = function() return _t.current.action == "got" end, callback = function(n)
+          _t.current.action = "got"
+          _t.notify_modified()
+        end, group = "SkillSpeak_type",
+      },{
+        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Casting"), font = 140, default = function() return _t.current.action == "casting" end, callback = function(n)
+          _t.current.action = "casting"
+          _t.notify_modified()
+        end, group = "SkillSpeak_type",
+      },{
+        name = "M_SkillSpeak_Content", type = "Edit", rect = pos:NextLine(nil, 400, 60), font = 140, default = function() return _t.current.text end, callback = function(n)
+          _t.current.text = n
+          _t.notify_modified()
+        end,
+      },{
+        name = "M_SkillSpeak_Add", type = "Button", rect = pos:NextLine(nil, 80, 25), text = _L("Add"), font = 140, callback = function(n)
           local n = _t.current_name
           if not n then
             return
@@ -191,28 +248,55 @@ local function init()
               t = {name = n, hit = {}, got = {}, casting = {}}
               _t.tSkillSpeak:push(t)
             end
-            _t.add_text(t, _t.current.action, _t.current.text)
+            _t.old = _t.add_text(t, _t.current)
           end
         end,
       },{
-        name = "M_SkillSpeak_TypeText", type = "Text", rect = pos:NextLine(nil, 120, 25), text = _L("SkillAction"), font = 140,
-      },{
-        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Hit"), font = 140, default =  function() return _t.current.action == "hit" end, callback = function(n)
-          _t.current.action = "hit"
-        end, group = "SkillSpeak_type",
-      },{
-        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Got"), font = 140, default = function() return _t.current.action == "got" end, callback = function(n)
-          _t.current.action = "got"
-        end, group = "SkillSpeak_type",
-      },{
-        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Casting"), font = 140, default = function() return _t.current.action == "casting" end, callback = function(n)
-          _t.current.action = "casting"
-        end, group = "SkillSpeak_type",
-      },{
-        name = "M_SkillSpeak_Content", type = "Edit", rect = pos:NextLine(nil, 400, 60), font = 140, default = function() return _t.current.text end, callback = function(n)
-          _t.current.text = n
+        name = "M_SkillSpeak_Save", type = "Button", rect = pos:Next(80, 25), text = _L("Save"), font = 140, enable = function() return _t.old and _t.modified end, callback = function(n)
+          local n = _t.current_name
+          if n and n:sub(1, 1) == "[" and n:sub(-1) == "]" then
+            n = n:sub(2, -2)
+          end
+          if not n or n == "" then
+            return
+          end
+          local t = _t.tSkillSpeak:get(n)
+          if not t then
+            t = {name = n, hit = {}, got = {}, casting = {}, enabled = true}
+            _t.tSkillSpeak:push(t)
+          end
+          if n ~= _t.old_name then
+            local old_t = _t.tSkillSpeak:get(_t.old_name)
+            if old_t then
+              _t.remove(old_t, _t.old)
+            end
+            _t.old = _t.add_text(t, _t.current)
+            _t.old_name = n
+          else
+            if xv.algo.table.in_(t, _t.old) then
+              _t.old.text = _t.current.text
+              if _t.old.action ~= _t.current.action then
+                _t.old.action = _t.current.action
+                xv.algo.table.remove_v(t[_t.old.action] or {}, _t.old)
+                if not t[_t.current.action] then
+                  t[_t.current.action] = {}
+                end
+                if _t.current.enabled then
+                  table.insert(t[_t.current.action], _t.current)
+                end
+              end
+            else
+              _t.old = _t.add_text(t, _t.current)
+            end
+          end
+          _t.notify_modified()
         end,
-      }
+      },{
+        name = "M_SkillSpeak_Reset", type = "Button", rect = pos:Next(80, 25), text = _L("Reset"), font = 140, callback = function(n)
+          _t.reset()
+          _t.update_text()
+        end,
+      },
     },
   }
   _t.ui_manager:RegisterPanel(tSkillMonConfig)
