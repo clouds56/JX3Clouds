@@ -14,7 +14,8 @@ _t = {
   old_name = nil,
   old = nil,
   modified = false,
-  default = {action = "hit", text = "", enable = true},
+  duplicated = false,
+  default = {action = "hit", text = "", enabled = true},
   true_f = function() return true end,
   hash_function = function(x) return x.name end,
   ui_manager = Clouds_Graphics.manager.EasyManager,
@@ -46,8 +47,18 @@ _t = {
   end,
 
   add_text = function(t, x)
+    local found = false
     x = xv.algo.table.clone(x)
-    table.insert(t, x)
+    for i, v in ipairs(t) do
+      if v.action == x.action and v.text == x.text then
+        v.enabled = x.enabled
+        x = v
+        found = true
+      end
+    end
+    if not found then
+      table.insert(t, x)
+    end
     if not t[x.action] then
       t[x.action] = {}
     end
@@ -94,7 +105,7 @@ _t = {
           v.enabled = not v.enabled
         end,
         {
-          szOption = "Delete", fnAction = function() _t.tSkillSpeak:remove_i(i) end,
+          szOption = _L("Delete"), fnAction = function() _t.tSkillSpeak:remove_i(i) end,
         },
       }
       for _, a in ipairs(_t.type_sets) do
@@ -147,9 +158,10 @@ _t = {
           szOption = "  " .. _L("Delete"),
           fnAction = function()
             _t.remove(v, k)
-            -- _t.current = _t.default
-            -- _t.current_name = ""
-            -- _t.update_text()
+            if _t.old == k then
+              _t.old = nil
+              _t.notify_modified()
+            end
           end
         })
       end
@@ -163,8 +175,11 @@ _t = {
   notify_modified = function()
     if _t.old then
       _t.modified = _t.old_name ~= _t.current_name or _t.old.text ~= _t.current.text or _t.old.action ~= _t.current.action
+    else
+      _t.modified = true
     end
     _t.ui_manager:Fetch("M_SkillSpeak_Save"):Enable(_t.old ~= nil and _t.modified)
+    _t.ui_manager:Fetch("M_SkillSpeak_Add"):Enable(_t.modified)
   end
 }
 
@@ -214,17 +229,17 @@ local function init()
       },{
         name = "M_SkillSpeak_TypeText", type = "Text", rect = pos:NextLine(nil, 120, 25), text = _L("SkillAction"), font = 140,
       },{
-        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Hit"), font = 140, default =  function() return _t.current.action == "hit" end, callback = function(n)
+        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(60, 25), text = _L("hit"), font = 140, default =  function() return _t.current.action == "hit" end, callback = function(n)
           _t.current.action = "hit"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
       },{
-        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Got"), font = 140, default = function() return _t.current.action == "got" end, callback = function(n)
+        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(60, 25), text = _L("got"), font = 140, default = function() return _t.current.action == "got" end, callback = function(n)
           _t.current.action = "got"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
       },{
-        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(60, 25), text = _L("Casting"), font = 140, default = function() return _t.current.action == "casting" end, callback = function(n)
+        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(60, 25), text = _L("casting"), font = 140, default = function() return _t.current.action == "casting" end, callback = function(n)
           _t.current.action = "casting"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
@@ -234,22 +249,23 @@ local function init()
           _t.notify_modified()
         end,
       },{
-        name = "M_SkillSpeak_Add", type = "Button", rect = pos:NextLine(nil, 80, 25), text = _L("Add"), font = 140, callback = function(n)
+        name = "M_SkillSpeak_Add", type = "Button", rect = pos:NextLine(nil, 80, 25), text = _L("Add"), font = 140, function() return not _t.duplicated and _t.modified end, callback = function(n)
           local n = _t.current_name
-          if not n then
-            return
-          end
-          if n:sub(1, 1) == "[" and n:sub(-1) == "]" then
+          if n and n:sub(1, 1) == "[" and n:sub(-1) == "]" then
             n = n:sub(2, -2)
           end
-          if n ~= "" then
-            local t = _t.tSkillSpeak:get(n)
-            if not t then
-              t = {name = n, hit = {}, got = {}, casting = {}}
-              _t.tSkillSpeak:push(t)
-            end
-            _t.old = _t.add_text(t, _t.current)
+          if not n or n == "" then
+            return
           end
+          _t.current_name = n
+          local t = _t.tSkillSpeak:get(n)
+          if not t then
+            t = {name = n, hit = {}, got = {}, casting = {}, enabled = true}
+            _t.tSkillSpeak:push(t)
+          end
+          _t.old = _t.add_text(t, _t.current)
+          _t.old_name = n
+          _t.notify_modified()
         end,
       },{
         name = "M_SkillSpeak_Save", type = "Button", rect = pos:Next(80, 25), text = _L("Save"), font = 140, enable = function() return _t.old and _t.modified end, callback = function(n)
@@ -260,6 +276,7 @@ local function init()
           if not n or n == "" then
             return
           end
+          _t.current_name = n
           local t = _t.tSkillSpeak:get(n)
           if not t then
             t = {name = n, hit = {}, got = {}, casting = {}, enabled = true}

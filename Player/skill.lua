@@ -19,10 +19,10 @@ _t = {
         elseif from == nil then
           action = "casting"
         end
-        _t.Output_verbose(--[[tag]]1000, string.format("%s %s(%d)", action, tostring(name), id))
+        _t.Output_verbose(--[[tag]]1001, string.format("%s %s(%d)", action, tostring(skill.szName), id))
         if t[action] and #t[action] ~= 0 then
           local i = math.floor(math.random()*(#t[action]))+1
-          _t.Output_verbose(--[[tag]]1001, tostring(t[action][i].text))
+          _t.Output_verbose(--[[tag]]1002, tostring(t[action][i].text))
         end
       end
     end

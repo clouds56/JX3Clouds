@@ -14,7 +14,19 @@ Clouds_Player.lang = _t
 _t.module.base.gen_all_msg(_t)
 
 _t.strings = {
-  BattleLog = "战斗记录",
-  BattleLogTitle = "战斗记录查看",
-  BattleLogOpen = "<打开>"
+  SkillMon = "技能喊话",
+  SkillSpeakTitle = "技能喊话",
+  Add = "添加",
+  Save = "保存",
+  Reset = "重置",
+  hit = "命中",
+  got = "被命中",
+  casting = "读条",
+  SkillName = "技能名",
+  SkillAction = "类型",
+  Setup = "设置",
+  SkillSpeakEnabled = "技能喊话开关",
+  New = "新建",
+  Modify = "修改",
+  Delete = "删除",
 }
