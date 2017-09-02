@@ -73,9 +73,11 @@ _t = {
   gen_msg = base.module_gen_msg(base),
   gen_all_msg = function(t)
     t.Output = t.module.base.gen_msg(t.NAME)
-    t.Output_verbose = function(...) t.Output(base.LEVEL.VERBOSE, ...) end
     t.Output_ex = function(...) t.Output(base.LEVEL.VERBOSEEX, ...) end
+    t.Output_verbose = function(...) t.Output(base.LEVEL.VERBOSE, ...) end
+    t.Output_info = function(...) t.Output(base.LEVEL.INFO, ...) end
     t.Output_warn = function(...) t.Output(base.LEVEL.WARNING, ...) end
+    t.Output_err = function(...) t.Output(base.LEVEL.ERROR, ...) end
   end,
 }
 

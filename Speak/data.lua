@@ -67,12 +67,13 @@ _t = {
   end,
 
   init_data = {
-    [enum.FORCE_TYPE.WAN_HUA] = { 101, 139 },
+    [enum.FORCE_TYPE.WAN_HUA] = { 139 },
   },
   initialize = function()
     _t.speak = xv.algo.ordered_hash.new(_t.hash_function, {})
     local me = GetClientPlayer()
-    for i, v in ipairs(_t.init_data[me.dwForceID] or {}) do
+    local init_data = LoadLUAData("interface/Clouds/Speak/default.jx3dat") or _t.init_data
+    for i, v in ipairs(init_data[me.dwForceID] or {}) do
       local skill = Table_GetSkill(v)
       if skill and skill.szName and skill.szName ~= "" then
         local desc = skill.szSpecialDesc

@@ -35,6 +35,52 @@ _t = {
     BA_DAO      = 20,     -- 霸刀内功
   }, -- me.GetSchoolList()
 
+  PLAYER_TALK_CHANNEL = {
+    INVALID = 0,
+    NEARBY = 1,
+    TEAM = 2,
+    RAID = 3,
+    BATTLE_FIELD = 4,
+    SENCE = 5,
+    WHISPER = 6,
+    FACE = 7,
+    GM_MESSAGE = 8,
+    LOCAL_SYS = 9,
+    GLOBAL_SYS = 10,
+    GM_ANNOUNCE = 11,
+    TO_TONG_GM_ANNOUNCE = 12,
+    TO_PLAYER_GM_ANNOUNCE = 13,
+    NPC_NEARBY = 14,
+    NPC_PARTY = 15,
+    NPC_SENCE = 16,
+    NPC_WHISPER = 17,
+    NPC_SAY_TO = 18,
+    NPC_YELL_TO = 19,
+    NPC_FACE = 20, -- emoji?
+    NPC_SAY_TO_ID = 21,
+    NPC_SAY_TO_CAMP = 22,
+    TONG = 23,
+    TONG_ALLIANCE = 24,
+    --TongAlliance = 24,
+    TONG_SYS = 25,
+    WORLD = 26,
+    FORCE = 27,
+    CAMP = 28,
+    MENTOR = 29,
+    FRIENDS = 30,
+    DEBUG_THREAT = 31,
+    IDENTITY = 34,
+    --CHANNEL1
+    --CHANNEL2
+    --CHANNEL3
+    --CHANNEL4
+    --CHANNEL5
+    --CHANNEL6
+    --CHANNEL7
+    --CHANNEL8
+    --DEBUG_THREAT
+  },
+
   as = function(n, t)
     if type(t) == "string" then
       t = _t[t]

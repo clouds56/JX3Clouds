@@ -3,11 +3,15 @@ local GetLogicFrameCount = GetLogicFrameCount
 local GetClientPlayer = GetClientPlayer
 local GetFormatText = GetFormatText
 local FireUIEvent = FireUIEvent
+local GetPlayer, GetNpc = GetPlayer, GetNpc
 local xv = Clouds.xv
 
 local _t
 _t = {
   NAME = "api",
+  GetObject = function(id)
+    return GetPlayer(id) or GetNpc(id)
+  end,
   Buff_ToString = function(self)
     local id, level, isbuff, endframe, index, stacknum, srcid, valid, stackable = unpack(self)
     local name, debuffheader = Table_GetBuffName(id, level) or "", isbuff and "" or "~"

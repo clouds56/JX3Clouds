@@ -152,38 +152,40 @@ local function init()
       {
         name = "M_SkillSpeak_Title", type = "Text", rect = pos:Next(80, 28), text = _L("SkillSpeakTitle"), font = 136,
       },{
-        name = "M_SkillSpeak_Enable", type = "CheckBox", rect = pos:NextLine(nil, 200, 25), text = _L("SkillSpeakEnabled"), font = 140, default = true_f,
+        name = "M_SkillSpeak_Enable", type = "CheckBox", rect = pos:NextLine(20, 200, 25), text = _L("SkillSpeakEnabled"), font = 140, default = true_f,
       },{
         name = "M_SkillSpeak_All", type = "ComboBox", rect = pos:Next(200, 25), text = _L("Setup"), font = 140, callback = function(m)
           _t.get_menu(m)
           PopupMenu(m)
         end,
       },{
-        name = "M_SkillSpeak_NameText", type = "Text", rect = pos:NextLine(nil, 120, 25), text = _L("SkillName"), font = 140,
+        name = "M_SkillSpeak_NameText", type = "Text", rect = pos:NextLine(nil, 200, 25), text = _L("SkillName"),
       },{
-        name = "M_SkillSpeak_Name", type = "Edit", rect = pos:Next(160, 25), font = 140, default =  function() return _t.current_name end, callback = function(n)
+        name = "M_SkillSpeak_Name", type = "Edit", rect = pos:Next(200, 25), default =  function() return _t.current_name end, callback = function(n)
           _t.current_name = n
           _t.notify_modified()
         end,
       },{
-        name = "M_SkillSpeak_TypeText", type = "Text", rect = pos:NextLine(nil, 120, 25), text = _L("SkillAction"), font = 140,
+        name = "M_SkillSpeak_TypeText", type = "Text", rect = pos:NextLine(nil, 150, 25), text = _L("SkillAction"),
       },{
-        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(60, 25), text = _L("hit"), font = 140, default =  function() return _t.current.action == "hit" end, callback = function(n)
+        name = "M_SkillSpeak_Type_hit", type = "RadioBox", rect = pos:Next(70, 25), text = _L("hit"), default =  function() return _t.current.action == "hit" end, callback = function(n)
           _t.current.action = "hit"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
       },{
-        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(60, 25), text = _L("got"), font = 140, default = function() return _t.current.action == "got" end, callback = function(n)
+        name = "M_SkillSpeak_Type_got", type = "RadioBox", rect = pos:Next(70, 25), text = _L("got"), default = function() return _t.current.action == "got" end, callback = function(n)
           _t.current.action = "got"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
       },{
-        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(60, 25), text = _L("casting"), font = 140, default = function() return _t.current.action == "casting" end, callback = function(n)
+        name = "M_SkillSpeak_Type_casting", type = "RadioBox", rect = pos:Next(70, 25), text = _L("casting"), default = function() return _t.current.action == "casting" end, callback = function(n)
           _t.current.action = "casting"
           _t.notify_modified()
         end, group = "SkillSpeak_type",
       },{
-        name = "M_SkillSpeak_Content", type = "Edit", rect = pos:NextLine(nil, 400, 60), font = 140, default = function() return _t.current.text end, callback = function(n)
+        name = "M_SkillSpeak_Tip", type = "Text", rect = pos:NextLine(nil, 400, 15), font = 220, text = _L("meIsMyName_uIsTargetName_sIsSkillName_"),
+      },{
+        name = "M_SkillSpeak_Content", type = "Edit", rect = pos:NextLine(-10, 400, 60), default = function() return _t.current.text end, callback = function(n)
           _t.current.text = n
           _t.notify_modified()
         end,

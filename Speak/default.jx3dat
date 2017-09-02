@@ -1,0 +1,19 @@
+local FORCE_TYPE = {
+  JIANG_HU  = 0 , -- 江湖
+  SHAO_LIN  = 1 , -- 少林
+  WAN_HUA   = 2 , -- 万花
+  TIAN_CE   = 3 , -- 天策
+  CHUN_YANG = 4 , -- 纯阳
+  QI_XIU    = 5 , -- 七秀
+  WU_DU     = 6 , -- 五毒
+  TANG_MEN  = 7 , -- 唐门
+  CANG_JIAN = 8 , -- 藏剑
+  GAI_BANG  = 9 , -- 丐帮
+  MING_JIAO = 10, -- 明教
+  CANG_YUN  = 21, -- 苍云
+  CHANG_GE  = 22, -- 长歌
+  BA_DAO    = 23, -- 霸刀
+}
+data = {
+  [FORCE_TYPE.WAN_HUA] = { 101, 137, 139 },
+}
