@@ -205,8 +205,8 @@ _t = {
   end,
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.record = _t
+_t.module = Clouds.Flags
+Clouds.Flags.record = _t
 _t.module.base.gen_all_msg(_t)
 
 _t.GetSkillRespondText=function(nRespondCode)
@@ -261,7 +261,7 @@ _t.GetSkillRespondText=function(nRespondCode)
   else return "UNABLE_CAST" end
 end
 
-Clouds_Base.event.Add("SYS_MSG", function()
+Clouds.Base.event.Add("SYS_MSG", function()
   local now = GetLogicFrameCount()
   local event = arg0
   if event == "UI_OME_SKILL_CAST_LOG" then _t.OnSkillCast(now, arg1, arg2, arg3)
@@ -279,7 +279,7 @@ Clouds_Base.event.Add("SYS_MSG", function()
   end
 end, "Clouds_Flags_record")
 
-Clouds_Base.event.Every(4, function()
+Clouds.Base.event.Every(4, function()
   if _t.module.data.current_compat then
     local now = GetLogicFrameCount()
     for i, v in pairs(_t.module.data.current_compat.data.players) do
@@ -288,11 +288,11 @@ Clouds_Base.event.Every(4, function()
   end
 end, "Clouds_Flags_record")
 
-Clouds_Base.event.Add("BUFF_UPDATE", function()
+Clouds.Base.event.Add("BUFF_UPDATE", function()
   _t.OnBuffUpdate(GetLogicFrameCount(), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 end, "Clouds_Flags_record")
 
-Clouds_Base.event.Add("LOADING_END", function()
+Clouds.Base.event.Add("LOADING_END", function()
   _t.Output_verbose(--[[tag]]0, "StartNewCompat")
   -- TODO: check in jjc
 --  _t.module.data:StartNewCompat()
@@ -303,9 +303,9 @@ _t.OnExit = function()
   _t.module.data:EndCompat()
 end
 
-Clouds_Base.event.Add("DISCONNECT", _t.OnExit, "Clouds_Flags_record")
-Clouds_Base.event.Add("GAME_EXIT", _t.OnExit, "Clouds_Flags_record")
-Clouds_Base.event.Add("PLAYER_EXIT_GAME", _t.OnExit, "Clouds_Flags_record")
+Clouds.Base.event.Add("DISCONNECT", _t.OnExit, "Clouds_Flags_record")
+Clouds.Base.event.Add("GAME_EXIT", _t.OnExit, "Clouds_Flags_record")
+Clouds.Base.event.Add("PLAYER_EXIT_GAME", _t.OnExit, "Clouds_Flags_record")
 
 --SYNC_ROLE_DATA_END
 

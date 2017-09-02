@@ -1,7 +1,7 @@
 local TimeToDate = TimeToDate
 
 local xv = {}
-Clouds_Base.xv = xv
+Clouds.xv = xv
 
 local _t
 _t = {
@@ -196,8 +196,8 @@ _t = {
   },
 }
 
-_t.module = Clouds_Base
-Clouds_Base.algorithm = _t
+_t.module = Clouds.Base
+Clouds.Base.algorithm = _t
 _t.module.base.gen_all_msg(_t)
 
 _t.object_to_string = function(o, mode, index)

@@ -1,14 +1,13 @@
 local OutputMessage = OutputMessage
 
-Clouds_Base.DEBUG = true
-Clouds_Base.LEVEL_CURRENT = Clouds_Base.LEVEL.VERBOSE
+Clouds.DEBUG = true
+Clouds.LEVEL_CURRENT = Clouds.Base.LEVEL.INFO
+Clouds.LEVEL_LOG = Clouds.Base.LEVEL.VERBOSE
 
 local _t = {}
+Clouds.debug = _t
 
-_t.module = Clouds_Base
-Clouds_Base.debug = _t
-
-_t.object_to_string = _t.module.algorithm.object_to_string
+_t.object_to_string = Clouds.Base.algorithm.object_to_string
 
 _t.var2str = function(...)
   local t = {...}
@@ -28,7 +27,7 @@ _t.out = function(...)
   print(s)
 end
 
-Clouds_Base.xv.debug = {
+Clouds.xv.debug = {
   object_to_string = _t.object_to_string,
   var2str = _t.var2str,
   dumpstr = _t.dumpstr,
@@ -39,11 +38,11 @@ Clouds_Base.xv.debug = {
 --   out(arg0)
 -- end)
 
-if _t.module.DEBUG then
+if Clouds.DEBUG then
   _G._var2str = _t.var2str
   _G._dumpstr = _t.dumpstr
   _G.out = _t.out
   TraceButton_AppendAddonMenu( { function()
-    return {{szOption = "Reload", fnAction = function() _t.module.api.ReloadUIAddon() end}}
+    return {{szOption = "Reload", fnAction = function() Clouds.Base.api.ReloadUIAddon() end}}
   end } )
 end

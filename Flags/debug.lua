@@ -1,4 +1,4 @@
-if not Clouds_Flags.DEBUG then
+if not Clouds.Flags.DEBUG then
   return
 end
 
@@ -11,6 +11,6 @@ _t = {
   end
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.debug = _t
+_t.module = Clouds.Flags
+Clouds.Flags.debug = _t
 _t.module.base.gen_all_msg(_t)

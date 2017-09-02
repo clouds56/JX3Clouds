@@ -1,4 +1,4 @@
-local xv = Clouds_Base.xv
+local xv = Clouds.xv
 
 local _t
 _t = {
@@ -66,7 +66,7 @@ _t = {
       info.dbname = xv.algo.timestamp.tostring(info.date, "%yyyy%MM%dd")
     end
     info.id = _t.db:Execute("SELECT lower(hex(randomblob(16))) AS compat_id")[1].compat_id
-    Clouds_Base.xv.debug.out(info.id, info.dbname)
+    -- Clouds.Base.xv.debug.out(info.id, info.dbname)
     info.db_bind = _t.init_dbs(info.dbname)
     return info
   end,
@@ -94,11 +94,11 @@ _t = {
   end
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.sql = _t
+_t.module = Clouds.Flags
+Clouds.Flags.sql = _t
 _t.module.base.gen_all_msg(_t)
 
-Clouds_Base.event.Add("DISCONNECT", function()
+Clouds.Base.event.Add("DISCONNECT", function()
   _t.Output_verbose(--[[tag]]0, "EndCompat")
   if _t.db then
     _t.db:Release()

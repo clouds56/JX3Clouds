@@ -1,3 +1,6 @@
+if Clouds then return end
+_G.Clouds = {}
+
 local Trace = Trace
 local OutputMessage = OutputMessage
 
@@ -9,6 +12,9 @@ local _level = {
   WARNING = 30,
   ERROR = 40,
 }
+_G.Clouds.DEBUG = false
+_G.Clouds.LEVEL_CURRENT = _level.ERROR
+_G.Clouds.LEVEL_LOG = _level.WARNING
 
 _level.leveltostring = function(level)
   if level == _level.VERBOSEEX then
@@ -29,10 +35,10 @@ end
 local base
 base = {
   NAME = "Clouds_Base",
-  DEBUG = false,
+  DEBUG = Clouds.DEBUG,
   LEVEL = _level,
-  LEVEL_CURRENT = _level.WARNING,
-  LEVEL_LOG = _level.VERBOSE,
+  LEVEL_CURRENT = Clouds.LEVEL_CURRENT,
+  LEVEL_LOG = Clouds.LEVEL_LOG,
 
   tag_base = {},
   decode_tag = function(tag)
@@ -60,11 +66,11 @@ base = {
     end
   end,
 }
-_G.Clouds_Base = base
+Clouds.Base = base
 
 local _t
 _t = {
-  gen_msg = Clouds_Base.module_gen_msg(Clouds_Base),
+  gen_msg = base.module_gen_msg(base),
   gen_all_msg = function(t)
     t.Output = t.module.base.gen_msg(t.NAME)
     t.Output_verbose = function(...) t.Output(t.module.LEVEL.VERBOSE, ...) end
@@ -75,8 +81,8 @@ _t = {
 
 local tag_basestring = "0123456789abcdefghijklmnopqrstuvwxyz"
 for i = 1, 36 do
-  Clouds_Base.tag_base[i] = tag_basestring:sub(i, i)
+  base.tag_base[i] = tag_basestring:sub(i, i)
 end
 
-_t.module = Clouds_Base
-Clouds_Base.base = _t
+_t.module = Clouds.Base
+Clouds.Base.base = _t

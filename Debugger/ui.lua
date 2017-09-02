@@ -1,6 +1,6 @@
 local CreateAddon = EasyUI.CreateAddon
-local xv = Clouds_Base.xv
-local out = Clouds_Base.xv.debug.out
+local xv = Clouds.xv
+local out = Clouds.debug.out
 
 local _t
 _t = {
@@ -95,8 +95,8 @@ function _t.panel:OpenPanel()
   end
 end
 
-_t.module = Clouds_Debugger
-Clouds_Debugger.ui = _t
+_t.module = Clouds.Debugger
+Clouds.Debugger.ui = _t
 _t.module.base.gen_all_msg(_t)
 
-Clouds_Base.event.Add("LOADING_END", _t.init, "Clouds_Debugger_REPL")
+Clouds.Base.event.Add("LOADING_END", _t.init, "Clouds_Debugger_REPL")

@@ -3,7 +3,7 @@ local GetLogicFrameCount = GetLogicFrameCount
 local GetClientPlayer = GetClientPlayer
 local GetFormatText = GetFormatText
 local FireUIEvent = FireUIEvent
-local xv = Clouds_Base.xv
+local xv = Clouds.xv
 
 local _t
 _t = {
@@ -63,10 +63,9 @@ _t = {
   end,
 }
 
-_t.module = Clouds_Base
-Clouds_Base.api = _t
-_t.Output = Clouds_Base.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
+_t.module = Clouds.Base
+Clouds.Base.api = _t
+_t.module.base.gen_all_msg(_t)
 
 xv.api = {
   GetBuffList = _t.GetBuffList,

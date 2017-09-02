@@ -1,15 +1,13 @@
-local _L = Clouds_Graphics.lang.L
+local _L = Clouds.Graphics.lang.L
 
 local _t
 _t = {
   name = "EasyManager",
 }
 
-_t.module = Clouds_Graphics
-Clouds_Graphics.manager = _t
-_t.Output = Clouds_Graphics.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
-_t.Output_ex = function(...) _t.Output(_t.module.LEVEL.VERBOSEEX, ...) end
+_t.module = Clouds.Graphics
+Clouds.Graphics.manager = _t
+_t.module.base.gen_all_msg(_t)
 
 local EasyManager = EasyUI.CreateAddon("CloudsEasyManager")
 EasyManager:BindEvent("OnFrameDestroy", "OnDestroy")

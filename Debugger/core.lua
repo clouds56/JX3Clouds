@@ -1,5 +1,5 @@
-local xv = Clouds_Base.xv
-local out = Clouds_Base.xv.debug.out
+local xv = Clouds.xv
+local out = Clouds.debug.out
 
 local _t
 _t = {
@@ -34,7 +34,7 @@ _t.RegisterRunCode = function(_this, index)
     end
     _t.outbox[_t.outlast] = result[1]
     _t.outbox[_t.outformat:format(index)] = result[1]
-    local hh, s = self:GetParent(), Clouds_Base.debug.var2str(unpack(result))
+    local hh, s = self:GetParent(), Clouds.debug.var2str(unpack(result))
     hh:AppendItemFromString(xv.api.GetFormatText(string.format("Out[%d]: %s\n", index, s), 0x00FFFF, nil, nil, "out"))
     hh:resize()
     subIndex = subIndex + 1
@@ -78,15 +78,15 @@ function _t.RenderCode(hh, code, callbacks)
   end
   local codeExec = head .. ("\nreturn " .. rtn)
   hh:AppendItemFromString(xv.api.GetFormatText(string.format("In [%d]: %s", _t.index, codeTrim), 0xFFFFFF, 0,
-      string.format("local func=function() %s end\nClouds_Debugger.core.RegisterCode(this, %d, %s, func)", codeExec, _t.index, EncodeComponentsString(code)), "in"))
+      string.format("local func=function() %s end\nClouds.Debugger.core.RegisterCode(this, %d, %s, func)", codeExec, _t.index, EncodeComponentsString(code)), "in"))
   hh:AppendItemFromString(xv.api.GetFormatText(" *#* ", 0x0000FF, 771,
-      string.format('Clouds_Debugger.core.RegisterRunCode(this, %d)', _t.index), "code"))
+      string.format('Clouds.Debugger.core.RegisterRunCode(this, %d)', _t.index), "code"))
   hh:AppendItemFromString(xv.api.GetFormatText(" *!* ", 0xFF00FF, 771,
-      string.format('Clouds_Debugger.core.RegisterClearCode(this, %d)', _t.index), "code"))
+      string.format('Clouds.Debugger.core.RegisterClearCode(this, %d)', _t.index), "code"))
   hh:AppendItemFromString(xv.api.GetFormatText(" *@* ", 0xFF00FF, 771,
-      string.format('Clouds_Debugger.core.RegisterEditCode(this, %d)', _t.index), "code"))
+      string.format('Clouds.Debugger.core.RegisterEditCode(this, %d)', _t.index), "code"))
   hh:AppendItemFromString(xv.api.GetFormatText("*X*\n", 0xFF0000, 771,
-      string.format('Clouds_Debugger.core.RegisterRemoveCode(this, %d)', _t.index), "code"))
+      string.format('Clouds.Debugger.core.RegisterRemoveCode(this, %d)', _t.index), "code"))
   hh.resize = callbacks.resize
   hh.remove = callbacks.remove
   hh.edit = callbacks.edit
@@ -99,8 +99,8 @@ function _t.RenderCode(hh, code, callbacks)
   _t.index = _t.index + 1
 end
 
-_t.module = Clouds_Debugger
-Clouds_Debugger.core = _t
+_t.module = Clouds.Debugger
+Clouds.Debugger.core = _t
 _t.module.base.gen_all_msg(_t)
 
 if _t.module.DEBUG then

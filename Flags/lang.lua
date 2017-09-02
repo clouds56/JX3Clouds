@@ -9,8 +9,8 @@ _t = {
   end,
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.lang = _t
+_t.module = Clouds.Flags
+Clouds.Flags.lang = _t
 _t.module.base.gen_all_msg(_t)
 
 _t.strings = {

@@ -11,7 +11,8 @@ local GetClientPlayer = GetClientPlayer
 local GetCurrentTime = GetCurrentTime
 local GetLogicFrameCount = GetLogicFrameCount
 local FireUIEvent = FireUIEvent
-local xv = Clouds_Base.xv
+local xv = Clouds.xv
+local object_to_string = Clouds.Base.algorithm.object_to_string
 
 local _t
 _t = {
@@ -257,10 +258,10 @@ _t = {
     },
   },
   stringify = function(s)
-    return Clouds_Base.xv.debug.object_to_string(s, {oneline=true})
+    return object_to_string(s, {oneline=true})
   end
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.data = _t
+_t.module = Clouds.Flags
+Clouds.Flags.data = _t
 _t.module.base.gen_all_msg(_t)

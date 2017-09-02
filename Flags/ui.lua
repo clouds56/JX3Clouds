@@ -1,6 +1,7 @@
-local _L = Clouds_Flags.lang.L
+local _L = Clouds.Flags.lang.L
 local CreateAddon = EasyUI.CreateAddon
-local xv = Clouds_Base.xv
+local Graphics = Clouds.Graphics
+local xv = Clouds.xv
 
 local OutputSkillTip, OutputBuffTip, HideTip = OutputSkillTip, OutputBuffTip, HideTip
 
@@ -10,11 +11,9 @@ _t = {
   szIni = "interface/Clouds/Flags/ui.ini",
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.ui = _t
-_t.Output = Clouds_Flags.base.gen_msg(_t.NAME)
-_t.Output_verbose = function(...) _t.Output(_t.module.LEVEL.VERBOSE, ...) end
-_t.Output_ex = function(...) _t.Output(_t.module.LEVEL.VERBOSEEX, ...) end
+_t.module = Clouds.Flags
+Clouds.Flags.ui = _t
+_t.module.base.gen_all_msg(_t)
 
 _t.BattleLog = CreateAddon("Clouds_Flags_BattleLog")
 
@@ -105,7 +104,7 @@ _t.RenderBattleLog = function(compat, tp, value)
   local ss = {}
   table.insert(ss, xv.api.GetFormatText(string.format("[%s] ", xv.algo.frame.tostring(value.time, 2)), 0xFFFF00))
   table.insert(ss, xv.api.GetFormatText(tp..": ", {0xFFFFFF,10}, 515,
-    'Clouds_Flags.ui.BattleLogRegisterPrefix(this)', "type"))
+    'Clouds.Flags.ui.BattleLogRegisterPrefix(this)', "type"))
   if tp == "skill" or tp == "buff" then
     if value.act ~= _t.module.data.ACTION_TYPE.SKILL_LOG then
       local src = compat:GetPlayer(value.src)
@@ -119,10 +118,10 @@ _t.RenderBattleLog = function(compat, tp, value)
 
     if tp == "skill" then
       table.insert(ss, xv.api.GetFormatText(string.format("%s", _t.SkillToString(value.skill)), 0x00FFFF, 256,
-        string.format('Clouds_Flags.ui.BattleLogRegisterSkill(this,%d,%d)', value.skill.id, value.skill.level), "skill"))
+        string.format('Clouds.Flags.ui.BattleLogRegisterSkill(this,%d,%d)', value.skill.id, value.skill.level), "skill"))
     elseif tp == "buff" then
       table.insert(ss, xv.api.GetFormatText(string.format("%s", _t.BuffToString(value.buff)), value.buff.type ~= false and 0x00FF00 or 0xFF0000, 256,
-        string.format('Clouds_Flags.ui.BattleLogRegisterBuff(this,%d,%d)', value.buff.id, value.buff.level), "buff"))
+        string.format('Clouds.Flags.ui.BattleLogRegisterBuff(this,%d,%d)', value.buff.id, value.buff.level), "buff"))
       if value.act == _t.module.data.ACTION_TYPE.BUFF_ADD then
         table.insert(ss, xv.api.GetFormatText(" +++ ", value.buff.type~=false and 0x00FF00 or 0xFF0000))
       elseif value.act == _t.module.data.ACTION_TYPE.BUFF_REMOVE then
@@ -259,7 +258,6 @@ function _t.BattleLog:OpenPanel()
 end
 
 local function init()
-  local Graphics = _G.Clouds_Graphics
   _t.Output_verbose(--[[tag]]0, "Hello Graphics => %s", tostring(Graphics))
   local tConfig = {
     szName = "BattleLog",
@@ -282,7 +280,7 @@ local function init()
   Graphics.manager.EasyManager:RegisterPanel(tConfig)
 end
 
-local Base = Clouds_Base
+local Base = Clouds.Base
 Base.event.Add("LOGIN_GAME", init, "Clouds_Flags_ui")
 
 Base.event.Add("LOADING_END", function()

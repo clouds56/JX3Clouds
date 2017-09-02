@@ -1,6 +1,6 @@
 require "test_base"
 require "algorithm"
-local xv = Clouds_Base.xv
+local xv = Clouds.xv
 local out = function(...) print(xv.object_to_string(...)) end
 
 assert_equals(type(xv), "table")

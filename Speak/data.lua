@@ -1,5 +1,6 @@
-local xv = Clouds_Base.xv
-local enum = Clouds_Base.enum
+local event = Clouds.Base.event
+local xv = Clouds.xv
+local enum = Clouds.Base.enum
 
 local _t
 _t = {
@@ -71,6 +72,7 @@ _t = {
   initialize = function()
     _t.speak = xv.algo.ordered_hash.new(_t.hash_function, {})
     local me = GetClientPlayer()
+    xv.debug.out(_t.init_data[me.dwForceID])
     for i, v in ipairs(_t.init_data[me.dwForceID] or {}) do
       local skill = Table_GetSkill(v)
       if skill and skill.szName and skill.szName ~= "" then
@@ -85,11 +87,11 @@ _t = {
   end
 }
 
-_t.module = Clouds_Player
-Clouds_Player.data = _t
+_t.module = Clouds.Speak
+Clouds.Speak.data = _t
 _t.module.base.gen_all_msg(_t)
 
-Clouds_Base.event.Add("LOADING_END", function()
+event.Add("LOADING_END", function()
   if _t.loaded == true then
     return
   end

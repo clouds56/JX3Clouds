@@ -47,6 +47,6 @@ _t = {
   end,
 }
 
-_t.module = Clouds_Base
-Clouds_Base.enum = _t
+_t.module = Clouds.Base
+Clouds.Base.enum = _t
 _t.Output = _t.module.base.gen_msg(_t.NAME)

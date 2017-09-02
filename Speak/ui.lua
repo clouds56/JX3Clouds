@@ -1,8 +1,8 @@
-local _L = Clouds_Player.lang.L
+local _L = Clouds.Speak.lang.L
 local CreateAddon = EasyUI.CreateAddon
-local xv = Clouds_Base.xv
+local xv = Clouds.xv
 local NewPos = EasyUI.NewPos
-local data = Clouds_Player.data
+local data = Clouds.Speak.data
 
 local PopupMenu = PopupMenu
 
@@ -18,7 +18,7 @@ _t = {
   duplicated = false,
   default = {action = "hit", text = "", enabled = true},
   true_f = function() return true end,
-  ui_manager = Clouds_Graphics.manager.EasyManager,
+  ui_manager = Clouds.Graphics.manager.EasyManager,
 
   reset = function()
       _t.current = xv.algo.table.clone(_t.default)
@@ -134,9 +134,9 @@ _t = {
 
 _t.reset()
 
-_t.module = Clouds_Player
-Clouds_Player.ui = _t
-Clouds_Player.base.gen_all_msg(_t)
+_t.module = Clouds.Speak
+Clouds.Speak.ui = _t
+_t.module.base.gen_all_msg(_t)
 
 local empty_f = function() end
 local true_f = function() return true end
@@ -250,7 +250,7 @@ local function init()
   _t.ui_manager:RegisterPanel(tSkillMonConfig)
 end
 
-local Base = Clouds_Base
+local Base = Clouds.Base
 Base.event.Add("LOGIN_GAME", init, "Clouds_Player_ui")
 
 Base.event.Add("LOADING_END", function()

@@ -39,5 +39,5 @@ _t = {
   end,
 }
 
-_t.module = Clouds_Flags
-Clouds_Flags.view = _t
+_t.module = Clouds.Flags
+Clouds.Flags.view = _t
