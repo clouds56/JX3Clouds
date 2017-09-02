@@ -72,7 +72,6 @@ _t = {
   initialize = function()
     _t.speak = xv.algo.ordered_hash.new(_t.hash_function, {})
     local me = GetClientPlayer()
-    xv.debug.out(_t.init_data[me.dwForceID])
     for i, v in ipairs(_t.init_data[me.dwForceID] or {}) do
       local skill = Table_GetSkill(v)
       if skill and skill.szName and skill.szName ~= "" then
@@ -89,7 +88,7 @@ _t = {
 
 _t.module = Clouds.Speak
 Clouds.Speak.data = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 event.Add("LOADING_END", function()
   if _t.loaded == true then

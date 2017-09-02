@@ -96,7 +96,7 @@ _t = {
 
 _t.module = Clouds.Flags
 Clouds.Flags.sql = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 Clouds.Base.event.Add("DISCONNECT", function()
   _t.Output_verbose(--[[tag]]0, "EndCompat")

@@ -2,7 +2,6 @@ local graphics
 graphics = {
   NAME = "Clouds_Graphics",
   DEBUG = Clouds.DEBUG,
-  LEVEL = Clouds.LEVEL,
   LEVEL_CURRENT = Clouds.LEVEL_CURRENT,
   LEVEL_LOG = Clouds.LEVEL_LOG,
 }
@@ -10,6 +9,7 @@ _G.Clouds.Graphics = graphics
 
 local _t
 _t = {
+  NAME = "base",
   gen_msg = Clouds.Base.module_gen_msg(graphics),
 }
 

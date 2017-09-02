@@ -10,7 +10,7 @@ _t = {
 
 _t.module = Clouds.Graphics
 Clouds.Graphics.draw = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 _t.GetHandle = function(name)
   if not _t.ui or not _t.ui.handle then return end

@@ -7,7 +7,7 @@ _t = {
 
 _t.module = Clouds.Graphics
 Clouds.Graphics.manager = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 local EasyManager = EasyUI.CreateAddon("CloudsEasyManager")
 EasyManager:BindEvent("OnFrameDestroy", "OnDestroy")

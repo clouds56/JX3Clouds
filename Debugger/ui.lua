@@ -97,6 +97,6 @@ end
 
 _t.module = Clouds.Debugger
 Clouds.Debugger.ui = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 Clouds.Base.event.Add("LOADING_END", _t.init, "Clouds_Debugger_REPL")

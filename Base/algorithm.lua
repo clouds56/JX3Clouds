@@ -198,7 +198,7 @@ _t = {
 
 _t.module = Clouds.Base
 Clouds.Base.algorithm = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 _t.object_to_string = function(o, mode, index)
   index = index or 0

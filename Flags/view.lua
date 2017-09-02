@@ -41,3 +41,4 @@ _t = {
 
 _t.module = Clouds.Flags
 Clouds.Flags.view = _t
+Clouds.Base.base.gen_all_msg(_t)

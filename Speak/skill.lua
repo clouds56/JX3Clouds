@@ -45,7 +45,7 @@ _t = {
 
 _t.module = Clouds.Speak
 Clouds.Speak.skill = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 event.Add("SYS_MSG", function()
   local now = GetLogicFrameCount()

@@ -17,7 +17,7 @@ _t = {
 
 _t.module = Clouds.Base
 Clouds.Base.event = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 --- Generate system monitor that call all functions in monitors[event]
 --- @param(event): system event name, if begin with MESSAGE, call GenNewMsgMonitor additionally

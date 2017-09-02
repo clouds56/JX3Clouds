@@ -1,6 +1,5 @@
 local _L = Clouds.Flags.lang.L
 local CreateAddon = EasyUI.CreateAddon
-local Graphics = Clouds.Graphics
 local xv = Clouds.xv
 
 local OutputSkillTip, OutputBuffTip, HideTip = OutputSkillTip, OutputBuffTip, HideTip
@@ -13,7 +12,7 @@ _t = {
 
 _t.module = Clouds.Flags
 Clouds.Flags.ui = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 _t.BattleLog = CreateAddon("Clouds_Flags_BattleLog")
 
@@ -277,7 +276,7 @@ local function init()
       }
     },
   }
-  Graphics.manager.EasyManager:RegisterPanel(tConfig)
+  Clouds.Graphics.manager.EasyManager:RegisterPanel(tConfig)
 end
 
 local Base = Clouds.Base

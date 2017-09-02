@@ -207,7 +207,7 @@ _t = {
 
 _t.module = Clouds.Flags
 Clouds.Flags.record = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 _t.GetSkillRespondText=function(nRespondCode)
   if nRespondCode == SKILL_RESULT_CODE.INVALID_CAST_MODE then return "INVALID_CAST_MODE"

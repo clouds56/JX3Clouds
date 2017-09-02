@@ -101,7 +101,7 @@ end
 
 _t.module = Clouds.Debugger
 Clouds.Debugger.core = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 if _t.module.DEBUG then
   _G["_dout"] = _t.results

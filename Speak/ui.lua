@@ -136,7 +136,7 @@ _t.reset()
 
 _t.module = Clouds.Speak
 Clouds.Speak.ui = _t
-_t.module.base.gen_all_msg(_t)
+Clouds.Base.base.gen_all_msg(_t)
 
 local empty_f = function() end
 local true_f = function() return true end
