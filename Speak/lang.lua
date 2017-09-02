@@ -14,6 +14,7 @@ Clouds.Speak.lang = _t
 Clouds.Base.base.gen_all_msg(_t)
 
 _t.strings = {
+  _ = "，",
   SkillMon = "技能喊话",
   SkillSpeakTitle = "技能喊话",
   Add = "添加",

@@ -1,3 +1,4 @@
+local _L = Clouds.Speak.lang.L
 local event = Clouds.Base.event
 local xv = Clouds.xv
 local enum = Clouds.Base.enum
@@ -81,7 +82,7 @@ _t = {
           desc = skill.szName
         end
         local t = _t.get(skill.szName, true)
-        _t.add_text(t, {action = "hit", text = desc, enabled = true})
+        _t.add_text(t, {action = "hit", text = "$u" .. _L("_") .. desc, enabled = true})
       end
     end
   end
