@@ -2,6 +2,7 @@ local _L = Clouds_Player.lang.L
 local CreateAddon = EasyUI.CreateAddon
 local xv = Clouds_Base.xv
 local NewPos = EasyUI.NewPos
+local data = Clouds_Player.data
 
 local PopupMenu = PopupMenu
 
@@ -17,10 +18,7 @@ _t = {
   duplicated = false,
   default = {action = "hit", text = "", enabled = true},
   true_f = function() return true end,
-  hash_function = function(x) return x.name end,
   ui_manager = Clouds_Graphics.manager.EasyManager,
-
-  type_sets = { "hit", "got", "casting" },
 
   reset = function()
       _t.current = xv.algo.table.clone(_t.default)
@@ -29,62 +27,13 @@ _t = {
       _t.old_name = nil
   end,
 
-  rehash = function(v)
-    if not v then
-      for i, v in ipairs(_t.tSkillSpeak) do
-        _t.rehash(v)
-      end
-    else
-      for _, k in ipairs(v) do
-        if k.enabled == true then
-          if not v[k.action] then
-            v[k.action] = {}
-          end
-          table.insert(v[k.action], k)
-        end
-      end
-    end
-  end,
-
-  add_text = function(t, x)
-    local found = false
-    x = xv.algo.table.clone(x)
-    for i, v in ipairs(t) do
-      if v.action == x.action and v.text == x.text then
-        v.enabled = x.enabled
-        x = v
-        found = true
-      end
-    end
-    if not found then
-      table.insert(t, x)
-    end
-    if not t[x.action] then
-      t[x.action] = {}
-    end
-    if x.enabled then
-      table.insert(t[x.action], x)
-    end
-    return x
-  end,
-
   update_text = function()
     _t.ui_manager:Fetch("M_SkillSpeak_Name"):SetText(_t.current_name)
     _t.ui_manager:Fetch("M_SkillSpeak_Content"):SetText(_t.current.text)
-    for i, v in ipairs(_t.type_sets) do
+    for i, v in ipairs(data.type_sets) do
       _t.ui_manager:Fetch("M_SkillSpeak_Type_" .. v):Check(_t.current.action == v)
     end
     _t.notify_modified()
-  end,
-
-  remove = function(v, k)
-    xv.algo.table.remove_v(v, k)
-    for _, t in ipairs(_t.type_sets) do
-      xv.algo.table.remove_v(v[t] or {}, k)
-    end
-    if #v == 0 then
-      _t.tSkillSpeak:remove(v.name)
-    end
   end,
 
   get_menu = function(m)
@@ -96,7 +45,7 @@ _t = {
       _t.update_text()
     end})
     table.insert(m, { bDevide = true }) -- Divide
-    for i, v in ipairs(_t.tSkillSpeak) do
+    for i, v in ipairs(data.speak) do
       local menuSkill = {
         szOption = v.name,
         bCheck = true,
@@ -105,10 +54,10 @@ _t = {
           v.enabled = not v.enabled
         end,
         {
-          szOption = _L("Delete"), fnAction = function() _t.tSkillSpeak:remove_i(i) end,
+          szOption = _L("Delete"), fnAction = function() data.speak:remove_i(i) end,
         },
       }
-      for _, a in ipairs(_t.type_sets) do
+      for _, a in ipairs(data.type_sets) do
         if #v >= 5 then
           table.insert(menuSkill, { bDevide = true }) -- Divide
           table.insert(menuSkill, { szOption = _L(a), fnDisable = _t.true_f })
@@ -157,7 +106,7 @@ _t = {
         table.insert(menuSpeak, {
           szOption = "  " .. _L("Delete"),
           fnAction = function()
-            _t.remove(v, k)
+            data.remove(v, k)
             if _t.old == k then
               _t.old = nil
               _t.notify_modified()
@@ -184,13 +133,6 @@ _t = {
 }
 
 _t.reset()
-_t.tSkillSpeak = xv.algo.ordered_hash.new(_t.hash_function, {
-  {name = "Test1", {text = "Hello", action = "hit", enabled = true},},
-  {name = "Test2", },
-  {name = "Test3", },
-  {name = "Test4", },
-})
-_t.rehash()
 
 _t.module = Clouds_Player
 Clouds_Player.ui = _t
@@ -209,9 +151,6 @@ local function init()
     tWidget = {
       {
         name = "M_SkillSpeak_Title", type = "Text", rect = pos:Next(80, 28), text = _L("SkillSpeakTitle"), font = 136,
-      },
-      {
-        name = "M_SkillSpeak_Options", type = "Text", rect = pos:NextLine(30, 100, 25), text = "Options", font = 140,
       },{
         name = "M_SkillSpeak_Enable", type = "CheckBox", rect = pos:NextLine(nil, 200, 25), text = _L("SkillSpeakEnabled"), font = 140, default = true_f,
       },{
@@ -258,12 +197,8 @@ local function init()
             return
           end
           _t.current_name = n
-          local t = _t.tSkillSpeak:get(n)
-          if not t then
-            t = {name = n, hit = {}, got = {}, casting = {}, enabled = true}
-            _t.tSkillSpeak:push(t)
-          end
-          _t.old = _t.add_text(t, _t.current)
+          local t = data.get(n, true)
+          _t.old = data.add_text(t, _t.current)
           _t.old_name = n
           _t.notify_modified()
         end,
@@ -277,17 +212,13 @@ local function init()
             return
           end
           _t.current_name = n
-          local t = _t.tSkillSpeak:get(n)
-          if not t then
-            t = {name = n, hit = {}, got = {}, casting = {}, enabled = true}
-            _t.tSkillSpeak:push(t)
-          end
+          local t = data.get(n, true)
           if n ~= _t.old_name then
-            local old_t = _t.tSkillSpeak:get(_t.old_name)
+            local old_t = data.get(_t.old_name)
             if old_t then
-              _t.remove(old_t, _t.old)
+              data.remove(old_t, _t.old)
             end
-            _t.old = _t.add_text(t, _t.current)
+            _t.old = data.add_text(t, _t.current)
             _t.old_name = n
           else
             if xv.algo.table.in_(t, _t.old) then
@@ -303,7 +234,7 @@ local function init()
                 end
               end
             else
-              _t.old = _t.add_text(t, _t.current)
+              _t.old = data.add_text(t, _t.current)
             end
           end
           _t.notify_modified()

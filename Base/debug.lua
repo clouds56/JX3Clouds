@@ -43,4 +43,7 @@ if _t.module.DEBUG then
   _G._var2str = _t.var2str
   _G._dumpstr = _t.dumpstr
   _G.out = _t.out
+  TraceButton_AppendAddonMenu( { function()
+    return {{szOption = "Reload", fnAction = function() _t.module.api.ReloadUIAddon() end}}
+  end } )
 end

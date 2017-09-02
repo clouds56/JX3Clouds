@@ -3,13 +3,13 @@ _t = {
   NAME = "skill",
 
   SkillSpeak = function(from, to, id, level)
-    if _t.module.ui and _t.module.ui.tSkillSpeak then
+    if _t.module.data and _t.module.data.speak then
       local me = GetClientPlayer()
       local skill = Table_GetSkill(id, level)
       if not skill or skill.szSpecialDesc == "" then
         return
       end
-      local t = _t.module.ui.tSkillSpeak:get(skill.szName)
+      local t = _t.module.data.speak:get(skill.szName)
       local action = ""
       if t then
         if from == me.dwID then
@@ -29,7 +29,7 @@ _t = {
   end,
 
   OnSkillCast = function(event, now, from, to, id, level)
-    _t.Output_verbose(--[[tag]]1000, string.format("[%s] %d casting (%d, %d) to %d", tostring(event), tostring(from), tostring(id), tostring(level), tostring(to)))
+    -- _t.Output_verbose(--[[tag]]1000, string.format("[%s] %d casting (%d, %d) to %d", tostring(event), tostring(from), tostring(id), tostring(level), tostring(to)))
     if not _t.cast_list[from] then
       _t.cast_list[from] = {}
     end

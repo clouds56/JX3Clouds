@@ -98,6 +98,8 @@ local event = {
   end
 }
 
+RegisterEvent("LOADING_ENDING", OnInit) -- first time
+
 RegisterEvent('GAME_EXIT', OnExit)
 RegisterEvent('PLAYER_EXIT_GAME', OnExit)
 RegisterEvent('RELOAD_UI_ADDON_BEGIN', OnExit)
