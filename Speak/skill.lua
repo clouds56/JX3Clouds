@@ -7,6 +7,7 @@ local _t
 _t = {
   NAME = "skill",
 
+  Talk = api.GetTalk(120, PLAYER_TALK_CHANNEL.RAID),
   SkillSpeak = function(from, to, id, level)
     if _t.module.data and _t.module.data.speak then
       local me = GetClientPlayer()
@@ -16,24 +17,28 @@ _t = {
       end
       local t = _t.module.data.speak:get(skill.szName)
       local action = ""
-      if from == me.dwID then
+      if from == nil then
+        action = "casting"
+      elseif from == me.dwID then
         action = "hit"
       elseif to == me.dwID then
         action = "got"
-      elseif from == nil then
-        action = "casting"
       end
       if t then
         _t.Output_verbose(--[[tag]]1001, string.format("%s %s(%d)", action, tostring(skill.szName), id))
         if t[action] and #t[action] ~= 0 then
           local me = GetClientPlayer()
-          local tar = api.GetObject(to) or {szName = _L("UnknownTarget")}
+          local tar = api.GetObject(to) or {}
+          local tar_name = tar.szName
+          if not tar_name or tar_name == "" then
+            tar_name = _L("UnknownTarget")
+          end
           local i = math.floor(math.random()*(#t[action]))+1
-          local text = t[action][i].text:gsub("$$", "$$|"):gsub("$u", tostring(tar.szName)):gsub("$me", tostring(me.szName)):gsub("$s", skill.szName):gsub("$$|", "$")
+          local text = t[action][i].text:gsub("$$", "$$||"):gsub("$u", tostring(tar_name)):gsub("$me", tostring(me.szName)):gsub("$s", skill.szName):gsub("$$||", "$")
           _t.Output_verbose(--[[tag]]1002, text)
-          local result = me.Talk(enum.PLAYER_TALK_CHANNEL.RAID, 0, {{ type = "text", text = text }})
+          local result = _t.Talk({{ type = "text", text = text }})
           if result == false then
-            _t.Output_warn(--[[tag]]3000, "talk failed")
+            _t.Output_info(--[[tag]]2000, "talk failed")
           end
         end
       end
@@ -68,6 +73,7 @@ event.Add("SYS_MSG", function()
     local _, target
     if me.dwID == arg1 then
       _, target = me.GetTarget()
+      if target == 0 then target = me.dwID end
     end
     _t.OnSkillCast(tp, now, arg1, target, arg2, arg3)
   -- elseif tp == "UI_OME_SKILL_CAST_RESPOND_LOG" then _t.OnSkillCast(tp, now, arg1, nil, arg2, arg3)

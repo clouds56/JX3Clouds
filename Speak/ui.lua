@@ -67,8 +67,9 @@ _t = {
         if #v < 5 then
           table.insert(menuSkill, { bDevide = true }) -- Divide
         end
+        local text = k.text:gsub("$$", "$$|"):gsub("$u", _L("UnknownTarget")):gsub("$me", _L("Me")):gsub("$s", v.name):gsub("$$|", "$")
         local menuSpeak = {
-          szOption = k.text:sub(1, 20),
+          szOption = text:sub(1, 20),
           bCheck = true,
           bChecked = k.enabled,
           fnAction = function()

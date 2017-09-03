@@ -81,6 +81,14 @@ _t = {
     --DEBUG_THREAT
   },
 
+  MAP_TYPE = {
+    NORMAL_MAP = 0,
+    DUNGEON = 1,
+    BATTLE_FIELD = 2,
+    BIRTH_MAP = 3,
+    TONG_DUNGEON = 4,
+  },
+
   as = function(n, t)
     if type(t) == "string" then
       t = _t[t]

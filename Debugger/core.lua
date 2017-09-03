@@ -11,6 +11,7 @@ _t = {
   outlast = "_d",
   outbox = {},
   index = 1,
+  __tostring = function() return tostring(Clouds.Debugger.core) end,
 }
 
 _t.RegisterCode = function(_this, index, data, func)

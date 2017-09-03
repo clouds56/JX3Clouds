@@ -30,6 +30,7 @@ _t.strings = {
   New = "新建",
   Modify = "修改",
   Delete = "删除",
+  Me = "孤",
   UnknownTarget = "某",
   ["meIsMyName_uIsTargetName_sIsSkillName_"] = "$me 表示自己的名字，$u 表示目标的名字，$s 表示技能名。"
 }

@@ -39,6 +39,9 @@ Clouds.xv.debug = {
 -- end)
 
 if Clouds.DEBUG then
+  Clouds.Base.DEBUG = Clouds.DEBUG
+  Clouds.Base.LEVEL_CURRENT = Clouds.LEVEL_CURRENT
+  Clouds.Base.LEVEL_LOG = Clouds.LEVEL_LOG
   _G._var2str = _t.var2str
   _G._dumpstr = _t.dumpstr
   _G.out = _t.out

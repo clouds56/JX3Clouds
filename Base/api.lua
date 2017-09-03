@@ -4,13 +4,54 @@ local GetClientPlayer = GetClientPlayer
 local GetFormatText = GetFormatText
 local FireUIEvent = FireUIEvent
 local GetPlayer, GetNpc = GetPlayer, GetNpc
+local enum = Clouds.Base.enum
 local xv = Clouds.xv
 
 local _t
 _t = {
   NAME = "api",
+  LogicFPS = 16,
   GetObject = function(id)
     return GetPlayer(id) or GetNpc(id)
+  end,
+  GetTalk = function(limit, channel, target)
+    target = target or 0
+    local count = 0
+    local last_check = GetLogicFrameCount()
+    return function(...)
+      local now = GetLogicFrameCount()
+      if now - last_check > _t.LogicFPS * 60 then
+        if now - last_check > _t.LogicFPS * 60 * 3 then
+          count = 0
+        else
+          count = math.floor(count/2)
+        end
+      end
+      count = count + 1
+      _t.Output_verbose(1001, "Talk limit check ~%s~ %s <=> %s", now - last_check, count, limit)
+      if count > limit then
+        _t.Output_warn(3001, "Talk limit reached ~%s~ %s > %s", now - last_check, count, limit)
+        count = limit
+        return
+      end
+      last_check = now
+      local me = GetClientPlayer()
+      local c = channel
+      if channel == enum.PLAYER_TALK_CHANNEL.RAID or channel == enum.PLAYER_TALK_CHANNEL.TEAM then
+        local scene = me.GetScene()
+        if scene and scene.nType == enum.MAP_TYPE.BATTLE_FIELD then
+          c = enum.PLAYER_TALK_CHANNEL.BATTLE_FIELD
+        elseif not me.IsInParty() then
+          count = count - 1
+          return
+        end
+      end
+      if not me.Talk(channel, target, ...) then
+        count = count - 1
+        return false
+      end
+      return true
+    end
   end,
   Buff_ToString = function(self)
     local id, level, isbuff, endframe, index, stacknum, srcid, valid, stackable = unpack(self)
@@ -34,6 +75,7 @@ _t = {
     return buffs
   end,
   COLOR = {
+    Tianyi          = 0x66CCFF,
     Yellow          = 0xFFFF00,
     Red             = 0xFF0000,
     Green           = 0x00FF00,
