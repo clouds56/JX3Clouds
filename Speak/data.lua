@@ -74,15 +74,17 @@ _t = {
     _t.speak = xv.algo.ordered_hash.new(_t.hash_function, {})
     local me = GetClientPlayer()
     local init_data = LoadLUAData("interface/Clouds/Speak/default.jx3dat") or _t.init_data
-    for i, v in ipairs(init_data[me.dwForceID] or {}) do
-      local skill = Table_GetSkill(v)
+    for i, v in pairs(init_data[me.dwForceID] or {}) do
+      local skill = Table_GetSkill(i)
       if skill and skill.szName and skill.szName ~= "" then
         local desc = skill.szSpecialDesc
         if not desc or desc == "" then
           desc = skill.szName
         end
         local t = _t.get(skill.szName, true)
-        _t.add_text(t, {action = "hit", text = "$u" .. _L("_") .. desc, enabled = true})
+        for ii, vv in ipairs(v) do
+          _t.add_text(t, {action = vv, text = "$u" .. _L("_") .. desc, enabled = true})
+        end
       end
     end
   end
