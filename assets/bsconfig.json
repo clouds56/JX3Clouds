@@ -1,20 +1,23 @@
 {
-  "name": "viewer",
-  "version": "0.1.0",
+  "name": "react-template",
+  "reason": {
+    "react-jsx": 2
+  },
   "sources": {
     "dir" : "src",
     "subdirs" : true
   },
-  "package-specs": {
+  "package-specs": [{
     "module": "commonjs",
     "in-source": true
-  },
+  }],
   "suffix": ".bs.js",
+  "namespace": true,
   "bs-dependencies": [
-      // add your bs-dependencies here 
+    "reason-react"
   ],
+  "refmt": 3,
   "warnings": {
-    "error" : "+101"
-  },
-  "refmt": 3
+    "error": "+5"
+  }
 }
