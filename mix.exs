@@ -25,6 +25,9 @@ defmodule Jx3replay.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"},
+      {:jason, "~> 1.1"},
+      {:ecto, "~> 2.1"},
+      {:postgrex, ">= 0.0.0"},
     ]
   end
 end
