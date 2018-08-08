@@ -1,4 +1,7 @@
 defmodule Model do
+  defmodule Repo do
+    use Ecto.Repo, otp_app: :jx3replay
+  end
 
   defmodule Person do
     use Ecto.Schema
@@ -16,6 +19,7 @@ defmodule Model do
 
   defmodule Role do
     use Ecto.Schema
+    import Ecto.Changeset
     schema "roles" do
       field :role_id, :id
       field :global_id, :string
@@ -26,6 +30,12 @@ defmodule Model do
       field :zone, :string
       field :server, :string
       belongs_to :person, Person
+
+      @permitted ~w(role_id global_id name force body_type camp zone server person)a
+
+      def changeset(role, change \\ :empty) do
+        role |> cast(change, @permitted)
+      end
     end
   end
 
@@ -34,6 +44,16 @@ defmodule Model do
     schema "indicators" do
       field :score, :integer
       belongs_to :role, Role
+    end
+  end
+
+  defmodule Query do
+    def update_role(%{global_id: id} = role) do
+      r = case Repo.get(Role, id) do
+        nil -> %Role{global_id: id}
+        role -> role
+      end
+      r |> Role.changeset(role) |> Repo.insert_or_update
     end
   end
 end

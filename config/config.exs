@@ -28,3 +28,12 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+
+config :jx3replay, Model.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "j3",
+  hostname: "localhost",
+  port: 5733
+
+config :jx3replay,
+  ecto_repos: [Model.Repo]
