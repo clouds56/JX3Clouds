@@ -77,7 +77,7 @@ defmodule Jx3APP do
 
   @impl true
   def init(%{username: u, password: p, deviceid: id}) do
-    {:ok, login(u, p, id)}
+    {:ok, %{token: login(u, p, id)}}
   end
 
   @impl true
@@ -90,22 +90,25 @@ defmodule Jx3APP do
     {_, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
     r = d |> Map.get("data", []) |> Enum.map(fn p ->
       r = Map.get(p, "personInfo")
-      {%{
-        global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
-        role_id: Map.get(r, "gameRoleId") |> String.to_integer,
-        name: Map.get(r, "roleName"),
-        server: Map.get(r, "server"),
-        zone: Map.get(r, "zone"),
-        force: Map.get(r, "force"),
-        body_type: Map.get(r, "bodyType"),
-        camp: "",
-      }, %{
-        passport_id: Map.get(p, "passportId"),
-        person_id: Map.get(p, "personId"),
-        name: Map.get(r, "person") |> Map.get("nickName"),
-        avatar: Map.get(r, "person") |> Map.get("avatarUrl"),
-        signature: Map.get(r, "person") |> Map.get("signature"),
-      }}
+      %{
+        role_info: %{
+          global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
+          role_id: Map.get(r, "gameRoleId") |> String.to_integer,
+          name: Map.get(r, "roleName"),
+          server: Map.get(r, "server"),
+          zone: Map.get(r, "zone"),
+          force: Map.get(r, "force"),
+          body_type: Map.get(r, "bodyType"),
+          camp: nil,
+        },
+        person_info: %{
+          passport_id: Map.get(p, "passportId"),
+          person_id: Map.get(p, "personId"),
+          name: Map.get(r, "person") |> Map.get("nickName"),
+          avatar: Map.get(r, "person") |> Map.get("avatarUrl"),
+          signature: Map.get(r, "person") |> Map.get("signature"),
+        }
+      }
     end)
     {:reply, r, state}
   end
@@ -122,7 +125,54 @@ defmodule Jx3APP do
 
   @impl true
   def handle_call({:role_info, role_id, zone, server}, _from, state) do
-    {:reply, post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server}), state}
+    {:ok, d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
+    p = Map.get(d, "data") |> Map.get("person_info")
+    r = Map.get(d, "data") |> Map.get("role_info")
+    t = Map.get(d, "data") |> Map.get("indicator")
+    d = %{
+      role_info: %{
+        global_id: Map.get(r, "global_role_id"),
+        role_id: Map.get(r, "role_id") |> String.to_integer,
+        name: Map.get(r, "name"),
+        server: Map.get(r, "server"),
+        zone: Map.get(r, "zone"),
+        force: Map.get(r, "force"),
+        body_type: Map.get(r, "body_type"),
+        camp: Map.get(r, "camp"),
+      },
+      person_info: %{
+        passport_id: nil,
+        person_id: Map.get(p, "person_id"),
+        name: Map.get(p, "person_name"),
+        avatar: Map.get(r, "person_avatar"),
+        signature: nil,
+      },
+      indicator: t |> Enum.map(fn i ->
+        %{
+          #match_type: Map.get(i, "match_type"),
+          type: Map.get(i, "type"),
+          metrics: (Map.get(i, "metrics") || []) |> Enum.map(fn t ->
+            {Map.get(t, "kungfu"), %{
+              kungfu: Map.get(t, "kungfu"),
+              mvp_count: Map.get(t, "mvp_count"),
+              pvp_type: Map.get(t, "pvp_type"),
+              total_count: Map.get(t, "total_count"),
+              win_count: Map.get(t, "win_count"),
+              items: Map.get(t, "items") |> Enum.map(fn i ->
+                {Map.get(i, "name"), %{
+                  grade: Map.get(i, "grade"),
+                  name: Map.get(i, "name"),
+                  value: Map.get(i, "value"),
+                  ranking: Map.get(i, "ranking"),
+                }}
+              end),
+            }}
+          end),
+          performance: Map.get(i, "performance") || %{},
+        }
+      end)
+    }
+    {:reply, d, state}
   end
 
   @impl true

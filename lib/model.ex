@@ -5,23 +5,24 @@ defmodule Model do
 
   defmodule Person do
     use Ecto.Schema
+    @primary_key {:person_id, :string, autogenerate: false}
     schema "persons" do
       # globalId, passportId, personId
       # personInfo: { bodyType, force, gameGlobalRoleId, gameRoleId, miniAvatar, passportId, person: {avatarUrl, id, nickName, signature}, roleName, server, zone }
       # rankNum, score, upNum, winRate
-      field :person_id, :string
       field :passport_id, :string
       field :name, :string
       field :avatar, :string
       field :signature, :string
+      timestamps()
     end
   end
 
   defmodule Role do
     use Ecto.Schema
     import Ecto.Changeset
+    @primary_key {:role_id, :id, autogenerate: false}
     schema "roles" do
-      field :role_id, :id
       field :global_id, :string
       field :name, :string
       field :force, :string
@@ -30,6 +31,7 @@ defmodule Model do
       field :zone, :string
       field :server, :string
       belongs_to :person, Person
+      timestamps()
 
       @permitted ~w(role_id global_id name force body_type camp zone server person)a
 
