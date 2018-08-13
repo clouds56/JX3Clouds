@@ -20,7 +20,7 @@ defmodule Model.Repo.Migrations.CreateRole do
       add :camp, :string
       add :zone, :string
       add :server, :string
-      add :person, references(:persons, column: :person_id, type: :string)
+      add :person_id, references(:persons, column: :person_id, type: :string)
       timestamps()
     end
 

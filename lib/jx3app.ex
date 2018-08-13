@@ -11,6 +11,13 @@ defmodule Jx3APP do
     |> String.pad_leading(i, "0")
   end
 
+  def empty_nil(s) do
+    case s do
+      "" -> nil
+      s -> s
+    end
+  end
+
   @doc """
   sign data
   """
@@ -94,19 +101,19 @@ defmodule Jx3APP do
         role_info: %{
           global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
           role_id: Map.get(r, "gameRoleId") |> String.to_integer,
-          name: Map.get(r, "roleName"),
-          server: Map.get(r, "server"),
-          zone: Map.get(r, "zone"),
-          force: Map.get(r, "force"),
-          body_type: Map.get(r, "bodyType"),
+          name: Map.get(r, "roleName") |> empty_nil,
+          server: Map.get(r, "server") |> empty_nil,
+          zone: Map.get(r, "zone") |> empty_nil,
+          force: Map.get(r, "force") |> empty_nil,
+          body_type: Map.get(r, "bodyType") |> empty_nil,
           camp: nil,
         },
         person_info: %{
-          passport_id: Map.get(p, "passportId"),
-          person_id: Map.get(p, "personId"),
-          name: Map.get(r, "person") |> Map.get("nickName"),
-          avatar: Map.get(r, "person") |> Map.get("avatarUrl"),
-          signature: Map.get(r, "person") |> Map.get("signature"),
+          passport_id: Map.get(p, "passportId") |> empty_nil,
+          person_id: Map.get(p, "personId") |> empty_nil,
+          name: Map.get(r, "person") |> Map.get("nickName") |> empty_nil,
+          avatar: Map.get(r, "person") |> Map.get("avatarUrl") |> empty_nil,
+          signature: Map.get(r, "person") |> Map.get("signature") |> empty_nil,
         }
       }
     end)
@@ -133,18 +140,18 @@ defmodule Jx3APP do
       role_info: %{
         global_id: Map.get(r, "global_role_id"),
         role_id: Map.get(r, "role_id") |> String.to_integer,
-        name: Map.get(r, "name"),
-        server: Map.get(r, "server"),
-        zone: Map.get(r, "zone"),
-        force: Map.get(r, "force"),
-        body_type: Map.get(r, "body_type"),
-        camp: Map.get(r, "camp"),
+        name: Map.get(r, "name") |> empty_nil,
+        server: Map.get(r, "server") |> empty_nil,
+        zone: Map.get(r, "zone") |> empty_nil,
+        force: Map.get(r, "force") |> empty_nil,
+        body_type: Map.get(r, "body_type") |> empty_nil,
+        camp: Map.get(r, "camp") |> empty_nil,
       },
       person_info: %{
         passport_id: nil,
-        person_id: Map.get(p, "person_id"),
-        name: Map.get(p, "person_name"),
-        avatar: Map.get(r, "person_avatar"),
+        person_id: Map.get(p, "person_id") |> empty_nil,
+        name: Map.get(p, "person_name") |> empty_nil,
+        avatar: Map.get(r, "person_avatar") |> empty_nil,
         signature: nil,
       },
       indicator: t |> Enum.map(fn i ->

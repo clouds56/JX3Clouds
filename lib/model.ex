@@ -5,6 +5,7 @@ defmodule Model do
 
   defmodule Person do
     use Ecto.Schema
+    import Ecto.Changeset
     @primary_key {:person_id, :string, autogenerate: false}
     schema "persons" do
       # globalId, passportId, personId
@@ -15,25 +16,31 @@ defmodule Model do
       field :avatar, :string
       field :signature, :string
       timestamps()
+
+      @permitted ~w(passport_id name avatar signature)a
+
+      def changeset(person, change \\ :empty) do
+        person |> cast(change, @permitted)
+      end
     end
   end
 
   defmodule Role do
     use Ecto.Schema
     import Ecto.Changeset
-    @primary_key {:role_id, :id, autogenerate: false}
+    @primary_key {:global_id, :string, autogenerate: false}
     schema "roles" do
-      field :global_id, :string
+      field :role_id, :id
       field :name, :string
       field :force, :string
       field :body_type, :string
       field :camp, :string
       field :zone, :string
       field :server, :string
-      belongs_to :person, Person
+      belongs_to :person, Person, type: :string
       timestamps()
 
-      @permitted ~w(role_id global_id name force body_type camp zone server person)a
+      @permitted ~w(role_id name force body_type camp zone server person_id)a
 
       def changeset(role, change \\ :empty) do
         role |> cast(change, @permitted)
@@ -50,6 +57,14 @@ defmodule Model do
   end
 
   defmodule Query do
+    def update_person(%{person_id: id} = person) do
+      p = case Repo.get(Person, id) do
+        nil -> %Person{person_id: id}
+        person -> person
+      end
+      p |> Person.changeset(person) |> Repo.insert_or_update
+    end
+
     def update_role(%{global_id: id} = role) do
       r = case Repo.get(Role, id) do
         nil -> %Role{global_id: id}
