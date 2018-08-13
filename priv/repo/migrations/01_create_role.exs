@@ -24,6 +24,6 @@ defmodule Model.Repo.Migrations.CreateRole do
       timestamps()
     end
 
-    create unique_index("roles", [:role_id, :zone, :server])
+    create index("roles", [:role_id, :zone, :server])
   end
 end

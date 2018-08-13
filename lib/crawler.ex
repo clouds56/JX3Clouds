@@ -13,10 +13,12 @@ defmodule Crawler do
     if person_id do p |> Model.Query.update_person end
     Map.put(r, :person_id, person_id) |> Model.Query.update_role
   end
+  def save_role(%{}) do :error end
 
   def top200(client \\ nil) do
-    GenServer.call(client || lookup(), {:top200}) |> Enum.map(fn %{person_info: _p, role_info: _r} = a ->
+    GenServer.call(client || lookup(), {:top200}) |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
       save_role(a)
+      role(r)
     end)
   end
 

@@ -83,8 +83,13 @@ defmodule Jx3APP do
   end
 
   @impl true
-  def init(%{username: u, password: p, deviceid: id}) do
-    {:ok, %{token: login(u, p, id)}}
+  def init(%{username: u, password: p, deviceid: id, sleep: sleep}) do
+    {:ok, %{token: login(u, p, id), last: Time.utc_now, sleep: sleep}}
+  end
+
+  @impl true
+  def init(%{username: _, password: _, deviceid: _} = cred) do
+    init(Map.put(cred, :sleep, 500))
   end
 
   @impl true
@@ -93,9 +98,14 @@ defmodule Jx3APP do
   end
 
   @impl true
-  def handle_call({:top200}, _from, state) do
+  def handle_call(req, _from, %{token: token, last: last, sleep: sleep} = state) do
+    :timer.sleep(max(0, sleep - Time.diff(Time.utc_now, last, :millisecond)))
+    {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: Time.utc_now}}
+  end
+
+  def handle(:top200, {}, _token) do
     {_, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
-    r = d |> Map.get("data", []) |> Enum.map(fn p ->
+    d |> Map.get("data", []) |> Enum.map(fn p ->
       r = Map.get(p, "personInfo")
       %{
         role_info: %{
@@ -117,83 +127,78 @@ defmodule Jx3APP do
         }
       }
     end)
-    {:reply, r, state}
   end
 
-  @impl true
-  def handle_call({:person_info, person_id}, _from, %{token: token} = state) do
-    {:reply, post("https://m.pvp.xoyo.com/socialgw/summary", %{personId: person_id}, token), state}
+  def handle(:person_info, {person_id}, token) do
+    post("https://m.pvp.xoyo.com/socialgw/summary", %{personId: person_id}, token)
   end
 
-  @impl true
-  def handle_call({:person_history, person_id, cursor, size}, _from, %{token: token} = state) do
-    {:reply, post("https://m.pvp.xoyo.com/mine/match/person-history", %{personId: person_id, cursor: cursor, size: size}, token), state}
+  def handle(:person_history, {person_id, cursor, size}, token) do
+    post("https://m.pvp.xoyo.com/mine/match/person-history", %{personId: person_id, cursor: cursor, size: size}, token)
   end
 
-  @impl true
-  def handle_call({:role_info, role_id, zone, server}, _from, state) do
+  def handle(:role_info, {role_id, zone, server}, _token) do
     {:ok, d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
     p = Map.get(d, "data") |> Map.get("person_info")
     r = Map.get(d, "data") |> Map.get("role_info")
     t = Map.get(d, "data") |> Map.get("indicator")
-    d = %{
-      role_info: %{
-        global_id: Map.get(r, "global_role_id"),
-        role_id: Map.get(r, "role_id") |> String.to_integer,
-        name: Map.get(r, "name") |> empty_nil,
-        server: Map.get(r, "server") |> empty_nil,
-        zone: Map.get(r, "zone") |> empty_nil,
-        force: Map.get(r, "force") |> empty_nil,
-        body_type: Map.get(r, "body_type") |> empty_nil,
-        camp: Map.get(r, "camp") |> empty_nil,
-      },
-      person_info: %{
-        passport_id: nil,
-        person_id: Map.get(p, "person_id") |> empty_nil,
-        name: Map.get(p, "person_name") |> empty_nil,
-        avatar: Map.get(r, "person_avatar") |> empty_nil,
-        signature: nil,
-      },
-      indicator: t |> Enum.map(fn i ->
-        %{
-          #match_type: Map.get(i, "match_type"),
-          type: Map.get(i, "type"),
-          metrics: (Map.get(i, "metrics") || []) |> Enum.map(fn t ->
-            {Map.get(t, "kungfu"), %{
-              kungfu: Map.get(t, "kungfu"),
-              mvp_count: Map.get(t, "mvp_count"),
-              pvp_type: Map.get(t, "pvp_type"),
-              total_count: Map.get(t, "total_count"),
-              win_count: Map.get(t, "win_count"),
-              items: Map.get(t, "items") |> Enum.map(fn i ->
-                {Map.get(i, "name"), %{
-                  grade: Map.get(i, "grade"),
-                  name: Map.get(i, "name"),
-                  value: Map.get(i, "value"),
-                  ranking: Map.get(i, "ranking"),
-                }}
-              end),
-            }}
-          end),
-          performance: Map.get(i, "performance") || %{},
-        }
-      end)
-    }
-    {:reply, d, state}
+    if r == nil do %{}
+    else
+      %{
+        role_info: %{
+          global_id: Map.get(r, "global_role_id"),
+          role_id: Map.get(r, "role_id") |> String.to_integer,
+          name: Map.get(r, "name") |> empty_nil,
+          server: Map.get(r, "server") |> empty_nil,
+          zone: Map.get(r, "zone") |> empty_nil,
+          force: Map.get(r, "force") |> empty_nil,
+          body_type: Map.get(r, "body_type") |> empty_nil,
+          camp: Map.get(r, "camp") |> empty_nil,
+        },
+        person_info: %{
+          passport_id: nil,
+          person_id: Map.get(p, "person_id") |> empty_nil,
+          name: Map.get(p, "person_name") |> empty_nil,
+          avatar: Map.get(r, "person_avatar") |> empty_nil,
+          signature: nil,
+        },
+        indicator: t |> Enum.map(fn i ->
+          %{
+            #match_type: Map.get(i, "match_type"),
+            type: Map.get(i, "type"),
+            metrics: (Map.get(i, "metrics") || []) |> Enum.map(fn t ->
+              {Map.get(t, "kungfu"), %{
+                kungfu: Map.get(t, "kungfu"),
+                mvp_count: Map.get(t, "mvp_count"),
+                pvp_type: Map.get(t, "pvp_type"),
+                total_count: Map.get(t, "total_count"),
+                win_count: Map.get(t, "win_count"),
+                items: (Map.get(t, "items") || []) |> Enum.map(fn i ->
+                  {Map.get(i, "name"), %{
+                    grade: Map.get(i, "grade"),
+                    name: Map.get(i, "name"),
+                    value: Map.get(i, "value"),
+                    ranking: Map.get(i, "ranking"),
+                  }}
+                end),
+              }}
+            end),
+            performance: Map.get(i, "performance") || %{},
+          }
+        end)
+      }
+    end
   end
 
-  @impl true
-  def handle_call({:role_history, global_role_id, cursor, size}, _from, %{token: token} = state) do
-    {:reply, post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_role_id, cursor: cursor, size: size}, token), state}
+  def handle(:role_history, {global_role_id, cursor, size}, token) do
+    post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_role_id, cursor: cursor, size: size}, token)
   end
 
-  @impl true
-  def handle_call({:match_replay, match_id}, _from, %{token: token} = state) do
-    {:reply, post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token), state}
+  def handle(:match_replay, {match_id}, token) do
+    post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
   end
 
-  @impl true
-  def handle_call({:match_detail, match_id}, _from, %{token: token} = state) do
-    {:reply, post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token), state}
+  def handle(:match_detail, {match_id}, token) do
+    post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
   end
 end

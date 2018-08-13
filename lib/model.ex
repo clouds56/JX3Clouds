@@ -20,7 +20,10 @@ defmodule Model do
       @permitted ~w(passport_id name avatar signature)a
 
       def changeset(person, change \\ :empty) do
-        person |> cast(change, @permitted)
+        change = change
+        |> Enum.filter(fn {_, v} -> v != nil end)
+        |> Enum.into(%{})
+        cast(person, change, @permitted)
       end
     end
   end
@@ -43,7 +46,10 @@ defmodule Model do
       @permitted ~w(role_id name force body_type camp zone server person_id)a
 
       def changeset(role, change \\ :empty) do
-        role |> cast(change, @permitted)
+        change = change
+        |> Enum.filter(fn {_, v} -> v != nil end)
+        |> Enum.into(%{})
+        cast(role, change, @permitted)
       end
     end
   end
