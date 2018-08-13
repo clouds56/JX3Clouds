@@ -37,3 +37,9 @@ config :jx3replay, Model.Repo,
 
 config :jx3replay,
   ecto_repos: [Model.Repo]
+
+config :jx3replay, Crawler,
+  username: "",
+  password: ""
+
+import_config "secret.exs"

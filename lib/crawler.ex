@@ -1,5 +1,9 @@
 defmodule Crawler do
 
+  def start_link do
+    start_link(Application.get_env(:jx3replay, Crawler) |> Enum.into(%{}))
+  end
+
   def start_link(%{username: _, password: _} = cred) do
     GenServer.start_link(Jx3APP, cred, [name: Jx3APP])
   end

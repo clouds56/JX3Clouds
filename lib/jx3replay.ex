@@ -21,7 +21,8 @@ defmodule Jx3replay do
     children = [
       # Define workers and child supervisors to be supervised
       # worker(BigLebowski.Worker, [arg1, arg2, arg3])
-      worker(Model.Repo, [])
+      worker(Model.Repo, []),
+      worker(Crawler, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
