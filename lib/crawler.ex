@@ -12,10 +12,22 @@ defmodule Crawler do
     GenServer.whereis(Jx3APP)
   end
 
-  def save_role(%{person_info: p, role_info: r}) do
+  def save_role(%{person_info: p, role_info: r} = a) do
     person_id = Map.get(p, :person_id)
     if person_id do p |> Model.Query.update_person end
     Map.put(r, :person_id, person_id) |> Model.Query.update_role
+    Map.get(a, :indicator, []) |> Enum.map(fn i ->
+      pvp_type = case Map.get(i, :type) do
+        x when x in ["2c", "2d"] -> 2
+        x when x in ["3c", "3d"] -> 3
+        x when x in ["5c", "5d"] -> 5
+        _ -> 0
+      end
+      i = i |> Map.get(:performance) |> Map.put(:pvp_type, pvp_type) |> Map.put(:role_id, Map.get(r, :global_id))
+      if i |> Map.get(:score, nil) do
+        i |> Model.Query.insert_performance
+      end
+    end)
   end
   def save_role(%{}) do :error end
 

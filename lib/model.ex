@@ -54,11 +54,36 @@ defmodule Model do
     end
   end
 
-  defmodule RoleIndicator do
+  defmodule RolePerformance do
     use Ecto.Schema
+    import Ecto.Changeset
     schema "indicators" do
+      field :pvp_type, :integer
       field :score, :integer
-      belongs_to :role, Role
+      field :grade, :integer
+      field :ranking, :integer
+      field :total_count, :integer
+      field :win_count, :integer
+      field :mvp_count, :integer
+      belongs_to :role, Role, type: :string
+
+      timestamps(updated_at: false)
+    end
+
+    @permitted ~w(pvp_type score grade ranking total_count win_count mvp_count role_id)a
+
+    def changeset(perf, change \\ :empty) do
+      change = case change do
+        %{ranking: r} -> %{change | ranking: cond do
+          is_integer(r) -> r
+          String.at(r, -1) == "%" -> r |> String.trim_trailing("%") |> String.to_integer |> Kernel.-
+          true -> r |> String.to_integer
+        end}
+        change -> change
+      end
+      |> Enum.filter(fn {_, v} -> v != nil end)
+      |> Enum.into(%{})
+      cast(perf, change, @permitted)
     end
   end
 
@@ -77,6 +102,10 @@ defmodule Model do
         role -> role
       end
       r |> Role.changeset(role) |> Repo.insert_or_update
+    end
+
+    def insert_performance(perf) do
+      %RolePerformance{} |> RolePerformance.changeset(perf) |> Repo.insert_or_update
     end
   end
 end

@@ -183,7 +183,14 @@ defmodule Jx3APP do
                 end),
               }}
             end),
-            performance: Map.get(i, "performance") || %{},
+            performance: Map.get(i, "performance") && %{
+              grade: Map.get(i, "performance") |> Map.get("grade"),
+              score: Map.get(i, "performance") |> Map.get("mmr"),
+              ranking: Map.get(i, "performance") |> Map.get("ranking"),
+              total_count: Map.get(i, "performance") |> Map.get("total_count"),
+              win_count: Map.get(i, "performance") |> Map.get("win_count"),
+              mvp_count: Map.get(i, "performance") |> Map.get("mvp_count"),
+            } || %{},
           }
         end)
       }
