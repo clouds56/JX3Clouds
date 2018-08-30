@@ -11,13 +11,12 @@ defmodule Model do
       # globalId, passportId, personId
       # personInfo: { bodyType, force, gameGlobalRoleId, gameRoleId, miniAvatar, passportId, person: {avatarUrl, id, nickName, signature}, roleName, server, zone }
       # rankNum, score, upNum, winRate
-      field :passport_id, :string
       field :name, :string
       field :avatar, :string
       field :signature, :string
       timestamps()
 
-      @permitted ~w(passport_id name avatar signature)a
+      @permitted ~w(name avatar signature)a
 
       def changeset(person, change \\ :empty) do
         change = change
@@ -34,6 +33,7 @@ defmodule Model do
     @primary_key {:global_id, :string, autogenerate: false}
     schema "roles" do
       field :role_id, :id
+      field :passport_id, :string
       field :name, :string
       field :force, :string
       field :body_type, :string
@@ -43,7 +43,7 @@ defmodule Model do
       belongs_to :person, Person, type: :string
       timestamps()
 
-      @permitted ~w(role_id name force body_type camp zone server person_id)a
+      @permitted ~w(role_id passport_id name force body_type camp zone server person_id)a
 
       def changeset(role, change \\ :empty) do
         change = change
@@ -140,7 +140,14 @@ defmodule Model do
     @permitted ~w(kungfu score score2 ranking equip_score equip_addition_score max_hp metrics equips talents)a
 
     def changeset(role, change \\ :empty) do
-      change = change
+      change = case change do
+        %{ranking: r} -> %{change | ranking: cond do
+          is_integer(r) -> r
+          String.at(r, -1) == "%" -> r |> String.trim_trailing("%") |> String.to_integer |> Kernel.-
+          true -> r |> String.to_integer
+        end}
+        change -> change
+      end
       |> Enum.filter(fn {_, v} -> v != nil end)
       |> Enum.into(%{})
       cast(role, change, @permitted)
@@ -169,6 +176,7 @@ defmodule Model do
   end
 
   defmodule Query do
+    import Ecto.Query
     def update_person(%{person_id: id} = person) do
       p = case Repo.get(Person, id) do
         nil -> %Person{person_id: id}
@@ -189,6 +197,10 @@ defmodule Model do
       Repo.get(Role, id)
     end
 
+    def get_roles do
+      Repo.all(from r in Role)
+    end
+
     def insert_performance(perf) do
       %RolePerformance{} |> RolePerformance.changeset(perf) |> Repo.insert_or_update
     end
@@ -198,13 +210,17 @@ defmodule Model do
         nil ->
           multi = Ecto.Multi.new
           |> Ecto.Multi.insert(:match, %Match{match_id: id} |> Match.changeset(match))
-          Enum.reduce(roles, multi, fn r, multi ->
+          {:ok, _} = Enum.reduce(roles, multi, fn r, multi ->
             role_id = Map.get(r, :global_id)
             multi |> Ecto.Multi.insert("roles#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r))
           end)
           |> Repo.transaction
         role -> role
       end
+    end
+
+    def get_match(id) do
+      Repo.get(Match, id)
     end
 
     def insert_match_log(%{"match_id" => id} = log) do

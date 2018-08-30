@@ -3,6 +3,10 @@ defmodule Jx3replayTest do
   doctest Jx3replay
 
   test "top200" do
-    Crawler.top200
+    GenServer.call(Crawler.lookup(), {:top200})
+  end
+
+  test "matches" do
+    Crawler.foreach_role(&Crawler.matches(Crawler.lookup, &1))
   end
 end

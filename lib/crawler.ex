@@ -12,9 +12,15 @@ defmodule Crawler do
     GenServer.whereis(Jx3APP)
   end
 
-  def save_role(%{person_info: p, role_info: r} = a) do
+  def save_role(a, o \\ nil)
+  def save_role(%{person_info: p, role_info: r} = a, o) do
     person_id = Map.get(p, :person_id)
     if person_id do p |> Model.Query.update_person end
+    o = case o do
+      %_{} -> Map.from_struct(o)
+      %{} -> o
+    end
+    r = r |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(o || %{})
     Map.put(r, :person_id, person_id) |> Model.Query.update_role
     Map.get(a, :indicator, []) |> Enum.map(fn i ->
       pvp_type = case Map.get(i, :type) do
@@ -29,7 +35,17 @@ defmodule Crawler do
       end
     end)
   end
-  def save_role(%{}) do :error end
+  def save_role(nil, o) do
+    o = case o do
+      %{} -> o
+      %_{} -> Map.from_struct(o)
+    end
+    Map.put(o, :person_id, nil) |> Model.Query.update_role
+  end
+
+  def foreach_role(fun) do
+    Model.Query.get_roles |> Enum.map(fun)
+  end
 
   def top200(client \\ nil) do
     client = client || lookup()
@@ -40,18 +56,20 @@ defmodule Crawler do
     end)
   end
 
-  def role(client \\ nil, %{global_id: global_id}) do
-    GenServer.call(client || lookup(), {:role_info, global_id}) |> save_role
+  def role(client \\ nil, %{global_id: global_id} = r) do
+    GenServer.call(client || lookup(), {:role_info, global_id}) |> save_role(r)
   end
 
-  def indicator(client \\ nil, %{role_id: role_id, zone: zone, server: server}) do
-    GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role
+  def indicator(client \\ nil, %{role_id: role_id, zone: zone, server: server} = r) do
+    GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role(r)
   end
 
   def matches(client \\ nil, %{global_id: global_id}) do
     client = client || lookup()
-    GenServer.call(client, {:role_history, global_id}) |> Enum.map(fn %{match_id: match_id} ->
-      match(client, match_id)
+    GenServer.call(client, {:role_history, global_id}) |> Enum.map(fn %{match_id: id} = m ->
+      if !Model.Query.get_match(id) do
+        match(client, m)
+      end
     end)
   end
 

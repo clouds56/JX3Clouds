@@ -112,6 +112,7 @@ defmodule Jx3APP do
       r = Map.get(p, "personInfo")
       %{
         role_info: %{
+          passport_id: Map.get(p, "passportId") |> empty_nil,
           global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
           role_id: Map.get(r, "gameRoleId") |> String.to_integer,
           name: Map.get(r, "roleName") |> empty_nil,
@@ -122,7 +123,6 @@ defmodule Jx3APP do
           camp: nil,
         },
         person_info: %{
-          passport_id: Map.get(p, "passportId") |> empty_nil,
           person_id: Map.get(p, "personId") |> empty_nil,
           name: Map.get(r, "person") |> Map.get("nickName") |> empty_nil,
           avatar: Map.get(r, "person") |> Map.get("avatarUrl") |> empty_nil,
@@ -145,8 +145,12 @@ defmodule Jx3APP do
     p = d |> Map.get("personInfo")
     %{
       role_info: %{
-        global_id: Map.get(p, "gameGlobalRoleId"),
-        role_id: Map.get(p, "gameRoleId") |> String.to_integer,
+        global_id: Map.get(p, "gameGlobalRoleId") |> empty_nil,
+        role_id: case Map.get(p, "gameRoleId") do
+          "" -> nil
+          i -> i |> String.to_integer
+        end,
+        passport_id: Map.get(d, "passportId") |> empty_nil,
         name: Map.get(p, "roleName") |> empty_nil,
         server: Map.get(p, "server") |> empty_nil,
         zone: Map.get(p, "zone") |> empty_nil,
@@ -155,7 +159,6 @@ defmodule Jx3APP do
         camp: nil,
       },
       person_info: %{
-        passport_id: Map.get(d, "passportId") |> empty_nil,
         person_id: Map.get(d, "personId") |> empty_nil,
         name: Map.get(p, "person") |> Map.get("nickName") |> empty_nil,
         avatar: Map.get(p, "person") |> Map.get("avatarUrl") |> empty_nil,
@@ -169,10 +172,11 @@ defmodule Jx3APP do
     p = d |> Map.get("person_info")
     r = d |> Map.get("role_info")
     t = d |> Map.get("indicator")
-    if r == nil do %{}
+    if r == nil do nil
     else
       %{
         role_info: %{
+          passport_id: nil,
           global_id: Map.get(r, "global_role_id"),
           role_id: Map.get(r, "role_id") |> String.to_integer,
           name: Map.get(r, "name") |> empty_nil,
@@ -183,7 +187,6 @@ defmodule Jx3APP do
           camp: Map.get(r, "camp") |> empty_nil,
         },
         person_info: %{
-          passport_id: nil,
           person_id: Map.get(p, "person_id") |> empty_nil,
           name: Map.get(p, "person_name") |> empty_nil,
           avatar: Map.get(r, "person_avatar") |> empty_nil,
@@ -224,8 +227,8 @@ defmodule Jx3APP do
     end
   end
 
-  def handle(:corp, {global_role_id}, token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/get-crops-by-global-id", %{globalId: global_role_id}, token)
+  def handle(:corp, {global_id}, token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/get-crops-by-global-id", %{globalId: global_id}, token)
     Enum.map(d, fn c -> %{
       corp_id: c |> Map.get("corpsId") |> String.to_integer,
       pvp_type: c |> Map.get("pvpType"),
@@ -235,12 +238,12 @@ defmodule Jx3APP do
     } end)
   end
 
-  def handle(:role_history, {global_role_id}, token) do
-    handle(:role_history, {global_role_id, 0, 10}, token)
+  def handle(:role_history, {global_id}, token) do
+    handle(:role_history, {global_id, 0, 100}, token)
   end
 
-  def handle(:role_history, {global_role_id, cursor, size}, token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_role_id, cursor: cursor, size: size}, token)
+  def handle(:role_history, {global_id, cursor, size}, token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_id, cursor: cursor, size: size}, token)
     d |> Enum.map(fn m ->
       %{
         match_id: m |> Map.get("match_id"),

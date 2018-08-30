@@ -4,7 +4,6 @@ defmodule Model.Repo.Migrations.CreateRole do
   def change do
     create table(:persons, primary_key: false) do
       add :person_id, :string, primary_key: true
-      add :passport_id, :string
       add :name, :string
       add :avatar, :text
       add :signature, :text
@@ -14,6 +13,7 @@ defmodule Model.Repo.Migrations.CreateRole do
     create table(:roles, primary_key: false) do
       add :role_id, :id
       add :global_id, :string, primary_key: true
+      add :passport_id, :string
       add :name, :string
       add :force, :string
       add :body_type, :string
