@@ -32,13 +32,33 @@ defmodule Crawler do
   def save_role(%{}) do :error end
 
   def top200(client \\ nil) do
-    GenServer.call(client || lookup(), {:top200}) |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
+    client = client || lookup()
+    GenServer.call(client, {:top200}) |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
       save_role(a)
-      role(r)
+      role(client, r)
     end)
   end
 
   def role(client \\ nil, %{role_id: role_id, zone: zone, server: server}) do
     GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role
+  end
+
+  def matches(client \\ nil, %{global_id: global_id}) do
+    client = client || lookup()
+    GenServer.call(client, {:role_history, global_id}) |> Enum.map(fn %{match_id: match_id} ->
+      match(client, match_id)
+    end)
+  end
+
+  def match(client \\ nil, %{match_id: match_id}) do
+    client = client || lookup()
+    detail = GenServer.call(client, {:match_detail, match_id})
+    detail |> Map.get(:roles) |> Enum.map(fn %{global_id: id} = r ->
+      if !Model.Query.get_role(id) do
+        role(client, r)
+      end
+    end)
+    detail |> Model.Query.insert_match
+    GenServer.call(client || lookup(), {:match_replay, match_id}) |> Model.Query.insert_match_log
   end
 end

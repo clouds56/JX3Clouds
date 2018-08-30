@@ -56,7 +56,10 @@ defmodule Jx3APP do
           {:ok, %HTTPoison.Response{body: body}} -> 
             case Poison.decode body do
               {:error, _} -> {:error, :decode}
-              {:ok, o} -> {:ok, o}
+              {:ok, o} -> case o do
+                %{"code" => 0, "data" => data} -> {:ok, data}
+                %{"msg" => msg} -> {:error, msg}
+              end
             end
         end
     end
@@ -71,7 +74,7 @@ defmodule Jx3APP do
   end
 
   def login(username, password, device \\ "CURL") do
-    {_, d} = _post(
+    {:ok, d} = _post(
       "https://m.pvp.xoyo.com/user/login",
       %{
         passportId: username,
@@ -79,12 +82,12 @@ defmodule Jx3APP do
       },
       [{:deviceid, device}]
     )
-    d |> Map.get("data", %{}) |> Map.get("token", "")
+    d |> Map.get("token", "")
   end
 
   @impl true
   def init(%{username: u, password: p, deviceid: id, sleep: sleep}) do
-    {:ok, %{token: login(u, p, id), last: Time.utc_now, sleep: sleep}}
+    {:ok, %{token: login(u, p, id), last: DateTime.utc_now, sleep: sleep}}
   end
 
   @impl true
@@ -99,13 +102,13 @@ defmodule Jx3APP do
 
   @impl true
   def handle_call(req, _from, %{token: token, last: last, sleep: sleep} = state) do
-    :timer.sleep(max(0, sleep - Time.diff(Time.utc_now, last, :millisecond)))
-    {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: Time.utc_now}}
+    :timer.sleep(max(0, sleep - DateTime.diff(DateTime.utc_now, last, :millisecond)))
+    {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: DateTime.utc_now}}
   end
 
   def handle(:top200, {}, _token) do
-    {_, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
-    d |> Map.get("data", []) |> Enum.map(fn p ->
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
+    d |> Enum.map(fn p ->
       r = Map.get(p, "personInfo")
       %{
         role_info: %{
@@ -139,9 +142,9 @@ defmodule Jx3APP do
 
   def handle(:role_info, {role_id, zone, server}, _token) do
     {:ok, d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
-    p = Map.get(d, "data") |> Map.get("person_info")
-    r = Map.get(d, "data") |> Map.get("role_info")
-    t = Map.get(d, "data") |> Map.get("indicator")
+    p = d |> Map.get("person_info")
+    r = d |> Map.get("role_info")
+    t = d |> Map.get("indicator")
     if r == nil do %{}
     else
       %{
@@ -197,15 +200,73 @@ defmodule Jx3APP do
     end
   end
 
+  def handle(:role_history, {global_role_id}, token) do
+    handle(:role_history, {global_role_id, 0, 10}, token)
+  end
+
   def handle(:role_history, {global_role_id, cursor, size}, token) do
-    post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_role_id, cursor: cursor, size: size}, token)
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_role_id, cursor: cursor, size: size}, token)
+    d |> Enum.map(fn m ->
+      %{
+        match_id: m |> Map.get("match_id"),
+        global_id: m |> Map.get("global_role_id"),
+        avg_grade: m |> Map.get("avg_grade"),
+        start_time: m |> Map.get("start_time"),
+        end_time: m |> Map.get("end_time"),
+        mvp: m |> Map.get("mvp"),
+        won: m |> Map.get("won"),
+        score_diff: m |> Map.get("mmr"),
+        score: m |> Map.get("total_mmr"),
+        kungfu: m |> Map.get("kungfu"),
+      }
+    end)
   end
 
   def handle(:match_replay, {match_id}, token) do
-    post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
+    Map.drop(d, ["skill_cate"])
   end
 
   def handle(:match_detail, {match_id}, token) do
-    post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
+    player_of = fn i -> fn pi ->
+      %{
+        team: i,
+        global_id: pi |> Map.get("global_role_id"),
+        role_id: pi |> Map.get("role_id"),
+        zone: pi |> Map.get("zone"),
+        server: pi |> Map.get("server"),
+        kungfu: pi |> Map.get("kungfu_id"),
+        score: pi |> Map.get("mmr"),
+        score2: pi |> Map.get("score"),
+        ranking: pi |> Map.get("ranking"),
+        equip_score: pi |> Map.get("equip_score"),
+        equip_addition_score: Map.get(pi, "equip_strength_score") + Map.get(pi, "stone_score"),
+        max_hp: pi |> Map.get("max_hp"),
+        metrics: pi |> Map.get("metrics") |> Enum.map(fn m -> m |> Map.get("value") end),
+        equips: pi |> Map.get("armors") |> Enum.map(fn e -> e |> Map.get("ui_id") |> String.to_integer end),
+        talents: pi |> Map.get("talents") |> Enum.map(fn t -> t |> Map.get("id") |> String.to_integer end),
+        attrs: pi |> Map.get("body_qualities") |> Enum.map(fn a -> a |> Map.get("value") end),
+      }
+    end end
+    %{
+      match_id: d |> Map.get("match_id"),
+      start_time: d |> Map.get("basic_info") |> Map.get("start_time"),
+      duration: d |> Map.get("basic_info") |> Map.get("duration"),
+      map: d |> Map.get("basic_info") |> Map.get("map") |> String.to_integer,
+      pvp_type: d |> Map.get("basic_info") |> Map.get("type"),
+      grade: d |> Map.get("basic_info") |> Map.get("grade"),
+      total_score1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
+      total_score2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
+      team1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi ->
+        pi |> Map.get("kungfu_id")
+      end),
+      team2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi ->
+        pi |> Map.get("kungfu_id")
+      end),
+      winner: d |> Map.get("team1") |> Map.get("won") && 1 || 2,
+      roles: (d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(player_of.(1)))
+          ++ (d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(player_of.(2))),
+    }
   end
 end
