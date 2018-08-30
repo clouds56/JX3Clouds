@@ -36,10 +36,15 @@ defmodule Crawler do
     GenServer.call(client, {:top200}) |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
       save_role(a)
       role(client, r)
+      indicator(client, r)
     end)
   end
 
-  def role(client \\ nil, %{role_id: role_id, zone: zone, server: server}) do
+  def role(client \\ nil, %{global_id: global_id}) do
+    GenServer.call(client || lookup(), {:role_info, global_id}) |> save_role
+  end
+
+  def indicator(client \\ nil, %{role_id: role_id, zone: zone, server: server}) do
     GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role
   end
 
@@ -56,9 +61,10 @@ defmodule Crawler do
     detail |> Map.get(:roles) |> Enum.map(fn %{global_id: id} = r ->
       if !Model.Query.get_role(id) do
         role(client, r)
+        indicator(client, r)
       end
     end)
     detail |> Model.Query.insert_match
-    GenServer.call(client || lookup(), {:match_replay, match_id}) |> Model.Query.insert_match_log
+    GenServer.call(client, {:match_replay, match_id}) |> Model.Query.insert_match_log
   end
 end

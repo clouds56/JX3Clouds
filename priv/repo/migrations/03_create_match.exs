@@ -3,7 +3,7 @@ defmodule Model.Repo.Migrations.CreateRole do
 
   def change do
     create table(:matches, primary_key: false) do
-      add :match_id, :integer, primary_key: true
+      add :match_id, :bigint, primary_key: true
       add :start_time, :integer
       add :duration, :integer
       add :pvp_type, :integer
@@ -19,7 +19,7 @@ defmodule Model.Repo.Migrations.CreateRole do
     end
 
     create table(:match_roles, primary_key: false) do
-      add :match_id, references(:matches, column: :match_id), primary_key: true
+      add :match_id, references(:matches, column: :match_id, type: :bigint), primary_key: true
       add :role_id, references(:roles, column: :global_id, type: :string), primary_key: true
       add :kungfu, :integer
       add :score, :integer
@@ -36,7 +36,7 @@ defmodule Model.Repo.Migrations.CreateRole do
     end
 
     create table(:match_logs, primary_key: false) do
-      add :match_id, references(:matches, column: :match_id), primary_key: true
+      add :match_id, references(:matches, column: :match_id, type: :bigint), primary_key: true
       add :replay, :map
 
       timestamps(updated_at: false)

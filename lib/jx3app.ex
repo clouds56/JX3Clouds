@@ -140,6 +140,30 @@ defmodule Jx3APP do
     post("https://m.pvp.xoyo.com/mine/match/person-history", %{personId: person_id, cursor: cursor, size: size}, token)
   end
 
+  def handle(:role_info, {global_id}, _token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/find-role-gid", %{globalId: global_id})
+    p = d |> Map.get("personInfo")
+    %{
+      role_info: %{
+        global_id: Map.get(p, "gameGlobalRoleId"),
+        role_id: Map.get(p, "gameRoleId") |> String.to_integer,
+        name: Map.get(p, "roleName") |> empty_nil,
+        server: Map.get(p, "server") |> empty_nil,
+        zone: Map.get(p, "zone") |> empty_nil,
+        force: Map.get(p, "force") |> empty_nil,
+        body_type: Map.get(p, "bodyType") |> empty_nil, # nil
+        camp: nil,
+      },
+      person_info: %{
+        passport_id: Map.get(d, "passportId") |> empty_nil,
+        person_id: Map.get(d, "personId") |> empty_nil,
+        name: Map.get(p, "person") |> Map.get("nickName") |> empty_nil,
+        avatar: Map.get(p, "person") |> Map.get("avatarUrl") |> empty_nil,
+        signature: nil,
+      },
+    }
+  end
+
   def handle(:role_info, {role_id, zone, server}, _token) do
     {:ok, d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
     p = d |> Map.get("person_info")
@@ -198,6 +222,17 @@ defmodule Jx3APP do
         end)
       }
     end
+  end
+
+  def handle(:corp, {global_role_id}, token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/get-crops-by-global-id", %{globalId: global_role_id}, token)
+    Enum.map(d, fn c -> %{
+      corp_id: c |> Map.get("corpsId") |> String.to_integer,
+      pvp_type: c |> Map.get("pvpType"),
+      name: c |> Map.get("corpsName"),
+      zone: c |> Map.get("zone"),
+      server: c |> Map.get("server"),
+    } end)
   end
 
   def handle(:role_history, {global_role_id}, token) do
