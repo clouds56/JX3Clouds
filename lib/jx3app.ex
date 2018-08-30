@@ -4,6 +4,7 @@ defmodule Jx3APP do
   """
 
   use GenServer
+  require Logger
 
   def pad_int(d, i) do
     d
@@ -49,16 +50,16 @@ defmodule Jx3APP do
     body = sign_data body
     option = Keyword.put_new(option, :"Content-Type", "application/json")
     case Poison.encode body do
-      {:error, _} -> {:error, :encode}
+      {:error, err} -> {:error, {:encode, err}}
       {:ok, body} ->
         case HTTPoison.post(url, body, option) do
-          {:error, _} -> {:error, :post}
+          {:error, err} -> {:error, {:post, err}}
           {:ok, %HTTPoison.Response{body: body}} -> 
             case Poison.decode body do
-              {:error, _} -> {:error, :decode}
+              {:error, err} -> {:error, {:decode, err}}
               {:ok, o} -> case o do
                 %{"code" => 0, "data" => data} -> {:ok, data}
-                %{"msg" => msg} -> {:error, msg}
+                %{"msg" => msg} -> {:error, {:result, msg}}
               end
             end
         end
@@ -92,7 +93,7 @@ defmodule Jx3APP do
 
   @impl true
   def init(%{username: _, password: _, deviceid: _} = cred) do
-    init(Map.put(cred, :sleep, 500))
+    init(Map.put(cred, :sleep, 300))
   end
 
   @impl true
@@ -103,7 +104,12 @@ defmodule Jx3APP do
   @impl true
   def handle_call(req, _from, %{token: token, last: last, sleep: sleep} = state) do
     :timer.sleep(max(0, sleep - DateTime.diff(DateTime.utc_now, last, :millisecond)))
-    {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: DateTime.utc_now}}
+    try do
+      {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: DateTime.utc_now}}
+    rescue e ->
+      Logger.error "JX3APP: " <> Exception.format(:error, e, __STACKTRACE__)
+      {:reply, nil, %{state | last: Timex.shift(DateTime.utc_now, seconds: 3)}}
+    end
   end
 
   def handle(:top200, {}, _token) do

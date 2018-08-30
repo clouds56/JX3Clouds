@@ -29,6 +29,14 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 
+config :logger,
+  backends: [{LoggerFileBackend, :error_log}, :console]
+config :logger, :console,
+  level: :debug
+config :logger, :error_log,
+  level: :error,
+  path: "log/elixir.log"
+
 config :jx3replay, Model.Repo,
   adapter: Ecto.Adapters.Postgres,
   database: "j3",

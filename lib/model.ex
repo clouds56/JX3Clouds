@@ -198,7 +198,7 @@ defmodule Model do
     end
 
     def get_roles do
-      Repo.all(from r in Role)
+      Repo.all(from r in Role, order_by: [asc: :inserted_at])
     end
 
     def insert_performance(perf) do
