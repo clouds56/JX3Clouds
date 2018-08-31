@@ -1,8 +1,8 @@
-defmodule Model.Repo.Migrations.CreateRole do
+defmodule Model.Repo.Migrations.CreateIndicatorLogs do
   use Ecto.Migration
 
   def change do
-    create table(:indicators) do
+    create table(:indicator_logs) do
       add :pvp_type, :integer
       add :score, :integer
       add :grade, :integer
@@ -14,6 +14,6 @@ defmodule Model.Repo.Migrations.CreateRole do
       timestamps(updated_at: false)
     end
 
-    create index("indicators", [:role_id, :inserted_at])
+    create index("indicator_logs", [:role_id, :inserted_at])
   end
 end

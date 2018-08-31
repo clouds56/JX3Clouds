@@ -1,4 +1,4 @@
-defmodule Model.Repo.Migrations.CreateRole do
+defmodule Model.Repo.Migrations.CreateMatches do
   use Ecto.Migration
 
   def change do

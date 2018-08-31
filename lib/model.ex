@@ -92,10 +92,10 @@ defmodule Model do
     end
   end
 
-  defmodule RolePerformance do
+  defmodule RolePerformanceLog do
     use Ecto.Schema
     import Ecto.Changeset
-    schema "indicators" do
+    schema "indicator_logs" do
       field :pvp_type, :integer
       field :score, :integer
       field :grade, :integer
@@ -259,7 +259,7 @@ defmodule Model do
     end
 
     def insert_performance(perf) do
-      %RolePerformance{} |> RolePerformance.changeset(perf) |> Repo.insert_or_update
+      %RolePerformanceLog{} |> RolePerformanceLog.changeset(perf) |> Repo.insert_or_update
     end
 
     def insert_match(%{match_id: id, roles: roles} = match) do
