@@ -24,22 +24,16 @@ defmodule Crawler do
     r = r |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(o || %{})
     Map.put(r, :person_id, person_id) |> Model.Query.update_role
     Map.get(a, :indicator, []) |> Enum.map(fn i ->
-      pvp_type = case Map.get(i, :type) do
-        x when x in ["2c", "2d"] -> 2
-        x when x in ["3c", "3d"] -> 3
-        x when x in ["5c", "5d"] -> 5
-        _ -> 0
-      end
-      i = i |> Map.get(:performance) |> Map.put(:pvp_type, pvp_type) |> Map.put(:role_id, Map.get(r, :global_id))
+      i = i |> Map.get(:performance) |> Map.put(:pvp_type, Map.get(i, :type)) |> Map.put(:role_id, Map.get(r, :global_id))
       if i |> Map.get(:score, nil) do
-        i |> Model.Query.insert_performance
+        i |> Model.Query.update_performance
       end
     end)
   end
   def save_role(nil, o) do
     o = case o do
-      %{} -> o
       %_{} -> Map.from_struct(o)
+      %{} -> o
     end
     Map.put(o, :person_id, nil) |> Model.Query.update_role
   end
@@ -98,6 +92,7 @@ defmodule Crawler do
   end
 
   def start do
-    spawn(fn -> Crawler.foreach_role(&Crawler.matches(Crawler.lookup, &1)) end)
+    # spawn(fn -> Crawler.foreach_role(&Crawler.matches(Crawler.lookup, &1)) end)
+    spawn(fn -> Crawler.foreach_role(&Crawler.indicator(Crawler.lookup, &1)) end)
   end
 end

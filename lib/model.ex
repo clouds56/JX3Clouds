@@ -92,10 +92,60 @@ defmodule Model do
     end
   end
 
+  defmodule RolePerformance do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    schema "scores" do
+      belongs_to :role, Role, type: :string, primary_key: true
+      field :pvp_type, :integer, primary_key: true
+      field :score, :integer
+      field :score2, :integer
+      field :grade, :integer
+      field :ranking, :integer
+      field :ranking2, :integer
+      field :total_count, :integer
+      field :win_count, :integer
+      field :mvp_count, :integer
+
+      timestamps()
+    end
+
+    @permitted ~w(score score2 grade ranking ranking2 total_count win_count mvp_count)a
+
+    def fix_pvptype(%{pvp_type: t} = change) do
+      pvp_type = cond do
+        is_integer(t) -> t
+        is_binary(t) and Integer.parse(t) != :error -> {x, _} = Integer.parse(t); x
+        true -> 0
+      end
+      %{change | pvp_type: pvp_type}
+    end
+    def fix_pvptype(change), do: change
+
+    def fix_ranking(%{ranking: r} = change) do
+      ranking = cond do
+        is_integer(r) -> r
+        String.at(r, -1) == "%" -> r |> String.trim_trailing("%") |> String.to_integer |> Kernel.-
+        true -> r |> String.to_integer
+      end
+      %{change | ranking: ranking}
+    end
+    def fix_ranking(change), do: change
+
+    def changeset(perf, change \\ :empty) do
+      change = change |> fix_pvptype |> fix_ranking
+      |> Enum.filter(fn {_, v} -> v != nil end)
+      |> Enum.into(%{})
+      cast(perf, change, @permitted)
+    end
+  end
+
   defmodule RolePerformanceLog do
     use Ecto.Schema
     import Ecto.Changeset
-    schema "indicator_logs" do
+    schema "score_logs" do
       field :pvp_type, :integer
       field :score, :integer
       field :grade, :integer
@@ -111,14 +161,7 @@ defmodule Model do
     @permitted ~w(pvp_type score grade ranking total_count win_count mvp_count role_id)a
 
     def changeset(perf, change \\ :empty) do
-      change = case change do
-        %{ranking: r} -> %{change | ranking: cond do
-          is_integer(r) -> r
-          String.at(r, -1) == "%" -> r |> String.trim_trailing("%") |> String.to_integer |> Kernel.-
-          true -> r |> String.to_integer
-        end}
-        change -> change
-      end
+      change = change |> RolePerformance.fix_pvptype |> RolePerformance.fix_ranking
       |> Enum.filter(fn {_, v} -> v != nil end)
       |> Enum.into(%{})
       cast(perf, change, @permitted)
@@ -178,14 +221,7 @@ defmodule Model do
     @permitted ~w(kungfu score score2 ranking equip_score equip_addition_score max_hp metrics equips talents)a
 
     def changeset(role, change \\ :empty) do
-      change = case change do
-        %{ranking: r} -> %{change | ranking: cond do
-          is_integer(r) -> r
-          String.at(r, -1) == "%" -> r |> String.trim_trailing("%") |> String.to_integer |> Kernel.-
-          true -> r |> String.to_integer
-        end}
-        change -> change
-      end
+      change = change |> RolePerformance.fix_pvptype
       |> Enum.filter(fn {_, v} -> v != nil end)
       |> Enum.into(%{})
       cast(role, change, @permitted)
@@ -258,8 +294,14 @@ defmodule Model do
       Repo.all(from r in Role, order_by: [asc: :inserted_at])
     end
 
-    def insert_performance(perf) do
-      %RolePerformanceLog{} |> RolePerformanceLog.changeset(perf) |> Repo.insert_or_update
+    def update_performance(%{role_id: id, pvp_type: _} = perf) do
+      %{pvp_type: pt} = RolePerformance.fix_pvptype(perf)
+      case Repo.get_by(RolePerformance, [role_id: id, pvp_type: pt]) do
+        nil -> %RolePerformance{role_id: id, pvp_type: pt}
+        p -> p
+      end
+      |> RolePerformance.changeset(perf) |> Repo.insert_or_update
+      %RolePerformanceLog{} |> RolePerformanceLog.changeset(perf) |> Repo.insert
     end
 
     def insert_match(%{match_id: id, roles: roles} = match) do
