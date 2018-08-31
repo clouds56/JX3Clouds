@@ -1,4 +1,5 @@
 defmodule Crawler do
+  require Logger
 
   def start_link do
     start_link(Application.get_env(:jx3replay, Crawler) |> Enum.into(%{}))
@@ -71,6 +72,7 @@ defmodule Crawler do
     client = client || lookup()
     history = GenServer.call(client, {:role_history, global_id})
     if history do
+      Logger.debug("fetching matches of #{global_id}")
       history |> Enum.map(fn %{match_id: id} = m ->
         if !Model.Query.get_match(id) do
           match(client, m)
@@ -93,5 +95,9 @@ defmodule Crawler do
       replay = GenServer.call(client, {:match_replay, match_id})
       if replay do replay |> Model.Query.insert_match_log end
     end
+  end
+
+  def start do
+    spawn(fn -> Crawler.foreach_role(&Crawler.matches(Crawler.lookup, &1)) end)
   end
 end

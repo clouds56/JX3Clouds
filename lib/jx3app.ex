@@ -27,6 +27,16 @@ defmodule Jx3APP do
     "#{pad_int(y, 4)}#{pad_int(m, 2)}#{pad_int(d, 2)}#{pad_int(hh, 2)}#{pad_int(mm, 2)}#{pad_int(ss, 2)}#{pad_int(ms, 6) |> String.slice(0..2)}"
   end
 
+  def icon_url_trim(url) do
+    r = Regex.run(~r|https://dl\.pvp\.xoyo\.com/prod/icons/([^?]*)\??.*|, url)
+    if r do
+      [_, r] = r
+      r
+    else
+      url
+    end
+  end
+
   def secret_key do
     "xv3r8cy1v1abdmi6"
   end
@@ -274,13 +284,15 @@ defmodule Jx3APP do
   def handle(:match_detail, {match_id}, token) do
     {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
     player_of = fn i -> fn pi ->
+      kungfu = Map.get(pi, "kungfu_id")
+      Jx3Const.push(:kungfu, kungfu, Map.get(pi, "kungfu"))
       %{
         team: i,
         global_id: pi |> Map.get("global_role_id"),
         role_id: pi |> Map.get("role_id"),
         zone: pi |> Map.get("zone"),
         server: pi |> Map.get("server"),
-        kungfu: pi |> Map.get("kungfu_id"),
+        kungfu: kungfu,
         score: pi |> Map.get("mmr"),
         score2: pi |> Map.get("score"),
         ranking: pi |> Map.get("ranking"),
@@ -288,8 +300,16 @@ defmodule Jx3APP do
         equip_addition_score: Map.get(pi, "equip_strength_score") + Map.get(pi, "stone_score"),
         max_hp: pi |> Map.get("max_hp"),
         metrics: pi |> Map.get("metrics") |> Enum.map(fn m -> m |> Map.get("value") end),
-        equips: pi |> Map.get("armors") |> Enum.map(fn e -> e |> Map.get("ui_id") |> String.to_integer end),
-        talents: pi |> Map.get("talents") |> Enum.map(fn t -> t |> Map.get("id") |> String.to_integer end),
+        equips: pi |> Map.get("armors") |> Enum.map(fn e ->
+          id = e |> Map.get("ui_id") |> String.to_integer
+          Jx3Const.push(:equip, id, %{Map.drop(e, ["strength_evel", "strength_level", "permanent_enchant", "temporary_enchant", "mount1", "mount2", "mount3", "mount4", "mount5", "pos"]) | "icon" => Map.get(e, "icon") |> icon_url_trim})
+          id
+        end),
+        talents: pi |> Map.get("talents") |> Enum.map(fn t ->
+          id = t |> Map.get("id") |> String.to_integer
+          Jx3Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> icon_url_trim})
+          id
+        end),
         attrs: pi |> Map.get("body_qualities") |> Enum.map(fn a -> a |> Map.get("value") end),
       }
     end end

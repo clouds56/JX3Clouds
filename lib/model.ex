@@ -1,6 +1,44 @@
 defmodule Model do
   defmodule Repo do
     use Ecto.Repo, otp_app: :jx3replay
+
+    defmodule LogEntry do
+      def log(%{query: query} = entry) do
+        cond do
+          query =~ ~r/^SELECT .* FROM "(items|matches)" AS .*/ -> entry
+          true -> Ecto.LogEntry.log(entry)
+        end
+      end
+    end
+  end
+
+  defmodule AnyType do
+    def type, do: :jsonb
+    def load(i), do: {:ok, i}
+    def cast(i), do: {:ok, i}
+    def dump(i), do: {:ok, i}
+  end
+
+  defmodule Item do
+    use Ecto.Schema
+    import Ecto.Changeset
+
+    @primary_key false
+    schema "items" do
+      field :tag, :string, primary_key: true
+      field :id, :string, primary_key: true
+      field :content, AnyType
+      timestamps()
+    end
+
+    @permitted ~w(content)a
+
+    def changeset(item, change \\ :empty) do
+      change = change
+      |> Enum.filter(fn {_, v} -> v != nil end)
+      |> Enum.into(%{})
+      cast(item, change, @permitted)
+    end
   end
 
   defmodule Person do
@@ -177,6 +215,25 @@ defmodule Model do
 
   defmodule Query do
     import Ecto.Query
+
+    def update_item(%{tag: tag, id: id} = item) do
+      {tag, id} = {"#{tag}", "#{id}"}
+      case Repo.get_by(Item, [tag: tag, id: id]) do
+        nil -> %Item{tag: tag, id: id}
+        item -> item
+      end
+      |> Item.changeset(item) |> Repo.insert_or_update
+    end
+
+    def get_items(tag \\ nil) do
+      if tag do
+        Repo.all(from i in Item, where: i.tag == ^tag)
+      else
+        Repo.all(from i in Item)
+      end
+      |> Enum.group_by(fn i -> i.tag end)
+    end
+
     def update_person(%{person_id: id} = person) do
       p = case Repo.get(Person, id) do
         nil -> %Person{person_id: id}

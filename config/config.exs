@@ -41,7 +41,8 @@ config :jx3replay, Model.Repo,
   adapter: Ecto.Adapters.Postgres,
   database: "j3",
   hostname: "localhost",
-  port: 5733
+  port: 5733,
+  loggers: [{Model.Repo.LogEntry, :log, []}]
 
 config :jx3replay,
   ecto_repos: [Model.Repo]
