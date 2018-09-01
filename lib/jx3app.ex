@@ -349,7 +349,7 @@ defmodule Jx3APP do
         end),
         talents: pi |> Map.get("talents") |> Enum.map(fn t ->
           id = t |> Map.get("id") |> String.to_integer
-          Jx3Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> icon_url_trim})
+          Jx3Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> icon_url_trim}, :insert_only)
           id
         end),
         attrs_version: attrs_version,
@@ -367,10 +367,10 @@ defmodule Jx3APP do
       total_score2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
       team1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi ->
         pi |> Map.get("kungfu_id")
-      end),
+      end) |> Enum.sort,
       team2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi ->
         pi |> Map.get("kungfu_id")
-      end),
+      end) |> Enum.sort,
       winner: d |> Map.get("team1") |> Map.get("won") && 1 || 2,
       roles: (d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(player_of.(1)))
           ++ (d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(player_of.(2))),

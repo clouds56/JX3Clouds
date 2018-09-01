@@ -349,6 +349,10 @@ defmodule Model do
       Repo.get(Match, id)
     end
 
+    def get_matches do
+      Repo.all(from m in Match, order_by: :match_id)
+    end
+
     def insert_match_log(%{"match_id" => id} = log) do
       case Repo.get(MatchLog, id) do
         nil -> %MatchLog{match_id: id} |> MatchLog.changeset(%{replay: log}) |> Repo.insert_or_update

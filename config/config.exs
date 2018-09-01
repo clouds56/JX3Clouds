@@ -32,7 +32,7 @@ use Mix.Config
 config :logger,
   backends: [{LoggerFileBackend, :error_log}, :console]
 config :logger, :console,
-  level: :debug
+  level: :info
 config :logger, :error_log,
   level: :error,
   path: "log/elixir.log"

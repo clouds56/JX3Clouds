@@ -68,7 +68,7 @@ defmodule Crawler do
     client = client || Jx3APP.lookup()
     history = GenServer.call(client, {:role_history, global_id, 0, size})
     if history do
-      Logger.debug("fetching matches of #{global_id}")
+      Logger.info("fetching matches of #{global_id}")
       history |> Enum.map(fn %{match_id: id} = m ->
         Model.Query.get_match(id) || match(client, m)
       end)
@@ -130,5 +130,13 @@ defmodule Crawler do
 
   def stop(pid) do
     Process.exit(pid, :stop)
+  end
+
+  def fix_match_array_order do
+    Model.Query.get_matches |> Enum.each(fn m ->
+      {:ok, _} = Model.Match.changeset(m, %{team1: Enum.sort(m.team1), team2: Enum.sort(m.team2)})
+      |> Model.Repo.update
+    end)
+    :ok
   end
 end
