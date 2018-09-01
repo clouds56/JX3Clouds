@@ -37,6 +37,12 @@ defmodule Jx3APP do
     end
   end
 
+  def get_percent_name(%{"name" => name, "value" => value}) when is_binary(value) do
+    {_, y} = Float.parse(value)
+    name <> y
+  end
+  def get_percent_name(%{"name" => name}), do: name
+
   def secret_key do
     "xv3r8cy1v1abdmi6"
   end
@@ -98,7 +104,7 @@ defmodule Jx3APP do
 
   @impl true
   def init(%{username: u, password: p, deviceid: id, sleep: sleep}) do
-    {:ok, %{token: login(u, p, id), last: DateTime.utc_now, sleep: sleep}}
+    {:ok, %{token: login(u, p, id), last: NaiveDateTime.utc_now, sleep: sleep}}
   end
 
   @impl true
@@ -113,12 +119,12 @@ defmodule Jx3APP do
 
   @impl true
   def handle_call(req, _from, %{token: token, last: last, sleep: sleep} = state) do
-    :timer.sleep(max(0, sleep - DateTime.diff(DateTime.utc_now, last, :millisecond)))
+    :timer.sleep(max(0, sleep - NaiveDateTime.diff(NaiveDateTime.utc_now, last, :millisecond)))
     try do
-      {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: DateTime.utc_now}}
+      {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: NaiveDateTime.utc_now, sleep: 100}}
     rescue e ->
       Logger.error "JX3APP: " <> Exception.format(:error, e, __STACKTRACE__)
-      {:reply, nil, %{state | last: Timex.shift(DateTime.utc_now, seconds: 3)}}
+      {:reply, nil, %{state | last: NaiveDateTime.add(NaiveDateTime.utc_now, 3)}}
     end
   end
 
@@ -286,6 +292,10 @@ defmodule Jx3APP do
     player_of = fn i -> fn pi ->
       kungfu = Map.get(pi, "kungfu_id")
       Jx3Const.push(:kungfu, kungfu, Map.get(pi, "kungfu"))
+      metrics_version = Jx3Const.find_version(:metric_names,
+        pi |> Map.get("metrics") |> Enum.map(&get_percent_name/1))
+      attrs_version = Jx3Const.find_version(:attr_names,
+        pi |> Map.get("body_qualities") |> Enum.map(&get_percent_name/1))
       %{
         team: i,
         global_id: pi |> Map.get("global_role_id"),
@@ -299,10 +309,12 @@ defmodule Jx3APP do
         equip_score: pi |> Map.get("equip_score"),
         equip_addition_score: Map.get(pi, "equip_strength_score") + Map.get(pi, "stone_score"),
         max_hp: pi |> Map.get("max_hp"),
+        metrics_version: metrics_version,
         metrics: pi |> Map.get("metrics") |> Enum.map(fn m -> m |> Map.get("value") end),
         equips: pi |> Map.get("armors") |> Enum.map(fn e ->
           id = e |> Map.get("ui_id") |> String.to_integer
-          Jx3Const.push(:equip, id, %{Map.drop(e, ["strength_evel", "strength_level", "permanent_enchant", "temporary_enchant", "mount1", "mount2", "mount3", "mount4", "mount5", "pos"]) | "icon" => Map.get(e, "icon") |> icon_url_trim})
+          value = %{Map.drop(e, ["strength_evel", "strength_level", "permanent_enchant", "temporary_enchant", "mount1", "mount2", "mount3", "mount4", "mount5", "pos"]) | "icon" => Map.get(e, "icon") |> icon_url_trim}
+          Jx3Const.push(:equip, id, value, :insert_only)
           id
         end),
         talents: pi |> Map.get("talents") |> Enum.map(fn t ->
@@ -310,6 +322,7 @@ defmodule Jx3APP do
           Jx3Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> icon_url_trim})
           id
         end),
+        attrs_version: attrs_version,
         attrs: pi |> Map.get("body_qualities") |> Enum.map(fn a -> a |> Map.get("value") end),
       }
     end end

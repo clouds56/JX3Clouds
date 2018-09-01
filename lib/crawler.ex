@@ -92,7 +92,6 @@ defmodule Crawler do
   end
 
   def start do
-    # spawn(fn -> Crawler.foreach_role(&Crawler.matches(Crawler.lookup, &1)) end)
-    spawn(fn -> Crawler.foreach_role(&Crawler.indicator(Crawler.lookup, &1)) end)
+    spawn(fn -> Crawler.foreach_role(fn {r, _} -> Crawler.matches(Crawler.lookup, r) end) end)
   end
 end

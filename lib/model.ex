@@ -211,17 +211,28 @@ defmodule Model do
       field :equip_score, :integer
       field :equip_addition_score, :integer
       field :max_hp, :integer
+      field :metrics_version, :integer
       field :metrics, {:array, :float}
       field :equips, {:array, :integer}
       field :talents, {:array, :integer}
+      field :attrs_version, :integer
+      field :attrs, {:array, :float}
 
       timestamps(updated_at: false)
     end
 
-    @permitted ~w(kungfu score score2 ranking equip_score equip_addition_score max_hp metrics equips talents)a
+    @permitted ~w(kungfu score score2 ranking equip_score equip_addition_score max_hp
+      metrics_version metrics equips talents attrs_version attrs)a
+
+    def fix_attrs(%{attrs: attrs} = change) do
+      attrs = attrs |> Enum.map(fn v -> {v, _} = Float.parse(v); v end)
+      %{change | attrs: attrs}
+    end
+    def fix_attrs(change), do: change
 
     def changeset(role, change \\ :empty) do
-      change = change |> RolePerformance.fix_pvptype
+      change = change |> RolePerformance.fix_pvptype |> RolePerformance.fix_ranking
+      |> fix_attrs
       |> Enum.filter(fn {_, v} -> v != nil end)
       |> Enum.into(%{})
       cast(role, change, @permitted)
@@ -291,7 +302,14 @@ defmodule Model do
     end
 
     def get_roles do
-      Repo.all(from r in Role, order_by: [asc: :inserted_at])
+      Repo.all(
+        from(
+          r in Role,
+          left_join: s in RolePerformance,
+          on: r.global_id == s.role_id,
+          where: s.pvp_type == 3,
+          order_by: [desc: s.score],
+          select: {r, s}))
     end
 
     def update_performance(%{role_id: id, pvp_type: _} = perf) do

@@ -28,9 +28,12 @@ defmodule Model.Repo.Migrations.CreateMatches do
       add :equip_score, :integer
       add :equip_addition_score, :integer
       add :max_hp, :integer
+      add :metrics_version, :integer
       add :metrics, {:array, :float}
       add :equips, {:array, :integer}
       add :talents, {:array, :integer}
+      add :attrs, {:array, :float}
+      add :attrs_version, :integer
 
       timestamps(updated_at: false)
     end
