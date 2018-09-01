@@ -13,6 +13,7 @@ defmodule Model.Repo.Migrations.CreateScoreLogs do
       add :total_count, :integer
       add :win_count, :integer
       add :mvp_count, :integer
+      add :fetch_at, :naive_datetime
       timestamps()
     end
 

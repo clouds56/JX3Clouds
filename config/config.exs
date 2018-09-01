@@ -48,5 +48,5 @@ config :jx3replay, Jx3APP,
   username: "",
   password: ""
 
-import_config "#{Mix.env}.exs"
+if File.exists?("#{Mix.env}.exs") do import_config "#{Mix.env}.exs" end
 import_config "secret.exs"
