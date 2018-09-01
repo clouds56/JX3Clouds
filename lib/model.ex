@@ -191,7 +191,7 @@ defmodule Model do
       timestamps(updated_at: false)
     end
 
-    @permitted ~w(start_time duration pvp_type map total_score1 total_score2 team1 team2 winner)a
+    @permitted ~w(start_time duration pvp_type map grade total_score1 total_score2 team1 team2 winner)a
 
     def changeset(match, change \\ :empty) do
       change = change
@@ -351,6 +351,10 @@ defmodule Model do
 
     def get_matches do
       Repo.all(from m in Match, order_by: :match_id)
+    end
+
+    def get_matches_by_role(id) do
+      Repo.all(from r in MatchRole, left_join: m in Match, on: r.match_id == m.match_id, where: r.role_id == ^id, order_by: m.start_time, select: m)
     end
 
     def insert_match_log(%{"match_id" => id} = log) do

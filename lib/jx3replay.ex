@@ -24,8 +24,10 @@ defmodule Jx3replay do
       worker(Model.Repo, [], restart: :transient),
       worker(Jx3Const, [], restart: :transient),
       worker(Jx3APP, [Application.get_env(:jx3replay, Jx3APP), [name: Jx3APP]], restart: :transient),
-      worker(Crawler, [], restart: :transient),
-    ]
+    ] ++ case Mix.env do
+      :prod -> [worker(Crawler, [], restart: :transient),]
+      _ -> []
+    end
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options

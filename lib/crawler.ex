@@ -70,9 +70,9 @@ defmodule Crawler do
     if history do
       Logger.info("fetching matches of #{global_id}")
       history |> Enum.map(fn %{match_id: id} = m ->
-        Model.Query.get_match(id) || match(client, m)
+        Model.Query.get_match(id) || match(client, m) || m
       end)
-    end || history
+    end || []
   end
 
   def match(client \\ nil, %{match_id: match_id} = m) do
@@ -85,7 +85,11 @@ defmodule Crawler do
           indicator(client, r)
         end
       end)
-      avg_grade = Map.get(detail, :grade, nil) || Map.get(m, :avg_grade, nil)
+      avg_grade = case Map.get(detail, :grade, nil) do
+        nil -> Map.get(m, :avg_grade, nil)
+        0 -> Map.get(m, :avg_grade, nil)
+        x -> x
+      end
       {:ok, detail} = detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match
       replay = GenServer.call(client, {:match_replay, match_id})
       if replay do replay |> Model.Query.insert_match_log end
@@ -99,9 +103,10 @@ defmodule Crawler do
       ranking in [-1, -2, -3] and time_in?(last, 6, :day) -> matches(client, role)
       ranking > 0 and time_in?(last, 18, :hour) -> matches(client, role)
       time_in?(last, 7, :day) -> matches(client, role, 10)
-      true -> []
+      true -> nil
     end
-    with [%Model.Match{} = h | _] <- history,
+    with [%Model.Match{} = h | _] <-
+            (history || []) |> Enum.drop_while(fn m -> case m do %Model.Match{} -> false; _ -> true end end),
          [r | _] <-
             h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> Enum.filter(fn r -> r.role_id == role.global_id end),
          pvp_type <- h.pvp_type
@@ -109,7 +114,15 @@ defmodule Crawler do
       %{role_id: role.global_id, pvp_type: pvp_type, score2: r.score2, fetch_at: NaiveDateTime.utc_now}
       |> Model.Query.update_performance
     else
-      err -> if history != [] do Logger.error "Error when fetching #{role.global_id}: " <> inspect(err) end
+      err -> if history != nil do
+        Logger.error "Error when fetching #{role.global_id}: " <> inspect(err)
+        with [h | _] <- history,
+          pvp_type <- Map.get(h, :pvp_type)
+        do
+          %{role_id: role.global_id, pvp_type: pvp_type, fetch_at: NaiveDateTime.utc_now}
+          |> Model.Query.update_performance
+        end
+      end
     end
   end
 
@@ -130,13 +143,5 @@ defmodule Crawler do
 
   def stop(pid) do
     Process.exit(pid, :stop)
-  end
-
-  def fix_match_array_order do
-    Model.Query.get_matches |> Enum.each(fn m ->
-      {:ok, _} = Model.Match.changeset(m, %{team1: Enum.sort(m.team1), team2: Enum.sort(m.team2)})
-      |> Model.Repo.update
-    end)
-    :ok
   end
 end

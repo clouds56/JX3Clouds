@@ -299,6 +299,7 @@ defmodule Jx3APP do
     d |> Enum.map(fn m ->
       %{
         match_id: m |> Map.get("match_id"),
+        pvp_type: m |> Map.get("pvp_type"),
         global_id: m |> Map.get("global_role_id"),
         avg_grade: m |> Map.get("avg_grade"),
         start_time: m |> Map.get("start_time"),
