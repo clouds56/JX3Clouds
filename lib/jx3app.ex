@@ -6,6 +6,14 @@ defmodule Jx3APP do
   use GenServer
   require Logger
 
+  def start_link(cred, opts) do
+    GenServer.start_link(__MODULE__, cred, opts)
+  end
+
+  def lookup do
+    GenServer.whereis(__MODULE__)
+  end
+
   def pad_int(d, i) do
     d
     |> Integer.to_string
@@ -103,18 +111,17 @@ defmodule Jx3APP do
   end
 
   @impl true
-  def init(%{username: u, password: p, deviceid: id, sleep: sleep}) do
-    {:ok, %{token: login(u, p, id), last: NaiveDateTime.utc_now, sleep: sleep}}
-  end
-
-  @impl true
-  def init(%{username: _, password: _, deviceid: _} = cred) do
-    init(Map.put(cred, :sleep, 300))
-  end
-
-  @impl true
-  def init(%{username: _, password: _} = cred) do
-    init(Map.put(cred, :deviceid, "CURL"))
+  def init(opts \\ []) do
+    with {:ok, u} <- Keyword.fetch(opts, :username),
+      {:ok, p} <- Keyword.fetch(opts, :password),
+      id <- Keyword.get(opts, :deviceid, "CURL"),
+      token <- login(u, p, id)
+    do
+      sleep = Keyword.get(opts, :sleep, 300)
+      {:ok, %{token: token, last: NaiveDateTime.utc_now, sleep: sleep}}
+    else
+      _ -> :error
+    end
   end
 
   def format_client({pid, _ref}) do
@@ -156,7 +163,10 @@ defmodule Jx3APP do
         role_info: %{
           passport_id: Map.get(p, "passportId") |> empty_nil,
           global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
-          role_id: Map.get(r, "gameRoleId") |> String.to_integer,
+          role_id: case Map.get(r, "gameRoleId") do
+            "" -> nil
+            i -> i |> String.to_integer
+          end,
           name: Map.get(r, "roleName") |> empty_nil,
           server: Map.get(r, "server") |> empty_nil,
           zone: Map.get(r, "zone") |> empty_nil,

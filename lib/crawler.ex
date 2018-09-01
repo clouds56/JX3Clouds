@@ -2,15 +2,7 @@ defmodule Crawler do
   require Logger
 
   def start_link do
-    start_link(Application.get_env(:jx3replay, Crawler) |> Enum.into(%{}))
-  end
-
-  def start_link(%{username: _, password: _} = cred) do
-    GenServer.start_link(Jx3APP, cred, [name: Jx3APP])
-  end
-
-  def lookup do
-    GenServer.whereis(Jx3APP)
+    run()
   end
 
   def time_in?(t, d, u \\ :second) do
@@ -53,7 +45,7 @@ defmodule Crawler do
   end
 
   def top200(client \\ nil) do
-    client = client || lookup()
+    client = client || Jx3APP.lookup()
     top = GenServer.call(client, {:top200})
     if top do
       top |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
@@ -65,15 +57,15 @@ defmodule Crawler do
   end
 
   def role(client \\ nil, %{global_id: global_id} = r) do
-    GenServer.call(client || lookup(), {:role_info, global_id}) |> save_role(r)
+    GenServer.call(client || Jx3APP.lookup(), {:role_info, global_id}) |> save_role(r)
   end
 
   def indicator(client \\ nil, %{role_id: role_id, zone: zone, server: server} = r) do
-    GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role(r)
+    GenServer.call(client || Jx3APP.lookup(), {:role_info, role_id, zone, server}) |> save_role(r)
   end
 
   def matches(client \\ nil, %{global_id: global_id}, size \\ 100) do
-    client = client || lookup()
+    client = client || Jx3APP.lookup()
     history = GenServer.call(client, {:role_history, global_id, 0, size})
     if history do
       Logger.debug("fetching matches of #{global_id}")
@@ -84,7 +76,7 @@ defmodule Crawler do
   end
 
   def match(client \\ nil, %{match_id: match_id} = m) do
-    client = client || lookup()
+    client = client || Jx3APP.lookup()
     detail = GenServer.call(client, {:match_detail, match_id})
     if detail do
       detail |> Map.get(:roles) |> Enum.map(fn %{global_id: id} = r ->
@@ -102,7 +94,7 @@ defmodule Crawler do
   end
 
   def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last}) do
-    client = client || lookup()
+    client = client || Jx3APP.lookup()
     history = cond do
       ranking in [-1, -2, -3] and time_in?(last, 6, :day) -> matches(client, role)
       ranking > 0 and time_in?(last, 18, :hour) -> matches(client, role)
@@ -121,15 +113,19 @@ defmodule Crawler do
     end
   end
 
-  def start do
-    spawn(fn -> Model.Query.get_roles |> Enum.map(fn {r, p} ->
+  def run do
+    Model.Query.get_roles |> Enum.map(fn {r, p} ->
       try do
-        Crawler.fetch(Crawler.lookup, r, p)
+        Crawler.fetch(Jx3APP.lookup, r, p)
       catch
         :exit, e when e != :stop -> Logger.error "Crawler (exit): " <> Exception.format(:error, e, __STACKTRACE__)
           :error
       end
-    end) end)
+    end)
+  end
+
+  def start do
+    spawn(&run/0)
   end
 
   def stop(pid) do
