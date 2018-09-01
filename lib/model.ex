@@ -52,6 +52,7 @@ defmodule Model do
       field :name, :string
       field :avatar, :string
       field :signature, :string
+      has_many :roles, Model.Role, foreign_key: :person_id
       timestamps()
 
       @permitted ~w(name avatar signature)a
@@ -79,6 +80,7 @@ defmodule Model do
       field :zone, :string
       field :server, :string
       belongs_to :person, Person, type: :string
+      has_one :performance, Model.RolePerformance, foreign_key: :role_id
       timestamps()
 
       @permitted ~w(role_id passport_id name force body_type camp zone server person_id)a
@@ -108,11 +110,12 @@ defmodule Model do
       field :total_count, :integer
       field :win_count, :integer
       field :mvp_count, :integer
+      field :fetch_at, :naive_datetime
 
       timestamps()
     end
 
-    @permitted ~w(score score2 grade ranking ranking2 total_count win_count mvp_count)a
+    @permitted ~w(score score2 grade ranking ranking2 total_count win_count mvp_count fetch_at)a
 
     def fix_pvptype(%{pvp_type: t} = change) do
       pvp_type = cond do
@@ -183,6 +186,7 @@ defmodule Model do
       field :team1, {:array, :integer}
       field :team2, {:array, :integer}
       field :winner, :integer
+      has_many :roles, Model.MatchRole, foreign_key: :match_id
 
       timestamps(updated_at: false)
     end
@@ -314,12 +318,16 @@ defmodule Model do
 
     def update_performance(%{role_id: id, pvp_type: _} = perf) do
       %{pvp_type: pt} = RolePerformance.fix_pvptype(perf)
-      case Repo.get_by(RolePerformance, [role_id: id, pvp_type: pt]) do
+      p = case Repo.get_by(RolePerformance, [role_id: id, pvp_type: pt]) do
         nil -> %RolePerformance{role_id: id, pvp_type: pt}
         p -> p
       end
       |> RolePerformance.changeset(perf) |> Repo.insert_or_update
-      %RolePerformanceLog{} |> RolePerformanceLog.changeset(perf) |> Repo.insert
+
+      if Map.has_key?(perf, :score) do
+        %RolePerformanceLog{} |> RolePerformanceLog.changeset(perf) |> Repo.insert
+      end
+      p
     end
 
     def insert_match(%{match_id: id, roles: roles} = match) do
@@ -327,12 +335,13 @@ defmodule Model do
         nil ->
           multi = Ecto.Multi.new
           |> Ecto.Multi.insert(:match, %Match{match_id: id} |> Match.changeset(match))
-          {:ok, _} = Enum.reduce(roles, multi, fn r, multi ->
+          {:ok, r} = Enum.reduce(roles, multi, fn r, multi ->
             role_id = Map.get(r, :global_id)
             multi |> Ecto.Multi.insert("roles#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r))
           end)
           |> Repo.transaction
-        role -> role
+          {:ok, Map.get(r, :match)}
+        match -> match
       end
     end
 

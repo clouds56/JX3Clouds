@@ -13,6 +13,20 @@ defmodule Crawler do
     GenServer.whereis(Jx3APP)
   end
 
+  def time_in?(t, d, u \\ :second) do
+    d = d * case u do
+      :second -> 1
+      :minute -> 60
+      :hour -> 3600
+      :day -> 24 * 3600
+      :week -> 7 * 24 * 3600
+    end
+    case t do
+      nil -> true
+      _ -> NaiveDateTime.diff(NaiveDateTime.utc_now, t) >= d
+    end
+  end
+
   def save_role(a, o \\ nil)
   def save_role(%{person_info: p, role_info: r} = a, o) do
     person_id = Map.get(p, :person_id)
@@ -38,10 +52,6 @@ defmodule Crawler do
     Map.put(o, :person_id, nil) |> Model.Query.update_role
   end
 
-  def foreach_role(fun) do
-    Model.Query.get_roles |> Enum.map(fun)
-  end
-
   def top200(client \\ nil) do
     client = client || lookup()
     top = GenServer.call(client, {:top200})
@@ -62,20 +72,18 @@ defmodule Crawler do
     GenServer.call(client || lookup(), {:role_info, role_id, zone, server}) |> save_role(r)
   end
 
-  def matches(client \\ nil, %{global_id: global_id}) do
+  def matches(client \\ nil, %{global_id: global_id}, size \\ 100) do
     client = client || lookup()
-    history = GenServer.call(client, {:role_history, global_id})
+    history = GenServer.call(client, {:role_history, global_id, 0, size})
     if history do
       Logger.debug("fetching matches of #{global_id}")
       history |> Enum.map(fn %{match_id: id} = m ->
-        if !Model.Query.get_match(id) do
-          match(client, m)
-        end
+        Model.Query.get_match(id) || match(client, m)
       end)
-    end
+    end || history
   end
 
-  def match(client \\ nil, %{match_id: match_id}) do
+  def match(client \\ nil, %{match_id: match_id} = m) do
     client = client || lookup()
     detail = GenServer.call(client, {:match_detail, match_id})
     if detail do
@@ -85,13 +93,35 @@ defmodule Crawler do
           indicator(client, r)
         end
       end)
-      detail |> Model.Query.insert_match
+      avg_grade = Map.get(detail, :grade, nil) || Map.get(m, :avg_grade, nil)
+      {:ok, detail} = detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match
       replay = GenServer.call(client, {:match_replay, match_id})
       if replay do replay |> Model.Query.insert_match_log end
+      detail
+    end || detail
+  end
+
+  def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last}) do
+    client = client || lookup()
+    history = cond do
+      ranking in [-1, -2, -3] and time_in?(last, 6, :day) -> matches(client, role)
+      ranking > 0 and time_in?(last, 18, :hour) -> matches(client, role)
+      time_in?(last, 7, :day) -> matches(client, role, 10)
+      true -> []
+    end
+    with [%Model.Match{} = h | _] <- history,
+         [r | _] <-
+            h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> Enum.filter(fn r -> r.role_id == role.global_id end),
+         pvp_type <- h.pvp_type
+    do
+      %{role_id: role.global_id, pvp_type: pvp_type, score2: r.score2, fetch_at: NaiveDateTime.utc_now}
+      |> Model.Query.update_performance
+    else
+      err -> if history != [] do Logger.error "Error when fetching #{role.global_id}: " <> inspect(err) end
     end
   end
 
   def start do
-    spawn(fn -> Crawler.foreach_role(fn {r, _} -> Crawler.matches(Crawler.lookup, r) end) end)
+    spawn(fn -> Model.Query.get_roles |> Enum.map(fn {r, p} -> Crawler.fetch(Crawler.lookup, r, p) end) end)
   end
 end
