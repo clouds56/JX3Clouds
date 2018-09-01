@@ -39,9 +39,6 @@ config :logger, :error_log,
 
 config :jx3replay, Model.Repo,
   adapter: Ecto.Adapters.Postgres,
-  database: "j3",
-  hostname: "localhost",
-  port: 5733,
   loggers: [{Model.Repo.LogEntry, :log, []}]
 
 config :jx3replay,
@@ -51,4 +48,5 @@ config :jx3replay, Jx3APP,
   username: "",
   password: ""
 
+import_config "#{Mix.env}.exs"
 import_config "secret.exs"

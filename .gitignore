@@ -24,3 +24,8 @@ jx3replay-*.tar
 
 db
 config/secret.exs
+log
+priv/repo/migrations/*_fix.exs
+*.flows
+mix.lock
+*.bak
