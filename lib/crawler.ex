@@ -122,6 +122,17 @@ defmodule Crawler do
   end
 
   def start do
-    spawn(fn -> Model.Query.get_roles |> Enum.map(fn {r, p} -> Crawler.fetch(Crawler.lookup, r, p) end) end)
+    spawn(fn -> Model.Query.get_roles |> Enum.map(fn {r, p} ->
+      try do
+        Crawler.fetch(Crawler.lookup, r, p)
+      catch
+        :exit, e when e != :stop -> Logger.error "Crawler (exit): " <> Exception.format(:error, e, __STACKTRACE__)
+          :error
+      end
+    end) end)
+  end
+
+  def stop(pid) do
+    Process.exit(pid, :stop)
   end
 end

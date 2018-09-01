@@ -117,15 +117,35 @@ defmodule Jx3APP do
     init(Map.put(cred, :deviceid, "CURL"))
   end
 
+  def format_client({pid, _ref}) do
+    "Client " <> inspect(pid) <> " is " <>
+    case Process.alive?(pid) do
+      true ->
+        {_, st} = Process.info(pid, :current_stacktrace)
+        "alive\n" <> Exception.format_stacktrace(st)
+      _ -> "not alive"
+    end
+  end
+
   @impl true
-  def handle_call(req, _from, %{token: token, last: last, sleep: sleep} = state) do
+  def handle_call(req, from, %{token: token, last: last, sleep: sleep} = state) do
     :timer.sleep(max(0, sleep - NaiveDateTime.diff(NaiveDateTime.utc_now, last, :millisecond)))
     try do
       {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0), token), %{state | last: NaiveDateTime.utc_now, sleep: 100}}
     rescue e ->
-      Logger.error "JX3APP: " <> Exception.format(:error, e, __STACKTRACE__)
+      Logger.error(
+        "JX3APP: " <> Exception.format(:error, e, __STACKTRACE__) <> "\n" <>
+        "Last message: " <> inspect(req) <> "\n" <>
+        "State: " <> inspect(state) <> "\n" <>
+        format_client(from)
+      )
       {:reply, nil, %{state | last: NaiveDateTime.add(NaiveDateTime.utc_now, 3)}}
     end
+  end
+
+  def handle(:sleep, {time}, _) do
+    Process.sleep(time*1000)
+    :ok
   end
 
   def handle(:top200, {}, _token) do
@@ -163,7 +183,7 @@ defmodule Jx3APP do
   end
 
   def handle(:role_info, {global_id}, _token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/find-role-gid", %{globalId: global_id})
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/arena/find-role-gid", %{globalId: global_id})
     p = d |> Map.get("personInfo")
     %{
       role_info: %{
@@ -190,7 +210,7 @@ defmodule Jx3APP do
   end
 
   def handle(:role_info, {role_id, zone, server}, _token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/role/indicator", %{role_id: "#{role_id}", zone: zone, server: server})
     p = d |> Map.get("person_info")
     r = d |> Map.get("role_info")
     t = d |> Map.get("indicator")
@@ -283,12 +303,12 @@ defmodule Jx3APP do
   end
 
   def handle(:match_replay, {match_id}, token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
     Map.drop(d, ["skill_cate"])
   end
 
   def handle(:match_detail, {match_id}, token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
     player_of = fn i -> fn pi ->
       kungfu = Map.get(pi, "kungfu_id")
       Jx3Const.push(:kungfu, kungfu, Map.get(pi, "kungfu"))
