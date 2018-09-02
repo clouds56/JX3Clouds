@@ -107,15 +107,20 @@ defmodule Crawler do
     end
     with [%Model.Match{} = h | _] <-
             (history || []) |> Enum.drop_while(fn m -> case m do %Model.Match{} -> false; _ -> true end end),
-         [r | _] <-
-            h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> Enum.filter(fn r -> r.role_id == role.global_id end),
-         pvp_type <- h.pvp_type
+         [:role, r] <-
+            [:role] ++ (h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> Enum.filter(fn r -> r != nil and r.role_id == role.global_id end))
     do
-      %{role_id: role.global_id, pvp_type: pvp_type, score2: r.score2, fetch_at: NaiveDateTime.utc_now}
+      %{role_id: role.global_id, pvp_type: h.pvp_type, score2: r.score2, fetch_at: NaiveDateTime.utc_now}
       |> Model.Query.update_performance
     else
       err -> if history != nil do
-        Logger.error "Error when fetching #{role.global_id}: " <> inspect(err)
+        hs = Enum.drop_while(history || [], fn m -> case m do %Model.Match{} -> false; _ -> true end end) |> Enum.take(1)
+        Logger.error("Error when fetching #{role.global_id}: " <> inspect(err) <> "\n" <> inspect(hs) <> "\n" <>
+        case {err, hs} do
+          {[:role], [h | _]} ->
+            h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> inspect
+          _ -> ""
+        end)
         with [h | _] <- history,
           pvp_type <- Map.get(h, :pvp_type)
         do

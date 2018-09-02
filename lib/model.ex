@@ -337,10 +337,13 @@ defmodule Model do
           |> Ecto.Multi.insert(:match, %Match{match_id: id} |> Match.changeset(match))
           {:ok, r} = Enum.reduce(roles, multi, fn r, multi ->
             role_id = Map.get(r, :global_id)
-            multi |> Ecto.Multi.insert("roles#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r))
+            multi |> Ecto.Multi.insert("role_#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r))
           end)
           |> Repo.transaction
-          {:ok, Map.get(r, :match)}
+          {:ok, %{Map.get(r, :match) | roles: Enum.map(roles, fn i ->
+            role_id = Map.get(i, :global_id)
+            Map.get(r, "role_#{role_id}")
+          end)}}
         match -> match
       end
     end
