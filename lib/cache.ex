@@ -23,11 +23,11 @@ defmodule Cache do
       time_key = opts[:time_key] || "#{name}:time"
       is_expire = opts[:expire] || false
       expire_time = opts[:expire_time] || @expire_time
-      fun_get = opts[:get] || fn i -> {:ok, i} end
+      fun_get = opts[:get] || &{:ok, &1}
       fun_set = opts[:set] ||
         case is_expire do
-          false -> fn k, v -> ["SET", k, v] end
-          true -> fn k, v -> ["SETEX", expire_time, k, v] end
+          false -> &["SET", &1, &2]
+          true -> &["SETEX", expire_time, &1, &2]
         end
       fun_query = fun_query || fn -> :error end
       {:ok, time} = Store.exec(["GET", time_key])
@@ -66,7 +66,7 @@ defmodule Cache do
 
   def count do
     ~w(roles persons matches fetched)a
-    |> Enum.map(fn key -> {key, count(key)} end)
+    |> Enum.map(&{&1, count(&1)})
     |> Enum.into(%{})
   end
 
@@ -88,7 +88,7 @@ defmodule Cache do
     case Store.get_ttl_key(key_str, fn -> {:ok, count_query(key)} end,
             expire_time: expire_time,
             is_expire: is_expire,
-            get: fn i -> string_to_integer(i || "") end)
+            get: &string_to_integer(&1 || ""))
     do
       {:ok, value} -> value
       _ -> nil
@@ -115,16 +115,39 @@ defmodule Cache do
     Repo.aggregate(from(r in MatchRole, where: r.role_id == ^role_id), :count, :match_id)
   end
 
+  def partition(l, acc \\ [])
+  def partition([], acc), do: Enum.reverse(acc)
+  def partition([a, b | t], acc) do
+    partition(t, [{a, b} | acc])
+  end
+
   def show_all do
+    foreach = fn keys, fun ->
+      {:ok, result} = keys
+        |> Enum.map(fun)
+        |> Store.multi
+      result
+    end
     {:ok, keys} = Store.exec(["KEYS", "*"])
-    {:ok, values} =
-      keys
-      |> Enum.map(fn i -> ["GET", i] end)
-      |> Store.multi
-    {:ok, ttl} =
-      keys
-      |> Enum.map(fn i -> ["TTL", i] end)
-      |> Store.multi
-    Enum.zip(keys, Enum.zip(ttl, values)) |> Enum.into(%{})
+    types = keys |> foreach.(&["TYPE", &1])
+    values = Enum.zip(keys, types) |> foreach.(fn {k, t} ->
+      case t do
+        "string" -> ["GET", k]
+        "hash" -> ["HGETALL", k]
+        "list" -> ["LRANGE", k, 0, -1]
+        "set" -> ["SMEMBERS", k]
+        "zset" -> ["ZRANGE", k, 0, -1, "WITHSCORES"]
+      end
+    end) |> Enum.zip(types) |> Enum.map(fn {v, t} ->
+      case t do
+        "string" -> v
+        "hash" -> partition(v) |> Enum.into(%{})
+        "list" -> v
+        "set" -> v
+        "zset" -> partition(v) |> Enum.map(fn {v1, v2} -> {v2, v1} end)
+      end
+    end)
+    ttl = keys |> foreach.(&["TTL", &1])
+    Enum.zip(keys, Enum.zip(Enum.zip(types, ttl), values)) |> Enum.into(%{})
   end
 end
