@@ -15,7 +15,7 @@ defmodule Crawler do
     end
     case t do
       nil -> true
-      _ -> NaiveDateTime.diff(NaiveDateTime.utc_now, t) >= d
+      _ -> NaiveDateTime.diff(NaiveDateTime.utc_now, t) <= d
     end
   end
 
@@ -100,9 +100,9 @@ defmodule Crawler do
   def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last}) do
     client = client || Jx3APP.lookup()
     history = cond do
-      ranking in [-1, -2, -3] and time_in?(last, 6, :day) -> matches(client, role)
-      ranking > 0 and time_in?(last, 18, :hour) -> matches(client, role)
-      time_in?(last, 7, :day) -> matches(client, role, 10)
+      ranking in [-1, -2, -3] and not time_in?(last, 6, :day) -> matches(client, role)
+      ranking > 0 and not time_in?(last, 18, :hour) -> matches(client, role)
+      not time_in?(last, 7, :day) -> matches(client, role, 10)
       true -> nil
     end
     with [%Model.Match{} = h | _] <-
