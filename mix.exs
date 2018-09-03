@@ -30,6 +30,8 @@ defmodule Jx3replay.MixProject do
       {:ecto, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
       {:logger_file_backend, "~> 0.0.10"},
+      {:poolboy, "~> 1.5"},
+      {:redix, "~> 0.7.1"},
     ]
   end
 end

@@ -18,12 +18,16 @@ defmodule Jx3replay do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    jx3app_args = Application.get_env(:jx3replay, Jx3APP)
+    redix_args = Application.get_env(:jx3replay, Cache)[:redis] || []
+
     children = [
       # Define workers and child supervisors to be supervised
       # worker(BigLebowski.Worker, [arg1, arg2, arg3])
       worker(Model.Repo, [], restart: :transient),
       worker(Jx3Const, [], restart: :transient),
-      worker(Jx3APP, [Application.get_env(:jx3replay, Jx3APP), [name: Jx3APP]], restart: :transient),
+      worker(Jx3APP, [jx3app_args, [name: Jx3APP]], restart: :transient),
+      :poolboy.child_spec(:redis_pool, [name: {:local, Redix}, worker_module: Redix, size: 5, max_overflow: 2], redix_args),
     ] ++ case Mix.env do
       :prod -> [worker(Crawler, [], restart: :transient),]
       _ -> []

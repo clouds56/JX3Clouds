@@ -22,7 +22,10 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 jx3replay-*.tar
 
-db
+db/*
+!db/cache
+db/cache/*
+!db/cache/redis.conf
 config/secret.exs
 log
 priv/repo/migrations/*_fix.exs

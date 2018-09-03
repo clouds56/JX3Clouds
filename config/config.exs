@@ -44,6 +44,9 @@ config :jx3replay, Model.Repo,
 config :jx3replay,
   ecto_repos: [Model.Repo]
 
+config :jx3replay, Cache,
+  redis: []
+
 config :jx3replay, Jx3APP,
   username: "",
   password: ""

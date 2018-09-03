@@ -41,3 +41,24 @@ mix test
 # run
 MIX_ENV=prod mix run --no-halt
 ```
+
+## Useful commands
+
+1. postgresql
+    ```shell
+    pg_ctl -D data initdb
+    # start/stop/restart
+    pg_ctl -D data -o "-p5733" -l postgres.log start
+    createdb -p5733 jx3replay # dropdb
+    pg_dump -Fc -p5733 jx3replay > dump.sql
+    pg_restore -a -p5733 -djx3replay dump.sql --disable-triggers
+    psql -p5733 jx3replay # -s (step)
+    # use "-h/tmp/postgresql" to specific pid folder
+    ```
+2. redis
+    ```shell
+    redis-server cache/redis.conf
+    redis-cli -p 5734
+    redis-cli -p 5734 flushdb
+    redis-cli -p 5734 shutdown
+    ```
