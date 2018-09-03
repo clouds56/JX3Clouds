@@ -39,5 +39,5 @@ mix ecto.migrate
 # test
 mix test
 # run
-MIX_ENV=prod mix run
+MIX_ENV=prod mix run --no-halt
 ```

@@ -2,7 +2,7 @@ defmodule Crawler do
   require Logger
 
   def start_link do
-    run()
+    {:ok, spawn_link(&run/0)}
   end
 
   def time_in?(t, d, u \\ :second) do
