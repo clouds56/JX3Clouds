@@ -17,9 +17,6 @@ defmodule Model.Repo.Migrations.CreateScoreLogs do
       timestamps()
     end
 
-    create index(:scores, :score)
-    create index(:scores, :ranking)
-
     create table(:score_logs) do
       add :pvp_type, :integer
       add :score, :integer

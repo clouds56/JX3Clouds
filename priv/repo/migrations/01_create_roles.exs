@@ -25,6 +25,5 @@ defmodule Model.Repo.Migrations.CreateRoles do
     end
 
     create index(:roles, [:role_id, :zone, :server])
-    create index(:roles, :person_id)
   end
 end
