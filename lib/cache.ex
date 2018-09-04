@@ -31,7 +31,7 @@ defmodule Cache do
         x when is_number(x) -> [["SETEX", key, x, value]]
       end
     end
-    def set(key, type, value, nil), do: set(key, type, value)
+    def set(key, type, value, nil), do: set_(key, type, value)
     def set(key, type, value, expire) when is_number(expire) do
       set_(key, type, value) ++ [["EXPIRE", key, expire]]
     end
@@ -77,6 +77,21 @@ defmodule Cache do
         {:ok, value} -> convert(type, value)
         _ -> :error
       end
+    end
+
+    def do_cache(name, value, opts \\ []) do
+      value_key = opts[:value_key] || "#{name}:value"
+      time_key = opts[:time_key] || "#{name}:time"
+      is_expire = opts[:hard_expire] || false
+      expire_time = opts[:expire_time] || @expire_time
+      value_type = opts[:type] || "string"
+      fun_set = opts[:set] || &set(&1, value_type, &2, is_expire && expire_time || nil)
+
+      Logger.debug("Cache: save #{value_key}")
+      Store.multi(
+        fun_set.(value_key, value) ++ [
+        ["SET", time_key, NaiveDateTime.to_iso8601(NaiveDateTime.utc_now)],
+      ])
     end
 
     def cache_query(name, fun_query, opts \\ []) do
@@ -169,27 +184,62 @@ defmodule Cache do
     end
   end
 
+  def search_role(role_name) do
+    roles = Repo.all(
+      from r in Role,
+      preload: [:person, :performances],
+      where: like(r.name, ^"%#{role_name}%"))
+    |> Enum.map(&get_summary/1)
+    roles |> Enum.map(fn r ->
+      Store.do_cache("role:#{r[:role_id]}", r, hard_expire: true, type: "hash")
+    end)
+    roles |> Enum.map(fn r ->
+      ~w(role_id force name zone server person_name)a
+      |> Enum.map(&{&1, r[&1]}) |> Enum.into(%{})
+    end)
+  end
+
+  def get_summary(%Model.Role{} = r) do
+    person_name = case r.person do
+      %Model.Person{} = p -> p.name
+      _ -> nil
+    end
+    %{
+      role_id: r.global_id,
+      person_id: r.person_id,
+      name: r.name,
+      zone: r.zone,
+      server: r.server,
+      force: r.force,
+      body_type: r.body_type,
+      person_name: person_name,
+      scores: r.performances |> Enum.map(fn s ->
+        [s.pvp_type, s.score, s.ranking, s.total_count, Float.round(s.win_count/s.total_count, 3)] end)
+      |> Enum.sort |> Poison.encode!,
+    }
+  end
+
+  def get_summary(%Model.Person{} = p) do
+    %{
+      person_id: p.person_id,
+      person_name: p.name,
+      roles: p.roles |> Enum.map(fn r ->
+        [r.global_id, r.name, r.force, r.passport_id] end)
+      |> Enum.sort |> Poison.encode!,
+    }
+  end
+
   def summary_role(role_id) do
     query = fn ->
       r = Repo.get(from(r in Role, preload: [:person, :performances]), role_id)
       if r do
-        {:ok, %{
-          role_id: role_id,
-          person_id: r.person_id,
-          name: r.name,
-          zone: r.zone,
-          server: r.server,
-          person_name: r.person.name,
-          scores: r.performances |> Enum.map(fn s ->
-            [s.pvp_type, s.score, s.ranking, s.total_count, Float.round(s.win_count/s.total_count, 3)] end)
-          |> Enum.sort |> Poison.encode!,
-        }}
+        {:ok, get_summary(r)}
       else
         :error
       end
     end
     fun_get = fn v ->
-      {:ok, map_mget(v, ~w(role_id person_id name zone server person_name scores)a)}
+      {:ok, map_mget(v, ~w(role_id person_id name zone server force body_type person_name scores)a)}
     end
     case Store.cache_query("role:#{role_id}", query, hard_expire: true, get: fun_get, type: "hash") do
       {:ok, %{} = result} ->
@@ -200,6 +250,30 @@ defmodule Cache do
         result
         |> Map.put(:scores, scores)
         |> Map.put(:match_count, count({:role_matches, role_id}))
+      _ -> nil
+    end
+  end
+
+  def summary_person(person_id) do
+    query = fn ->
+      p = Repo.get(from(p in Person, preload: [:roles]), person_id)
+      if p do
+        {:ok, get_summary(p)}
+      else
+        :error
+      end
+    end
+    fun_get = fn v ->
+      {:ok, map_mget(v, ~w(person_id person_name roles)a)}
+    end
+    case Store.cache_query("person:#{person_id}", query, hard_expire: true, get: fun_get, type: "hash") do
+      {:ok, %{} = result} ->
+        roles = case Poison.decode(result[:roles] || nil) do
+          {:ok, s} -> s
+          _ -> nil
+        end
+        result
+        |> Map.put(:roles, roles)
       _ -> nil
     end
   end
