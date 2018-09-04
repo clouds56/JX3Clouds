@@ -24,6 +24,7 @@ defmodule Model.Repo.Migrations.CreateRoles do
       timestamps()
     end
 
-    create index("roles", [:role_id, :zone, :server])
+    create index(:roles, [:role_id, :zone, :server])
+    create index(:roles, :person_id)
   end
 end

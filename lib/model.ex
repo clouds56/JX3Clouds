@@ -79,8 +79,8 @@ defmodule Model do
       field :camp, :string
       field :zone, :string
       field :server, :string
-      belongs_to :person, Person, type: :string
-      has_one :performance, Model.RolePerformance, foreign_key: :role_id
+      belongs_to :person, Person, type: :string, references: :person_id
+      has_many :performances, Model.RolePerformance, foreign_key: :role_id
       timestamps()
 
       @permitted ~w(role_id passport_id name force body_type camp zone server person_id)a
@@ -100,7 +100,7 @@ defmodule Model do
 
     @primary_key false
     schema "scores" do
-      belongs_to :role, Role, type: :string, primary_key: true
+      belongs_to :role, Role, type: :string, references: :role_id, primary_key: true
       field :pvp_type, :integer, primary_key: true
       field :score, :integer
       field :score2, :integer
@@ -156,7 +156,7 @@ defmodule Model do
       field :total_count, :integer
       field :win_count, :integer
       field :mvp_count, :integer
-      belongs_to :role, Role, type: :string
+      belongs_to :role, Role, type: :string, references: :role_id
 
       timestamps(updated_at: false)
     end
@@ -206,8 +206,8 @@ defmodule Model do
     import Ecto.Changeset
     @primary_key false
     schema "match_roles" do
-      belongs_to :match, Match, primary_key: true
-      belongs_to :role, Role, type: :string, primary_key: true
+      belongs_to :match, Match, references: :match_id, primary_key: true
+      belongs_to :role, Role, type: :string, references: :role_id, primary_key: true
       field :kungfu, :integer
       field :score, :integer
       field :score2, :integer
@@ -248,7 +248,7 @@ defmodule Model do
     import Ecto.Changeset
     @primary_key false
     schema "match_logs" do
-      belongs_to :match, Match, primary_key: true
+      belongs_to :match, Match, references: :role_id, primary_key: true
       field :replay, :map
 
       timestamps(updated_at: false)

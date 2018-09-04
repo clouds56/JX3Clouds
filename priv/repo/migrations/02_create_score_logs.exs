@@ -29,6 +29,6 @@ defmodule Model.Repo.Migrations.CreateScoreLogs do
       timestamps(updated_at: false)
     end
 
-    create index("score_logs", [:role_id, :inserted_at])
+    create index(:score_logs, [:role_id, :inserted_at])
   end
 end
