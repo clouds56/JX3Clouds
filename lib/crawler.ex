@@ -28,13 +28,25 @@ defmodule Crawler do
       %{} -> o
     end
     r = r |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(o || %{})
-    Map.put(r, :person_id, person_id) |> Model.Query.update_role
-    Map.get(a, :indicator, []) |> Enum.map(fn i ->
-      i = i |> Map.get(:performance) |> Map.put(:pvp_type, Map.get(i, :type)) |> Map.put(:role_id, Map.get(r, :global_id))
-      if i |> Map.get(:score, nil) do
-        i |> Model.Query.update_performance
+    result = with {:ok, result} <- Map.put(r, :person_id, person_id) |> Model.Query.update_role
+      do result else _ -> nil end
+    performances = Map.get(a, :indicator, []) |> Enum.map(fn i ->
+      pvp_type = i[:type]
+      with %{} = i <- Map.get(i, :performance),
+        i <- i |> Map.put(:pvp_type, pvp_type) |> Map.put(:role_id, Map.get(r,:global_id)),
+        true <- i[:score] != nil,
+        {:ok, i} <- i |> Model.Query.update_performance
+      do
+        i
+      else
+        _ -> nil
       end
-    end)
+    end) |> Enum.filter(&(&1!=nil))
+    if result != nil and performances != [] do
+      Map.put(result, :performances, performances)
+    else
+      result
+    end
   end
   def save_role(nil, o) do
     o = case o do
@@ -68,7 +80,6 @@ defmodule Crawler do
     client = client || Jx3APP.lookup()
     history = GenServer.call(client, {:role_history, global_id, 0, size})
     if history do
-      Logger.info("fetching matches of #{global_id}")
       history |> Enum.map(fn %{match_id: id} = m ->
         Model.Query.get_match(id) || match(client, m) || m
       end)
@@ -97,12 +108,40 @@ defmodule Crawler do
     end || detail
   end
 
-  def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last}) do
+  def do_fetch(client \\ nil, role, perf, opts \\ []) do
+    client = client || Jx3APP.lookup()
+    performances = Map.get(indicator(client, role), :performances) || []
+    {count, new_rank} = with true <- Map.get(perf, :pvp_type) != nil and is_number(Map.get(perf, :total_count)),
+      [new_perf] <- performances |> Enum.filter(fn p -> Map.get(p, :pvp_type) == Map.get(perf, :pvp_type) end),
+      true <- is_number(Map.get(new_perf, :total_count))
+    do
+      count = Map.get(new_perf, :total_count) - Map.get(perf, :total_count)
+      ranking = Map.get(new_perf, :ranking)
+      {count, ranking}
+    else
+      _ -> {nil, nil}
+    end
+    count = case count do
+      nil -> nil
+      x when x <=0 -> 3
+      x when x < 50 -> x + 5
+      x -> round(x*1.1)
+    end
+    limit = case {count, opts[:limit]} do
+      {nil, limit} -> limit
+      {x, nil} -> x
+      {x, y} -> min(x, y)
+    end
+    Logger.info("fetching #{limit} matches of #{Map.get(role, :global_id)} of #{Map.get(perf, :ranking)} -> #{new_rank}")
+    matches(client, role, limit)
+  end
+
+  def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last} = perf) do
     client = client || Jx3APP.lookup()
     history = cond do
-      ranking in [-1, -2, -3] and not time_in?(last, 6, :day) -> matches(client, role)
-      ranking > 0 and not time_in?(last, 18, :hour) -> matches(client, role)
-      not time_in?(last, 7, :day) -> matches(client, role, 10)
+      ranking in [-1, -2, -3] and not time_in?(last, 6, :day) -> do_fetch(client, role, perf, limit: 100)
+      ranking > 0 and not time_in?(last, 18, :hour) -> do_fetch(client, role, perf)
+      not time_in?(last, 7, :day) -> do_fetch(client, role, perf, limit: 10)
       true -> nil
     end
     with [%Model.Match{} = h | _] <-
@@ -122,10 +161,13 @@ defmodule Crawler do
           _ -> ""
         end)
         with [h | _] <- history,
-          pvp_type <- Map.get(h, :pvp_type)
+          pvp_type <- Map.get(h, :pvp_type),
+          true <- pvp_type != nil
         do
           %{role_id: role.global_id, pvp_type: pvp_type, fetch_at: NaiveDateTime.utc_now}
           |> Model.Query.update_performance
+        else
+          _ -> nil
         end
       end
     end
