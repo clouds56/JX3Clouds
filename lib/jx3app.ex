@@ -78,7 +78,7 @@ defmodule Jx3APP do
       {:ok, body} ->
         case HTTPoison.post(url, body, option) do
           {:error, err} -> {:error, {:post, err}}
-          {:ok, %HTTPoison.Response{body: body}} -> 
+          {:ok, %HTTPoison.Response{body: body}} ->
             case Poison.decode body do
               {:error, err} -> {:error, {:decode, err}}
               {:ok, o} -> case o do
@@ -162,7 +162,7 @@ defmodule Jx3APP do
       %{
         role_info: %{
           passport_id: Map.get(p, "passportId") |> empty_nil,
-          global_id: Map.get(p, "globalId"), # assert == Map.get(r, gameGlobalRoleId)
+          global_id: Map.get(p, "globalId") |> empty_nil, # assert == Map.get(r, gameGlobalRoleId)
           role_id: case Map.get(r, "gameRoleId") do
             "" -> nil
             i -> i |> String.to_integer
@@ -229,7 +229,7 @@ defmodule Jx3APP do
       %{
         role_info: %{
           passport_id: nil,
-          global_id: Map.get(r, "global_role_id"),
+          global_id: Map.get(r, "global_role_id") |> empty_nil,
           role_id: Map.get(r, "role_id") |> String.to_integer,
           name: Map.get(r, "name") |> empty_nil,
           server: Map.get(r, "server") |> empty_nil,
