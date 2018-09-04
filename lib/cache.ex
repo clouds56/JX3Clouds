@@ -82,7 +82,7 @@ defmodule Cache do
     def cache_query(name, fun_query, opts \\ []) do
       value_key = opts[:value_key] || "#{name}:value"
       time_key = opts[:time_key] || "#{name}:time"
-      is_expire = opts[:expire] || false
+      is_expire = opts[:hard_expire] || false
       expire_time = opts[:expire_time] || @expire_time
       value_type = opts[:type] || "string"
       fun_get = opts[:get] || &{:ok, &1}
@@ -122,12 +122,6 @@ defmodule Cache do
     end
   end
 
-  def count do
-    ~w(roles persons matches fetched)a
-    |> Enum.map(&{&1, count(&1)})
-    |> Enum.into(%{})
-  end
-
   def map_mget(m, keys) do
     keys
     |> Enum.map(&{&1, m[Atom.to_string(&1)]})
@@ -163,7 +157,7 @@ defmodule Cache do
         _ -> :error
       end
     end
-    case Store.cache_query("roles", query, expire: true, type: "zset", get: fun_get, get_opts: [length: limit]) do
+    case Store.cache_query("roles", query, hard_expire: true, type: "zset", get: fun_get, get_opts: [length: limit]) do
       {:ok, result} ->
         result |> Enum.map(fn {_, i} ->
           case Poison.decode(i || "") do
@@ -197,7 +191,7 @@ defmodule Cache do
     fun_get = fn v ->
       {:ok, map_mget(v, ~w(role_id person_id name zone server person_name scores)a)}
     end
-    case Store.cache_query("role:#{role_id}", query, expire: true, get: fun_get, type: "hash") do
+    case Store.cache_query("role:#{role_id}", query, hard_expire: true, get: fun_get, type: "hash") do
       {:ok, %{} = result} ->
         scores = case Poison.decode(result[:scores] || nil) do
           {:ok, s} -> s
@@ -208,6 +202,12 @@ defmodule Cache do
         |> Map.put(:match_count, count({:role_matches, role_id}))
       _ -> nil
     end
+  end
+
+  def count do
+    [roles: 60, persons: 60, matches: 30, fetched: 300]
+    |> Enum.map(fn {k, e} -> {k, count(k, expire_time: e)} end)
+    |> Enum.into(%{})
   end
 
   def count(key, opts \\ []) do

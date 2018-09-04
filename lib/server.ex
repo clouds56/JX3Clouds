@@ -13,9 +13,7 @@ defmodule Server do
       <div>
         #{nav}
       </div>
-      <pre>
-    #{str}
-      </pre>
+      <pre>#{str}</pre>
     </body>
     """
   end
@@ -31,17 +29,19 @@ defmodule Server do
     roles = Cache.roles
     resp = Poison.encode!(roles, pretty: true)
       |> format_replace(~r/("role_id":\s*")([^"]+)(",)/, &~s|<a href="/role/#{&1}">#{&1}</a>|)
-    send_resp(conn, 200, html(resp))
+      |> html
+    send_resp(conn, 200, resp)
   end
 
   get "/role/:role_id" do
     role = Cache.summary_role(role_id)
     resp = Poison.encode!(role, pretty: true)
       |> format_replace(~r/("role_id":\s*")([^"]+)(",)/, &~s|<a href="/role/#{&1}">#{&1}</a>|)
-    send_resp(conn, 200, html(resp))
+      |> html
+    send_resp(conn, 200, resp)
   end
 
   match _ do
-    send_resp(conn, 404, "oops")
+    send_resp(conn, 404, "oops" |> html)
   end
 end
