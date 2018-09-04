@@ -19,6 +19,9 @@ defmodule Crawler do
     end
   end
 
+  def unwrap({:ok, result}), do: result
+  def unwrap(_), do: nil
+
   def save_role(a, o \\ nil)
   def save_role(%{person_info: p, role_info: r} = a, o) do
     person_id = Map.get(p, :person_id)
@@ -28,8 +31,7 @@ defmodule Crawler do
       %{} -> o
     end
     r = r |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(o || %{})
-    result = with {:ok, result} <- Map.put(r, :person_id, person_id) |> Model.Query.update_role
-      do result else _ -> nil end
+    result = Map.put(r, :person_id, person_id) |> Model.Query.update_role |> unwrap
     performances = Map.get(a, :indicator, []) |> Enum.map(fn i ->
       pvp_type = i[:type]
       with %{} = i <- Map.get(i, :performance),
@@ -53,7 +55,7 @@ defmodule Crawler do
       %_{} -> Map.from_struct(o)
       %{} -> o
     end
-    Map.put(o, :person_id, nil) |> Model.Query.update_role
+    Map.put(o, :person_id, nil) |> Model.Query.update_role |> unwrap
   end
 
   def top200(client \\ nil) do
@@ -78,7 +80,7 @@ defmodule Crawler do
 
   def matches(client \\ nil, %{global_id: global_id}, size \\ 100) do
     client = client || Jx3APP.lookup()
-    history = GenServer.call(client, {:role_history, global_id, 0, size})
+    history = GenServer.call(client, {:role_history, global_id, 0, size || 100})
     if history do
       history |> Enum.map(fn %{match_id: id} = m ->
         Model.Query.get_match(id) || match(client, m) || m
@@ -101,26 +103,39 @@ defmodule Crawler do
         0 -> Map.get(m, :avg_grade, nil)
         x -> x
       end
-      {:ok, detail} = detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match
+      detail = detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match |> unwrap
       replay = GenServer.call(client, {:match_replay, match_id})
       if replay do replay |> Model.Query.insert_match_log end
       detail
     end || detail
   end
 
+  def is_zone_telecom(role) do
+    case role do
+      %{zone: zone} when zone != nil -> String.starts_with?(zone, "\u7535\u4FE1")
+      _ -> nil
+    end
+  end
+
   def do_fetch(client \\ nil, role, perf, opts \\ []) do
     client = client || Jx3APP.lookup()
-    performances = Map.get(indicator(client, role), :performances) || []
-    {count, new_rank} = with true <- Map.get(perf, :pvp_type) != nil and is_number(Map.get(perf, :total_count)),
-      [new_perf] <- performances |> Enum.filter(fn p -> Map.get(p, :pvp_type) == Map.get(perf, :pvp_type) end),
-      true <- is_number(Map.get(new_perf, :total_count))
-    do
-      count = Map.get(new_perf, :total_count) - Map.get(perf, :total_count)
-      ranking = Map.get(new_perf, :ranking)
-      {count, ranking}
-    else
-      _ -> {nil, nil}
+    indicators = case role do
+      %{role_id: role_id, zone: zone, server: server} -> GenServer.call(client, {:role_info, role_id, zone, server})
+      _ -> nil
     end
+    performances = indicators[:indicator] || []
+    {count, new_rank} =
+      with true <- Map.get(perf, :pvp_type) != nil and is_number(Map.get(perf, :total_count)),
+        [%{performance: new_perf}] <- performances
+          |> Enum.filter(fn p -> Integer.parse(p[:type]) == {Map.get(perf, :pvp_type), "c"} end),
+        true <- is_number(Map.get(new_perf, :total_count))
+      do
+        count = Map.get(new_perf, :total_count) - Map.get(perf, :total_count)
+        ranking = Map.get(new_perf, :ranking)
+        {count, ranking}
+      else
+        _ -> {nil, nil}
+      end
     count = case count do
       nil -> nil
       x when x <=0 -> 3
@@ -133,7 +148,17 @@ defmodule Crawler do
       {x, y} -> min(x, y)
     end
     Logger.info("fetching #{limit} matches of #{Map.get(role, :global_id)} of #{Map.get(perf, :ranking)} -> #{new_rank}")
-    matches(client, role, limit)
+    result = if is_zone_telecom(role) != false do
+      if limit == nil do
+        Logger.error("limit should not be null #{performances |> Enum.map(& &1[:type]) |> inspect}\n" <> inspect(indicators))
+      end
+      matches(client, role, limit)
+    else
+      Logger.warn("#{Map.get(role, :global_id)} not in zone of Telecom, skip")
+      nil
+    end
+    save_role(indicators, role)
+    result
   end
 
   def fetch(client \\ nil, role, %{ranking: ranking, fetch_at: last} = perf) do
@@ -150,7 +175,7 @@ defmodule Crawler do
             [:role] ++ (h |> Model.Repo.preload(:roles) |> Map.get(:roles) |> Enum.filter(fn r -> r != nil and r.role_id == role.global_id end))
     do
       %{role_id: role.global_id, pvp_type: h.pvp_type, score2: r.score2, fetch_at: NaiveDateTime.utc_now}
-      |> Model.Query.update_performance
+      |> Model.Query.update_performance |> unwrap
     else
       err -> if history != nil do
         hs = Enum.drop_while(history || [], fn m -> case m do %Model.Match{} -> false; _ -> true end end) |> Enum.take(1)
@@ -165,7 +190,7 @@ defmodule Crawler do
           true <- pvp_type != nil
         do
           %{role_id: role.global_id, pvp_type: pvp_type, fetch_at: NaiveDateTime.utc_now}
-          |> Model.Query.update_performance
+          |> Model.Query.update_performance |> unwrap
         else
           _ -> nil
         end
