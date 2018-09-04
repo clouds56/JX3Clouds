@@ -67,6 +67,13 @@ defmodule Server do
     send_resp(conn, 200, resp)
   end
 
+  get "/search/kungfu/:kungfu" do
+    roles = Cache.search_kungfu(kungfu)
+    resp = Poison.encode!(roles, pretty: true)
+      |> format_html
+    send_resp(conn, 200, resp)
+  end
+
   match _ do
     send_resp(conn, 404, "oops" |> html)
   end

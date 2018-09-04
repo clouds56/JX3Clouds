@@ -6,5 +6,7 @@ defmodule Model.Repo.Migrations.CreateIndicatorLogs do
 
     create index(:scores, :score)
     create index(:scores, :ranking)
+
+    create index(:matches, :start_time)
   end
 end

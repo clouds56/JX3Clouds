@@ -1,7 +1,7 @@
 defmodule Cache do
   require Logger
   import Ecto.Query
-  alias Model.{Repo, Person, Role, RolePerformance, Match, MatchRole}
+  alias Model.{Repo, Item, Person, Role, RolePerformance, Match, MatchRole}
 
   defmodule Store do
     def exec(command) do
@@ -15,6 +15,8 @@ defmodule Cache do
         Redix.pipeline(pid, commands)
       end)
     end
+
+    def now, do: NaiveDateTime.to_iso8601(NaiveDateTime.utc_now)
 
     @expire_time 300
 
@@ -90,7 +92,7 @@ defmodule Cache do
       Logger.debug("Cache: save #{value_key}")
       Store.multi(
         fun_set.(value_key, value) ++ [
-        ["SET", time_key, NaiveDateTime.to_iso8601(NaiveDateTime.utc_now)],
+        ["SET", time_key, now()],
       ])
     end
 
@@ -120,7 +122,7 @@ defmodule Cache do
         Logger.debug("Cache: save #{value_key}")
         Store.multi(
           fun_set.(value_key, value) ++ [
-          ["SET", time_key, NaiveDateTime.to_iso8601(NaiveDateTime.utc_now)],
+          ["SET", time_key, now()],
         ])
         {:ok, value}
       else
@@ -141,6 +143,31 @@ defmodule Cache do
     keys
     |> Enum.map(&{&1, m[Atom.to_string(&1)]})
     |> Enum.into(%{})
+  end
+
+  def count_word(l) do
+    Enum.reduce(l, %{}, fn i, acc -> Map.update(acc, i, 1, &(&1 + 1)) end)
+  end
+
+  def items do
+    Logger.info("Cache: save items")
+    items = Repo.all(from i in Item)
+    items |> Enum.flat_map(fn i ->
+      Store.set("item:#{i.tag}", "hash", [{i.id, Poison.encode!(i.content)}])
+    end) |> Store.multi
+    Store.exec(["SET", "item:time", Store.now])
+  end
+
+  def get_item(tag, key) do
+    {:ok, time} = Store.exec(["GET", "item:time"])
+    if time == nil do
+      items()
+    end
+    {:ok, value} = Store.exec(["HGET", "item:#{tag}", key])
+    case Poison.decode(value || "") do
+      {:ok, value} -> value
+      _ -> value
+    end
   end
 
   def roles(limit \\ 200) do
@@ -197,6 +224,37 @@ defmodule Cache do
       ~w(role_id force name zone server person_name)a
       |> Enum.map(&{&1, r[&1]}) |> Enum.into(%{})
     end)
+  end
+
+  def get_kungfu(role_id) do
+    query = fn ->
+      kungfu = Repo.all(
+        from r in Role,
+        left_join: t in MatchRole,
+        on: r.global_id == t.role_id,
+        left_join: m in Match,
+        on: t.match_id == m.match_id,
+        where: r.global_id == ^role_id and m.pvp_type == 3,
+        order_by: [desc: m.start_time],
+        limit: 100,
+        select: t.kungfu
+      ) |> count_word |> Enum.map(fn {k, v} -> {v, get_item(:kungfu, k)} end)
+      |> Enum.sort
+      {:ok, kungfu}
+    end
+    case Store.cache_query("kungfu:#{role_id}", query, hard_expire: true, expire_time: 3600, type: "zset") do
+      {:ok, result} -> result
+      _ -> nil
+    end
+  end
+
+  def search_kungfu(kungfu, opts \\ []) do
+    roles(opts[:search] || 3000) |> Enum.filter(fn r ->
+      kungfu == case get_kungfu(r[:role_id]) do
+        [{_, kungfu} | _] -> kungfu
+        _ -> "unknown"
+      end
+    end) |> Enum.take(opts[:limit] || 100)
   end
 
   def get_summary(%Model.Role{} = r) do
