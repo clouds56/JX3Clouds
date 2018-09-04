@@ -46,32 +46,34 @@ defmodule Cache do
       Enum.map(value, fn v -> ["SSET", key, v] end)
     end
     def set_(key, "zset", value) do
-      Enum.map(value, fn {z, v} -> ["ZSET", key, z, v] end)
+      Enum.map(value, fn {z, v} -> ["ZADD", key, z, v] end)
     end
 
-    def get_(key, type \\ "string") do
+    def get_(key, type \\ "string", opts \\ []) do
+      length = (opts[:length] || 0) - 1
       case type do
         "string" -> ["GET", key]
         "hash" -> ["HGETALL", key]
-        "list" -> ["LRANGE", key, 0, -1]
+        "list" -> ["LRANGE", key, 0, length]
         "set" -> ["SMEMBERS", key]
-        "zset" -> ["ZRANGE", key, 0, -1, "WITHSCORES"]
+        "zset" -> ["ZRANGE", key, 0, length, "WITHSCORES"]
       end
     end
 
     def convert(type, value) do
       case {type, value} do
         {_, nil} -> :error
+        {_, []} -> :error
         {"string", _} -> {:ok, value}
         {"hash", _} -> {:ok, partition(value) |> Enum.into(%{})}
         {"list", _} -> {:ok, value}
         {"set", _} -> {:ok, value}
-        {"zset", _} -> {:ok, partition(value) |> Enum.map(fn {v1, v2} -> {v2, v1} end)}
+        {"zset", _} -> {:ok, partition(value) |> Enum.map(fn {v1, v2} -> {String.to_integer(v2), v1} end)}
       end
     end
 
-    def get(key, type \\ "string") do
-      case Store.exec(get_(key, type)) do
+    def get(key, type \\ "string", opts \\ []) do
+      case Store.exec(get_(key, type, opts)) do
         {:ok, value} -> convert(type, value)
         _ -> :error
       end
@@ -90,7 +92,7 @@ defmodule Cache do
       value =
         with {:ok, time} <- NaiveDateTime.from_iso8601(time || ""),
             true <- expire_time > 0 and Crawler.time_in?(time, expire_time),
-            {:ok, value} <- get(value_key, value_type),
+            {:ok, value} <- get(value_key, value_type, opts[:get_opts] || []),
             {:ok, value} <- fun_get.(value)
         do
           value
@@ -126,6 +128,53 @@ defmodule Cache do
     |> Enum.into(%{})
   end
 
+  def map_mget(m, keys) do
+    keys
+    |> Enum.map(&{&1, m[Atom.to_string(&1)]})
+    |> Enum.into(%{})
+  end
+
+  def roles(limit \\ 200) do
+    query = fn ->
+      result = Repo.all(from r in Role,
+        left_join: s in RolePerformance,
+        on: r.global_id == s.role_id,
+        where: s.pvp_type == 3,
+        order_by: [desc: s.score],
+        limit: ^limit,
+        select: {r, s}
+      )
+      |> Enum.map(fn {r, s} ->
+        %{
+          role_id: r.global_id,
+          force: r.force,
+          name: r.name,
+          score: s.score,
+          ranking: s.ranking,
+          win_rate: Float.round(s.win_count/s.total_count, 3),
+        } |> Poison.encode!
+      end) |> Enum.with_index(1)
+      |> Enum.map(fn {v1, v2} -> {v2, v1} end)
+      {:ok, result}
+    end
+    fun_get = fn v ->
+      case length(v) do
+        ^limit -> {:ok, v}
+        _ -> :error
+      end
+    end
+    case Store.cache_query("roles", query, expire: true, type: "zset", get: fun_get, get_opts: [length: limit]) do
+      {:ok, result} ->
+        result |> Enum.map(fn {_, i} ->
+          case Poison.decode(i || "") do
+            {:ok, i} -> map_mget(i, ~w(role_id force name score ranking win_rate)a)
+            _ -> nil
+          end
+        end)
+      _ -> nil
+    end
+  end
+
   def summary_role(role_id) do
     query = fn ->
       r = Repo.get(from(r in Role, preload: [:person, :performances]), role_id)
@@ -146,10 +195,7 @@ defmodule Cache do
       end
     end
     fun_get = fn v ->
-      {:ok, ~w(role_id person_id name zone server person_name scores)a
-        |> Enum.map(&{&1, v[Atom.to_string(&1)]})
-        |> Enum.into(%{})
-      }
+      {:ok, map_mget(v, ~w(role_id person_id name zone server person_name scores)a)}
     end
     case Store.cache_query("role:#{role_id}", query, expire: true, get: fun_get, type: "hash") do
       {:ok, %{} = result} ->
@@ -210,7 +256,7 @@ defmodule Cache do
     values = Enum.zip(keys, types) |> foreach.(fn {k, t} ->
       Store.get_(k, t)
     end) |> Enum.zip(types) |> Enum.map(fn {v, t} ->
-      Store.convert(t, v)
+      {:ok, v} = Store.convert(t, v); v
     end)
     ttl = keys |> foreach.(&["TTL", &1])
     Enum.zip(keys, Enum.zip(Enum.zip(types, ttl), values)) |> Enum.into(%{})

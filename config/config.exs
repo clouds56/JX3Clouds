@@ -51,6 +51,9 @@ config :jx3replay, Jx3APP,
   username: "",
   password: ""
 
+config :jx3replay, Server,
+  cowboy: []
+
 try do
   import_config "#{Mix.env}.exs"
 rescue
