@@ -1,4 +1,5 @@
 defmodule Cache do
+  use GenServer
   require Logger
   import Ecto.Query
   alias Model.{Repo, Item, Person, Role, RolePerformance, Match, MatchRole}
@@ -149,6 +150,37 @@ defmodule Cache do
     Enum.reduce(l, %{}, fn i, acc -> Map.update(acc, i, 1, &(&1 + 1)) end)
   end
 
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, [], opts)
+  end
+
+  @impl true
+  def init(_) do
+    {:ok, nil}
+  end
+
+  @impl true
+  def handle_call(req, from, state) do
+    try do
+      {:reply, handle(elem(req, 0), Tuple.delete_at(req, 0)), state}
+    rescue e ->
+      Logger.error(
+        "Cache: " <> Exception.format(:error, e, __STACKTRACE__) <> "\n" <>
+        "Last message: " <> inspect(req) <> "\n" <>
+        "State: " <> inspect(state) <> "\n" <>
+        Jx3APP.format_client(from)
+      )
+      {:reply, nil, state}
+    end
+  end
+
+  def handle(:count, {}), do: count()
+  def handle(:role, {role_id}), do: summary_role(role_id)
+  def handle(:roles, {}), do: roles(200)
+  def handle(:person, {person_id}), do: summary_person(person_id)
+  def handle(:search_kungfu, {kungfu}), do: search_kungfu(kungfu)
+  def handle(:search_role, {role_name}), do: search_role(role_name)
+
   def items do
     Logger.info("Cache: save items")
     items = Repo.all(from i in Item)
@@ -194,12 +226,13 @@ defmodule Cache do
       {:ok, result}
     end
     fun_get = fn v ->
-      case length(v) do
-        ^limit -> {:ok, v}
+      case {List.first(v), length(v)} do
+        {nil, _} -> :error
+        {valid, ^limit} when valid >= limit -> {:ok, v}
         _ -> :error
       end
     end
-    case Store.cache_query("roles", query, hard_expire: true, type: "zset", get: fun_get, get_opts: [length: limit]) do
+    case Store.cache_query("roles", query, hard_expire: true, expire_time: 3600, type: "zset", get: fun_get, get_opts: [length: limit]) do
       {:ok, result} ->
         result |> Enum.map(fn {_, i} ->
           case Poison.decode(i || "") do

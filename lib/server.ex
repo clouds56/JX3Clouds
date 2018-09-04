@@ -35,46 +35,59 @@ defmodule Server do
   end
 
   get "/summary/count" do
-    send_resp(conn, 200, Poison.encode!(Cache.count, pretty: true) |> html)
+    send_resp(conn, 200, Poison.encode!(
+      GenServer.call(Cache, {:count}), pretty: true) |> html)
   end
 
   get "/roles" do
-    roles = Cache.roles
+    roles = GenServer.call(Cache, {:roles})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
   end
 
   get "/role/:role_id" do
-    role = Cache.summary_role(role_id)
-    resp = Poison.encode!(role, pretty: true)
-      |> format_html
-    send_resp(conn, 200, resp)
+    role = GenServer.call(Cache, {:role, role_id})
+    case role do
+      nil -> not_found(conn)
+      _ ->
+        resp = Poison.encode!(role, pretty: true)
+          |> format_html
+        send_resp(conn, 200, resp)
+    end
   end
 
   get "/person/:person_id" do
-    person = Cache.summary_person(person_id)
-    roles = person[:roles] |> Enum.map(fn [id|t] -> ["<role_id>:"<>id | t] end)
-    resp = Poison.encode!(person |> Map.put(:roles, roles), pretty: true)
-      |> format_html
-    send_resp(conn, 200, resp)
+    person = GenServer.call(Cache, {:person, person_id})
+    case person do
+      nil -> not_found(conn)
+      _ ->
+        roles = person[:roles] |> Enum.map(fn [id|t] -> ["<role_id>:"<>id | t] end)
+        resp = Poison.encode!(person |> Map.put(:roles, roles), pretty: true)
+          |> format_html
+        send_resp(conn, 200, resp)
+    end
   end
 
   get "/search/role/:role_name" do
-    roles = Cache.search_role(role_name)
+    roles = GenServer.call(Cache, {:search_role, role_name})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
   end
 
   get "/search/kungfu/:kungfu" do
-    roles = Cache.search_kungfu(kungfu)
+    roles = GenServer.call(Cache, {:search_kungfu, kungfu})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
   end
 
   match _ do
-    send_resp(conn, 404, "oops" |> html)
+    not_found(conn)
+  end
+
+  def not_found(conn) do
+    send_resp(conn, 404, "not found" |> html)
   end
 end
