@@ -309,6 +309,8 @@ defmodule Jx3APP do
         score_diff: m |> Map.get("mmr"),
         score: m |> Map.get("total_mmr"),
         kungfu: m |> Map.get("kungfu"),
+        zone: m |> Map.get("zone"),
+        server: m |> Map.get("server"),
       }
     end)
   end
@@ -331,6 +333,7 @@ defmodule Jx3APP do
         team: i,
         global_id: pi |> Map.get("global_role_id"),
         role_id: pi |> Map.get("role_id"),
+        name: pi |> Map.get("role_name"),
         zone: pi |> Map.get("zone"),
         server: pi |> Map.get("server"),
         kungfu: kungfu,

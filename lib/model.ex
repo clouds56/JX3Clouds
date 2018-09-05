@@ -19,6 +19,50 @@ defmodule Model do
     def dump(i), do: {:ok, i}
   end
 
+  defmodule DateRangeType do
+    @behaviour Ecto.Type
+    def type, do: :daterange
+    def load(%Postgrex.Range{} = range), do: apply_range(range, &Ecto.Date.load/1)
+    def load(_), do: :error
+    def cast([lower, upper], opts) do
+      lower_inclusive = case opts[:upper_inclusive] do
+        nil -> true
+        x -> x
+      end
+      upper_inclusive = opts[:upper_inclusive] || false
+      cast(%Postgrex.Range{lower: lower, lower_inclusive: lower_inclusive, upper: upper, upper_inclusive: upper_inclusive})
+    end
+    def cast(%Postgrex.Range{} = range), do: apply_range(range, &Ecto.Date.cast/1)
+    def cast([lower, upper]), do: cast([lower, upper], [])
+    def cast(_), do: :error
+    def dump(%Postgrex.Range{} = range), do: apply_range(range, &Ecto.Date.dump/1)
+    def dump(_), do: :error
+    def apply_range(%Postgrex.Range{lower: lower, upper: upper} = range, func) do
+      func = fn nil -> {:ok, nil}; x -> func.(x) end
+      case {func.(lower), func.(upper)} do
+        {{:ok, lower}, {:ok, upper}} -> {:ok, %{range | lower: lower, upper: upper}}
+        _ -> :error
+      end
+    end
+
+    def in?(%Postgrex.Range{} = r, i) do
+      cond do
+        r.lower != nil and i < r.lower -> false
+        r.lower != nil and r.lower_inclusive == false and i == r.lower -> false
+        r.upper != nil and r.upper_inclusive != true and i == r.upper -> false
+        r.upper != nil and i > r.upper -> false
+        true -> true
+      end
+    end
+
+    def r1 <= r2 do
+      Kernel.<=(
+        {r1.lower, r2.lower_inclusive, r1.upper, r1.upper_inclusive},
+        {r2.lower, r1.lower_inclusive, r2.upper, r2.upper_inclusive}
+      )
+    end
+  end
+
   defmodule Item do
     use Ecto.Schema
     import Ecto.Changeset
@@ -94,13 +138,105 @@ defmodule Model do
     end
   end
 
+  defmodule RoleLog do
+    use Ecto.Schema
+    import Ecto.Changeset
+    schema "role_logs" do
+      belongs_to :role, Role, type: :string, references: :global_id, foreign_key: :global_id
+      field :role_id, :id
+      field :name, :string
+      field :zone, :string
+      field :server, :string
+      field :passport_id, :string
+      field :seen, {:array, DateRangeType}
+      timestamps()
+    end
+
+    @permitted ~w(role_id global_id name zone server passport_id seen)a
+
+    def diff_date(%Ecto.Date{} = d1, %Ecto.Date{} = d2) do
+      {:ok, d1} = d1 |> Ecto.Date.to_erl |> Date.from_erl
+      {:ok, d2} = d2 |> Ecto.Date.to_erl |> Date.from_erl
+      diff_date(d1, d2)
+    end
+    def diff_date(%Date{} = d1, %Date{} = d2) do
+      Date.diff(d1, d2)
+    end
+    def diff_date(d1, d2) do
+      {:ok, d1} = Ecto.Date.cast(d1)
+      {:ok, d2} = Ecto.Date.cast(d2)
+      diff_date(d1, d2)
+    end
+
+    def insert_seen(nil, [], acc) do
+      Enum.reverse(acc)
+    end
+    def insert_seen(a, [], acc) do
+      a = case a do
+        {s, nil, nil} -> DateRangeType.cast([s, s], upper_inclusive: true)
+        {_, l, nil} -> {:ok, l}
+        {_, nil, r} -> {:ok, r}
+        _ -> :error
+      end
+      case a do
+        {:ok, day} -> [day | acc] |> Enum.sort(&DateRangeType.<=/2)
+        _ -> insert_seen(nil, [], acc)
+      end
+    end
+    def insert_seen(nil, [h | t], acc) do
+      insert_seen(nil, t, [h | acc])
+    end
+    def insert_seen({nil, nil, nil}, t, acc) do
+      insert_seen(nil, t, acc)
+    end
+    def insert_seen({s, l, r}, [h | t], acc) do
+      {s, l, r, h} = cond do
+        l == nil and r == nil and DateRangeType.in?(h, s) -> {nil, l, r, h}
+        r == nil and h.lower_inclusive == false and s == h.lower -> {s, l, %{h | lower_inclusive: true}, nil}
+        r == nil and h.lower_inclusive == true and diff_date(s, h.lower) == -1 -> {s, l, %{h | lower: s, lower_inclusive: true}, nil}
+        l == nil and h.upper_inclusive == false and s == h.upper -> {s, %{h | upper_inclusive: true}, r, nil}
+        l == nil and h.upper_inclusive == true and diff_date(s, h.upper) == 1 -> {s, %{h | upper: s, upper_inclusive: true}, r, nil}
+        true -> {s, l, r, h}
+      end
+      if l != nil and r != nil do
+        acc = [%{l | upper: r.upper, upper_inclusive: r.upper_inclusive} | acc]
+        insert_seen(nil, t, h && [h | acc] || acc)
+      else
+        insert_seen({s, l, r}, t, h && [h | acc] || acc)
+      end
+    end
+
+    def insert_seen(seen, a) do
+      a = a || []
+      case Ecto.Date.cast(seen) do
+        {:ok, s} ->
+          cond do
+            Enum.any?(a, &DateRangeType.in?(&1, s)) -> a
+            true -> insert_seen({s, nil, nil}, a, [])
+          end
+        _ -> a
+      end
+    end
+
+    def changeset(role, change \\ :empty) do
+      change = change
+      |> Enum.filter(fn {_, v} -> v != nil end)
+      |> Enum.into(%{})
+      |> Map.put(:seen, insert_seen(change[:seen], role.seen))
+      case role do
+        %RoleLog{} -> cast(role, change, @permitted)
+        _ -> cast(role, change, [:seen])
+      end
+    end
+  end
+
   defmodule RolePerformance do
     use Ecto.Schema
     import Ecto.Changeset
 
     @primary_key false
     schema "scores" do
-      belongs_to :role, Role, type: :string, references: :role_id, primary_key: true
+      belongs_to :role, Role, type: :string, references: :global_id, primary_key: true
       field :pvp_type, :integer, primary_key: true
       field :score, :integer
       field :score2, :integer
@@ -156,7 +292,7 @@ defmodule Model do
       field :total_count, :integer
       field :win_count, :integer
       field :mvp_count, :integer
-      belongs_to :role, Role, type: :string, references: :role_id
+      belongs_to :role, Role, type: :string, references: :global_id
 
       timestamps(updated_at: false)
     end
@@ -207,7 +343,7 @@ defmodule Model do
     @primary_key false
     schema "match_roles" do
       belongs_to :match, Match, references: :match_id, primary_key: true
-      belongs_to :role, Role, type: :string, references: :role_id, primary_key: true
+      belongs_to :role, Role, type: :string, references: :global_id, primary_key: true
       field :kungfu, :integer
       field :score, :integer
       field :score2, :integer
@@ -248,7 +384,7 @@ defmodule Model do
     import Ecto.Changeset
     @primary_key false
     schema "match_logs" do
-      belongs_to :match, Match, references: :role_id, primary_key: true
+      belongs_to :match, Match, references: :match_id, primary_key: true
       field :replay, :map
 
       timestamps(updated_at: false)
@@ -299,6 +435,16 @@ defmodule Model do
         role -> role
       end
       r |> Role.changeset(role) |> Repo.insert_or_update
+    end
+
+    def insert_role_log(%{global_id: _} = role) do
+      query = ~w(global_id role_id name zone server passport_id)a
+      |> Enum.map(&{&1, Map.get(role, &1) || ""})
+
+      case Repo.get_by(RoleLog, query) do
+        nil -> %RoleLog{}
+        role -> role
+      end |> RoleLog.changeset(role) |> Repo.insert_or_update
     end
 
     def get_role(id) do
