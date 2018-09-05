@@ -2,7 +2,7 @@ defmodule Cache do
   use GenServer
   require Logger
   import Ecto.Query
-  alias Model.{Repo, Item, Person, Role, RolePerformance, Match, MatchRole}
+  alias Model.{Repo, Item, Person, Role, RoleLog, RolePerformance, Match, MatchRole}
 
   defmodule Store do
     def exec(command) do
@@ -92,9 +92,10 @@ defmodule Cache do
 
       Logger.debug("Cache: save #{value_key}")
       Store.multi(
-        fun_set.(value_key, value) ++ [
-        ["SET", time_key, now()],
-      ])
+        [["DEL", value_key]] ++
+        fun_set.(value_key, value) ++
+        [["SET", time_key, now()]]
+      )
     end
 
     def cache_query(name, fun_query, opts \\ []) do
@@ -122,9 +123,10 @@ defmodule Cache do
       do
         Logger.debug("Cache: save #{value_key}")
         Store.multi(
-          fun_set.(value_key, value) ++ [
-          ["SET", time_key, now()],
-        ])
+          [["DEL", value_key]] ++
+          fun_set.(value_key, value) ++
+          [["SET", time_key, now()]]
+        )
         {:ok, value}
       else
         _ ->
@@ -140,7 +142,13 @@ defmodule Cache do
     end
   end
 
-  def map_mget(m, keys) do
+  def map_mget(%_{} = m, keys) do
+    keys
+    |> Enum.map(&{&1, Map.get(m, &1)})
+    |> Enum.into(%{})
+  end
+
+  def map_mget(%{} = m, keys) do
     keys
     |> Enum.map(&{&1, m[Atom.to_string(&1)]})
     |> Enum.into(%{})
@@ -180,6 +188,7 @@ defmodule Cache do
   def handle(:person, {person_id}), do: summary_person(person_id)
   def handle(:search_kungfu, {kungfu}), do: search_kungfu(kungfu)
   def handle(:search_role, {role_name}), do: search_role(role_name)
+  def handle(:role_log, {role_id}), do: role_log(role_id)
 
   def items do
     Logger.info("Cache: save items")
@@ -240,6 +249,27 @@ defmodule Cache do
             _ -> nil
           end
         end)
+      _ -> nil
+    end
+  end
+
+  def role_log(role_id) do
+    keys = ~w(global_id role_id name zone server passport_id)a
+    query = fn ->
+      result = Repo.all(
+        from r in RoleLog,
+          where: r.global_id == ^role_id,
+          order_by: r.seen,
+          select: ^keys
+      ) |> Enum.map(fn r -> map_mget(r, keys) |> Poison.encode! end)
+      {:ok, result}
+    end
+    case Store.cache_query("role_log:#{role_id}", query, hard_expire: true, expire_time: 36000, type: "list") do
+      {:ok, result} ->
+        case Poison.decode(result) do
+          {:ok, s} -> s
+          _ -> nil
+        end
       _ -> nil
     end
   end

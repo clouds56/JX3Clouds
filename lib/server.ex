@@ -22,16 +22,20 @@ defmodule Server do
   end
 
   def format_html(str) do
-    str |> format_role_id |> format_person_id |> html
+    str |> format_role_id |> format_person_id |> format_name |> html
   end
 
   def format_role_id(str) do
     str
     |> format_replace(~r/("role_id":\s*")([^"]+)(",?)/, &~s|<a href="/role/#{&1}">#{&1}</a>|)
+    |> format_replace(~r/("global_id":\s*")([^"]+)(",?)/, &~s|<a href="/role/#{&1}">#{&1}</a>|)
     |> format_replace(~r/(")<role_id>:([^"]+)(",?)/, &~s|<a href="/role/#{&1}">#{&1}</a>|)
   end
   def format_person_id(str) do
     format_replace(str, ~r/("person_id":\s*")([^"]+)(",?)/, &~s|<a href="/person/#{&1}">#{&1}</a>|)
+  end
+  def format_name(str) do
+    Regex.replace(~r/(")<role_id_log:(?<id>[^>]+)>:([^"]+)(",?)/, str, ~S|\1<a href="/role/log/\2">\3</a>\4|)
   end
 
   get "/summary/count" do
@@ -46,11 +50,18 @@ defmodule Server do
     send_resp(conn, 200, resp)
   end
 
+  get "/role/log/:role_id" do
+    role = GenServer.call(Cache, {:role_log, role_id})
+    resp = Poison.encode!(role, pretty: true) |> format_html
+    send_resp(conn, 200, resp)
+  end
+
   get "/role/:role_id" do
     role = GenServer.call(Cache, {:role, role_id})
     case role do
       nil -> not_found(conn)
       _ ->
+        role = role |> Map.put(:name, "<role_id_log:#{role[:role_id]}>:" <> role[:name])
         resp = Poison.encode!(role, pretty: true)
           |> format_html
         send_resp(conn, 200, resp)
