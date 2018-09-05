@@ -45,21 +45,31 @@ defmodule Model do
       end
     end
 
-    def in?(%Postgrex.Range{} = r, i) do
+    def in?(%Postgrex.Range{} = r, %Ecto.Date{} = i) do
+      {:ok, r} = cast(r)
       cond do
-        r.lower != nil and i < r.lower -> false
-        r.lower != nil and r.lower_inclusive == false and i == r.lower -> false
-        r.upper != nil and r.upper_inclusive != true and i == r.upper -> false
-        r.upper != nil and i > r.upper -> false
+        r.lower != nil and Ecto.Date.compare(i, r.lower) == :lt -> false
+        r.lower != nil and r.lower_inclusive == false and Ecto.Date.compare(i, r.lower) == :eq -> false
+        r.upper != nil and r.upper_inclusive != true and Ecto.Date.compare(i, r.upper) == :eq -> false
+        r.upper != nil and Ecto.Date.compare(i, r.upper) == :eq -> false
         true -> true
       end
     end
 
-    def r1 <= r2 do
-      Kernel.<=(
-        {r1.lower, r2.lower_inclusive, r1.upper, r1.upper_inclusive},
-        {r2.lower, r1.lower_inclusive, r2.upper, r2.upper_inclusive}
-      )
+    def compare(true, false), do: :gt
+    def compare(false, true), do: :lt
+    def compare(x, y) when is_boolean(x) and is_boolean(y) and x == y, do: :eq
+    def compare(r1, r2) do
+      r = [
+        Ecto.Date.compare(r1.lower, r2.lower),
+        compare(r2.lower_inclusive, r1.lower_inclusive),
+        Ecto.Date.compare(r1.upper, r2.upper),
+        compare(r2.upper_inclusive, r1.upper_inclusive),
+      ] |> Enum.filter(&:eq != &1)
+      case r do
+        [i | _] -> i
+        [] -> :eq
+      end
     end
   end
 
@@ -143,11 +153,11 @@ defmodule Model do
     import Ecto.Changeset
     schema "role_logs" do
       belongs_to :role, Role, type: :string, references: :global_id, foreign_key: :global_id
-      field :role_id, :id
-      field :name, :string
-      field :zone, :string
-      field :server, :string
-      field :passport_id, :string
+      field :role_id, :id, default: 0
+      field :name, :string, default: ""
+      field :zone, :string, default: ""
+      field :server, :string, default: ""
+      field :passport_id, :string, default: ""
       field :seen, {:array, DateRangeType}
       timestamps()
     end
@@ -179,9 +189,9 @@ defmodule Model do
         _ -> :error
       end
       case a do
-        {:ok, day} -> [day | acc] |> Enum.sort(&DateRangeType.<=/2)
+        {:ok, day} -> [day | acc]
         _ -> insert_seen(nil, [], acc)
-      end
+      end |> Enum.sort(fn i, j -> DateRangeType.compare(i, j) in [:lt, :eq] end)
     end
     def insert_seen(nil, [h | t], acc) do
       insert_seen(nil, t, [h | acc])

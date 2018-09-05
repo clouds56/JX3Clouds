@@ -3,12 +3,12 @@ defmodule Model.Repo.Migrations.CreateRoleLogs do
 
   def change do
     create table(:role_logs) do
-      add :role_id, :id
-      add :global_id, :string
-      add :passport_id, :string
-      add :name, :string
-      add :zone, :string
-      add :server, :string
+      add :role_id, :id, null: false
+      add :global_id, :string, null: false
+      add :passport_id, :string, null: false
+      add :name, :string, null: false
+      add :zone, :string, null: false
+      add :server, :string, null: false
       add :seen, {:array, :daterange}
       timestamps()
     end

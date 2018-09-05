@@ -57,4 +57,48 @@ defmodule Model.Fix do
     |> Enum.take(10)
     |> fix_match_grade_for_roles
   end
+
+  defimpl Inspect, for: Postgrex.Range do
+    import Inspect.Algebra
+
+    def inspect(range, _opts) do
+      left = range.lower_inclusive && "[" || "("
+      right = range.upper_inclusive && "]" || ")"
+      concat(["#Postgrex.Range<", left, inspect(range.lower), ", ", inspect(range.upper), right, ">"])
+    end
+  end
+
+  def fix_date_range(dr) do
+    combine = fn y, x ->
+      case Ecto.Date.compare(x.upper, y.upper) do
+        :lt -> y
+        :gt -> %{y | upper: x.upper, upper_inclusive: x.upper_inclusive}
+        :eq -> %{y | upper_inclusive: x.upper_inlcusive || y.upper_inclusive}
+      end
+    end
+    dr |> Enum.sort(fn i, j -> Model.DateRangeType.compare(i, j) in [:lt, :eq] end)
+    |> Enum.reduce({[], nil},
+      fn x, {acc, nil} -> {acc, x}
+        x, {acc, y} ->
+          case {Model.RoleLog.diff_date(x.lower, y.upper), x.lower_inclusive, y.upper_inclusive} do
+            {i, _, _} when i < 0 -> {acc, combine.(y, x)}
+            {0, true, false} -> {acc, combine.(y, x)}
+            {0, false, true} -> {acc, combine.(y, x)}
+            {i, true, true} when i <= 1 -> {acc, combine.(y, x)}
+            _ -> {[y | acc], x}
+          end
+      end) |> (fn {acc, y} -> [y | acc] end).() |> Enum.reverse
+  end
+
+  def fix_role_logs do
+    Repo.all(Model.RoleLog)
+    |> Enum.filter(fn r -> length(r.seen) > 1 end)
+    |> Enum.map(fn r ->
+      fix_seen = fix_date_range(r.seen)
+      if fix_seen != r.seen do
+        Logger.warn("fix #{inspect(r.seen)} to #{inspect(fix_seen)}")
+      end
+      Model.RoleLog.changeset(r, %{seen: fix_date_range(r.seen)})
+    end)
+  end
 end
