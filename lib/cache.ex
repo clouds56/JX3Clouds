@@ -4,6 +4,12 @@ defmodule Cache do
   import Ecto.Query
   alias Model.{Repo, Item, Person, Role, RoleLog, RolePerformance, Match, MatchRole}
 
+  def call(req) do
+    :poolboy.transaction(Cache, fn pid ->
+      GenServer.call(pid, req)
+    end)
+  end
+
   defmodule Store do
     def exec(command) do
       :poolboy.transaction(Redix, fn pid ->
@@ -266,10 +272,12 @@ defmodule Cache do
     end
     case Store.cache_query("role_log:#{role_id}", query, hard_expire: true, expire_time: 36000, type: "list") do
       {:ok, result} ->
-        case Poison.decode(result) do
-          {:ok, s} -> s
-          _ -> nil
-        end
+        Enum.map(result, fn s ->
+          case Poison.decode(s) do
+            {:ok, s} -> s
+            _ -> nil
+          end
+        end)
       _ -> nil
     end
   end

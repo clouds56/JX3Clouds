@@ -29,8 +29,8 @@ defmodule Jx3replay do
       worker(Jx3Const, [], restart: :transient),
       worker(Jx3APP, [jx3app_args, [name: Jx3APP]], restart: :transient),
       :poolboy.child_spec(:redis_pool, [name: {:local, Redix}, worker_module: Redix, size: 5, max_overflow: 2], redix_args),
+      :poolboy.child_spec(:cache_pool, [name: {:local, Cache}, worker_module: Cache, size: 5]),
       Plug.Adapters.Cowboy2.child_spec(scheme: :http, plug: Server, options: server_args),
-      worker(Cache, [[name: Cache]], restart: :transient),
     ] ++ case Mix.env do
       :prod -> [worker(Crawler, [], restart: :transient),]
       _ -> []

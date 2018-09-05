@@ -40,24 +40,24 @@ defmodule Server do
 
   get "/summary/count" do
     send_resp(conn, 200, Poison.encode!(
-      GenServer.call(Cache, {:count}), pretty: true) |> html)
+      Cache.call({:count}), pretty: true) |> html)
   end
 
   get "/roles" do
-    roles = GenServer.call(Cache, {:roles})
+    roles = Cache.call({:roles})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
   end
 
   get "/role/log/:role_id" do
-    role = GenServer.call(Cache, {:role_log, role_id})
+    role = Cache.call({:role_log, role_id})
     resp = Poison.encode!(role, pretty: true) |> format_html
     send_resp(conn, 200, resp)
   end
 
   get "/role/:role_id" do
-    role = GenServer.call(Cache, {:role, role_id})
+    role = Cache.call({:role, role_id})
     case role do
       nil -> not_found(conn)
       _ ->
@@ -69,7 +69,7 @@ defmodule Server do
   end
 
   get "/person/:person_id" do
-    person = GenServer.call(Cache, {:person, person_id})
+    person = Cache.call({:person, person_id})
     case person do
       nil -> not_found(conn)
       _ ->
@@ -81,14 +81,14 @@ defmodule Server do
   end
 
   get "/search/role/:role_name" do
-    roles = GenServer.call(Cache, {:search_role, role_name})
+    roles = Cache.call({:search_role, role_name})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
   end
 
   get "/search/kungfu/:kungfu" do
-    roles = GenServer.call(Cache, {:search_kungfu, kungfu})
+    roles = Cache.call({:search_kungfu, kungfu})
     resp = Poison.encode!(roles, pretty: true)
       |> format_html
     send_resp(conn, 200, resp)
