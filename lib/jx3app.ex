@@ -188,6 +188,36 @@ defmodule Jx3APP do
     post("https://m.pvp.xoyo.com/socialgw/summary", %{personId: person_id}, token)
   end
 
+  def handle(:person_roles, {person_id}, _) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/mine/role/person-roles", %{person_id: person_id})
+    d |> Enum.map(fn r ->
+      %{
+        role_info: %{
+          global_id: Map.get(r, "gameGlobalRoleId") |> empty_nil,
+          role_id: case Map.get(r, "gameRoleId") do
+            "" -> nil
+            i -> i |> String.to_integer
+          end,
+          passport_id: Map.get(r, "passport_id") |> empty_nil,
+          name: Map.get(r, "name") |> empty_nil,
+          server: Map.get(r, "server") |> empty_nil,
+          zone: Map.get(r, "zone") |> empty_nil,
+          force: Map.get(r, "force") |> empty_nil,
+          body_type: Map.get(r, "bodily") |> empty_nil, # nil
+          camp: nil,
+          level: Map.get(r, "level"),
+          valid: Map.get(r, "valid"),
+        },
+        person_info: %{
+          person_id: Map.get(r, "person_id") |> empty_nil,
+          name: Map.get(r, "person_name") |> empty_nil,
+          avatar: Map.get(r, "person_avatar") |> empty_nil,
+          signature: nil,
+        },
+      }
+    end)
+  end
+
   def handle(:person_history, {person_id, cursor, size}, token) do
     post("https://m.pvp.xoyo.com/mine/match/person-history", %{personId: person_id, cursor: cursor, size: size}, token)
   end

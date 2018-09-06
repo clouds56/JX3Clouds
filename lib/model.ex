@@ -448,8 +448,9 @@ defmodule Model do
     end
 
     def insert_role_log(%{global_id: _} = role) do
-      query = ~w(global_id role_id name zone server passport_id)a
+      query = ~w(global_id name zone server passport_id)a
       |> Enum.map(&{&1, Map.get(role, &1) || ""})
+      |> Keyword.put(:role_id, Map.get(role, :role_id) || 0)
 
       case Repo.get_by(RoleLog, query) do
         nil -> %RoleLog{}

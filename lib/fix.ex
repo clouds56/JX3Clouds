@@ -101,4 +101,9 @@ defmodule Model.Fix do
       Model.RoleLog.changeset(r, %{seen: fix_date_range(r.seen)})
     end)
   end
+
+  def fix_person_roles do
+    Repo.all(Model.Person)
+    |> Enum.map(&Crawler.person/1)
+  end
 end

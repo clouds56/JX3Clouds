@@ -69,8 +69,15 @@ defmodule Crawler do
   end
 
   def role_seen(%{global_id: id} = r, seen) do
-    r_now = Model.Query.get_role(id) || indicator(role(r))
+    r_now = Model.Query.get_role(id) || role_new(r)
     r |> filter_into(r_now) |> Map.put(:seen, seen) |> Model.Query.insert_role_log
+  end
+
+  def role_new(%{global_id: _} = r) do
+    r = indicator(role(r))
+    if Map.get(r, :person_id) do
+      person(r)
+    end
   end
 
   def role(%{global_id: global_id} = r) do
@@ -79,6 +86,12 @@ defmodule Crawler do
 
   def indicator(%{role_id: role_id, zone: zone, server: server} = r) do
     GenServer.call(Jx3APP, {:role_info, role_id, zone, server}) |> save_role(r)
+  end
+
+  def person(%{person_id: person_id}) do
+    if person_id != "" and person_id != nil do
+      GenServer.call(Jx3APP, {:person_roles, person_id}) |> Enum.map(&save_role/1)
+    end
   end
 
   def matches(%{global_id: global_id}, size \\ 100) do
