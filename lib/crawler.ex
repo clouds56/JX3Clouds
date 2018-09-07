@@ -28,14 +28,9 @@ defmodule Crawler do
     a |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(b |> unstruct)
   end
 
-  def save_role(a, o \\ nil)
-  def save_role(%{person_info: p, role_info: r} = a, o) do
-    person_id = Map.get(p, :person_id)
-    if person_id do p |> Model.Query.update_person end
-    r = r |> filter_into(o)
-    result = Map.put(r, :person_id, person_id) |> Model.Query.update_role |> unwrap
-    result |> unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
-    performances = Map.get(a, :indicator, []) |> Enum.map(fn i ->
+  def save_performance(_, nil), do: []
+  def save_performance(%Model.Role{} = r, perf) do
+    perf |> Enum.map(fn i ->
       pvp_type = i[:type]
       with %{} = i <- Map.get(i, :performance),
         i <- i |> Map.put(:pvp_type, pvp_type) |> Map.put(:role_id, Map.get(r,:global_id)),
@@ -47,11 +42,14 @@ defmodule Crawler do
         _ -> nil
       end
     end) |> Enum.filter(&(&1!=nil))
-    if result != nil and performances != [] do
-      Map.put(result, :performances, performances)
-    else
-      result
-    end
+  end
+
+  def save_role(a, o \\ nil)
+  def save_role(%{person_info: p, role_info: r} = a, o) do
+    person_id = Map.get(p, :person_id)
+    if person_id do p |> Model.Query.update_person end
+    r = r |> filter_into(o)
+    Map.put(r, :person_id, person_id) |> Model.Query.update_role |> unwrap
   end
   def save_role(nil, o) do
     o = unstruct(o)
@@ -63,21 +61,25 @@ defmodule Crawler do
     if top do
       top |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
         save_role(a)
-        indicator(role(r))
+        role_seen(r, Date.utc_today)
       end)
     end
   end
 
   def role_seen(%{global_id: id} = r, seen) do
-    r_now = Model.Query.get_role(id) || role_new(r)
+    r_now = Model.Query.get_role(id) || new_role(r)
     r |> filter_into(r_now) |> Map.put(:seen, seen) |> Model.Query.insert_role_log
   end
 
-  def role_new(%{global_id: _} = r) do
-    r = indicator(role(r))
+  def new_role(%{global_id: _} = r) do
+    r = update_role(r)
     if Map.get(r, :person_id) do
       person(r)
     end
+  end
+
+  def update_role(r) do
+    r = indicator(role(r))
   end
 
   def role(%{global_id: global_id} = r) do

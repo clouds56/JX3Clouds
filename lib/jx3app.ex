@@ -155,6 +155,10 @@ defmodule Jx3APP do
     :ok
   end
 
+  @not_nil_tags ~w(corp role_history role_info person_roles match_detail match_replay)a
+  def handle(tag, {nil}, _) when tag in @not_nil_tags, do: nil
+  def handle(tag, {""}, _) when tag in @not_nil_tags, do: nil
+
   def handle(:top200, {}, _token) do
     {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
     d |> Enum.map(fn p ->

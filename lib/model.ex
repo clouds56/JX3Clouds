@@ -153,16 +153,15 @@ defmodule Model do
     import Ecto.Changeset
     schema "role_logs" do
       belongs_to :role, Role, type: :string, references: :global_id, foreign_key: :global_id
-      field :role_id, :id, default: 0
-      field :name, :string, default: ""
-      field :zone, :string, default: ""
-      field :server, :string, default: ""
-      field :passport_id, :string, default: ""
+      field :role_id, :id
+      field :name, :string
+      field :zone, :string
+      field :server, :string
       field :seen, {:array, DateRangeType}
       timestamps()
     end
 
-    @permitted ~w(role_id global_id name zone server passport_id seen)a
+    @permitted ~w(role_id global_id name zone server seen)a
 
     def diff_date(%Ecto.Date{} = d1, %Ecto.Date{} = d2) do
       {:ok, d1} = d1 |> Ecto.Date.to_erl |> Date.from_erl
@@ -448,7 +447,7 @@ defmodule Model do
     end
 
     def insert_role_log(%{global_id: _} = role) do
-      query = ~w(global_id name zone server passport_id)a
+      query = ~w(global_id name zone server)a
       |> Enum.map(&{&1, Map.get(role, &1) || ""})
       |> Keyword.put(:role_id, Map.get(role, :role_id) || 0)
 

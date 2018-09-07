@@ -260,7 +260,7 @@ defmodule Cache do
   end
 
   def role_log(role_id) do
-    keys = ~w(global_id role_id name zone server passport_id)a
+    keys = ~w(global_id role_id name zone server)a
     query = fn ->
       result = Repo.all(
         from r in RoleLog,
