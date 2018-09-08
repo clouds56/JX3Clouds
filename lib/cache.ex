@@ -301,11 +301,11 @@ defmodule Cache do
     query = fn ->
       kungfu = Repo.all(
         from r in Role,
-        left_join: t in MatchRole,
+        left_join: t in ^MatchRole.subquery("3c"),
         on: r.global_id == t.role_id,
-        left_join: m in Match,
+        left_join: m in ^Match.subquery("3c"),
         on: t.match_id == m.match_id,
-        where: r.global_id == ^role_id and m.pvp_type == 3,
+        where: r.global_id == ^role_id,
         order_by: [desc: m.start_time],
         limit: 100,
         select: t.kungfu
@@ -444,7 +444,7 @@ defmodule Cache do
   end
 
   def count_query({:role_matches, role_id}) do
-    Repo.aggregate(from(r in MatchRole, where: r.role_id == ^role_id), :count, :match_id)
+    Repo.aggregate(from(r in subquery(MatchRole, prefix: Model.Match.prefix("3c")), where: r.role_id == ^role_id), :count, :match_id)
   end
 
   def show_all do

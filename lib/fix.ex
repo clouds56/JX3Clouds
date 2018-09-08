@@ -4,7 +4,8 @@ defmodule Model.Fix do
   alias Model.Repo
 
   def fix_match_array_order do
-    Model.Query.get_matches |> Enum.each(fn m ->
+    # TODO not only 3c
+    Model.Query.get_matches("3c") |> Enum.each(fn m ->
       {:ok, _} = Model.Match.changeset(m, %{team1: Enum.sort(m.team1), team2: Enum.sort(m.team2)})
       |> Model.Repo.update
     end)
@@ -25,7 +26,7 @@ defmodule Model.Fix do
   def fix_match_grade_for_roles(roles) do
     client = Jx3APP.lookup()
     roles |> Enum.each(fn r ->
-      size = Model.Query.get_matches_by_role(r) |> Enum.count
+      size = Model.Query.get_matches_by_role("3c", r) |> Enum.count
       size = trunc(size * 1.1)
       Logger.info("fetching matches of #{r} of size #{size}")
       history = GenServer.call(client, {:role_history, r, 0, size})
@@ -33,8 +34,8 @@ defmodule Model.Fix do
         Logger.error("size != history.count (#{size} != #{Enum.count(history)}) [with global_id = #{r}]")
       end
       if history do
-        history |> Enum.map(fn %{match_id: id} = m ->
-          case Model.Query.get_match(id) do
+        history |> Enum.map(fn %{match_type: type, match_id: id} = m ->
+          case Model.Query.get_match(type, id) do
             %Model.Match{grade: nil} = mm ->
               Model.Match.changeset(mm, %{grade: Map.get(m, :avg_grade)})
               |> Model.Repo.update

@@ -51,6 +51,16 @@ defmodule Jx3APP do
   end
   def get_percent_name(%{"name" => name}), do: name
 
+  def get_zone_suffix(zone) do
+    case zone do
+      nil -> ""
+      "" -> ""
+      "\u7535\u4FE1" <> _ -> "c"
+      "\u53CC\u7EBF" <> _ -> "d"
+      _ -> "m"
+    end
+  end
+
   def secret_key do
     "xv3r8cy1v1abdmi6"
   end
@@ -78,7 +88,7 @@ defmodule Jx3APP do
       {:ok, body} ->
         case HTTPoison.post(url, body, option) do
           {:error, err} -> {:error, {:post, err}}
-          {:ok, %HTTPoison.Response{body: body}} ->
+          {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
             case Poison.decode body do
               {:error, err} -> {:error, {:decode, err}}
               {:ok, o} -> case o do
@@ -86,6 +96,9 @@ defmodule Jx3APP do
                 %{"msg" => msg} -> {:error, {:result, msg}}
               end
             end
+          {:ok, %HTTPoison.Response{status_code: code} = resp} ->
+            Logger.warn(inspect(resp))
+            {:error, {:http_code, code}}
         end
     end
   end
@@ -280,13 +293,11 @@ defmodule Jx3APP do
         },
         indicator: t |> Enum.map(fn i ->
           %{
-            #match_type: Map.get(i, "match_type"),
-            type: Map.get(i, "type"),
+            match_type: Map.get(i, "type"),
             metrics: (Map.get(i, "metrics") || []) |> Enum.map(fn t ->
               {Map.get(t, "kungfu"), %{
                 kungfu: Map.get(t, "kungfu"),
                 mvp_count: Map.get(t, "mvp_count"),
-                pvp_type: Map.get(t, "pvp_type"),
                 total_count: Map.get(t, "total_count"),
                 win_count: Map.get(t, "win_count"),
                 items: (Map.get(t, "items") || []) |> Enum.map(fn i ->
@@ -324,16 +335,16 @@ defmodule Jx3APP do
     } end)
   end
 
-  def handle(:role_history, {global_id}, token) do
-    handle(:role_history, {global_id, 0, 100}, token)
+  def handle(:role_history, {match_type, global_id}, token) do
+    handle(:role_history, {match_type, global_id, 0, 100}, token)
   end
 
-  def handle(:role_history, {global_id, cursor, size}, token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/match/history", %{global_role_id: global_id, cursor: cursor, size: size}, token)
+  def handle(:role_history, {match_type, global_id, cursor, size}, token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/#{match_type}/mine/match/history", %{global_role_id: global_id, cursor: cursor, size: size}, token)
     d |> Enum.map(fn m ->
       %{
         match_id: m |> Map.get("match_id"),
-        pvp_type: m |> Map.get("pvp_type"),
+        match_type: (m |> Map.get("pvp_type") |> Integer.to_string) <> get_zone_suffix(m |> Map.get("zone")),
         global_id: m |> Map.get("global_role_id"),
         avg_grade: m |> Map.get("avg_grade"),
         start_time: m |> Map.get("start_time"),
@@ -349,13 +360,13 @@ defmodule Jx3APP do
     end)
   end
 
-  def handle(:match_replay, {match_id}, token) do
-    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/match/replay", %{match_id: match_id}, token)
-    Map.drop(d, ["skill_cate"])
+  def handle(:match_replay, {match_type, match_id}, token) do
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/#{match_type}/mine/match/replay", %{match_id: match_id}, token)
+    Map.drop(d, ["skill_cate"]) |> Map.put("match_type", match_type)
   end
 
-  def handle(:match_detail, {match_id}, token) do
-    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/match/detail", %{match_id: match_id}, token)
+  def handle(:match_detail, {match_type, match_id}, token) do
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/#{match_type}/mine/match/detail", %{match_id: match_id}, token)
     player_of = fn i -> fn pi ->
       kungfu = Map.get(pi, "kungfu_id")
       Jx3Const.push(:kungfu, kungfu, Map.get(pi, "kungfu"))
@@ -400,6 +411,7 @@ defmodule Jx3APP do
       duration: d |> Map.get("basic_info") |> Map.get("duration"),
       map: d |> Map.get("basic_info") |> Map.get("map") |> String.to_integer,
       pvp_type: d |> Map.get("basic_info") |> Map.get("type"),
+      match_type: match_type,
       grade: d |> Map.get("basic_info") |> Map.get("grade"),
       total_score1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
       total_score2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,

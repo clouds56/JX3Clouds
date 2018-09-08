@@ -262,13 +262,13 @@ defmodule Model do
 
     @permitted ~w(score score2 grade ranking ranking2 total_count win_count mvp_count fetch_at)a
 
-    def fix_pvptype(%{pvp_type: t} = change) do
+    def fix_pvptype(%{match_type: t} = change) do
       pvp_type = cond do
         is_integer(t) -> t
         is_binary(t) and Integer.parse(t) != :error -> {x, _} = Integer.parse(t); x
         true -> 0
       end
-      %{change | pvp_type: pvp_type}
+      Map.put(change, :pvp_type, pvp_type)
     end
     def fix_pvptype(change), do: change
 
@@ -338,6 +338,23 @@ defmodule Model do
 
     @permitted ~w(start_time duration pvp_type map grade total_score1 total_score2 team1 team2 winner)a
 
+    def valid_match_type?(%{match_type: match_type}), do: valid_match_type?(match_type)
+    def valid_match_type?(match_type) do
+      case Integer.parse(match_type) do
+        {x, y} when x in [2, 3, 5] and y in ["c", "d", "m"] -> true
+        _ -> false
+      end
+    end
+    def prefix(match_type) do
+      if valid_match_type?(match_type) do
+        "match_#{match_type}"
+      end
+    end
+
+    def subquery(match_type) do
+      Ecto.Query.subquery(__MODULE__, prefix: prefix(match_type))
+    end
+
     def changeset(match, change \\ :empty) do
       change = change
       |> Enum.filter(fn {_, v} -> v != nil end)
@@ -379,6 +396,10 @@ defmodule Model do
     end
     def fix_attrs(change), do: change
 
+    def subquery(match_type) do
+      Ecto.Query.subquery(__MODULE__, prefix: Match.prefix(match_type))
+    end
+
     def changeset(role, change \\ :empty) do
       change = change |> RolePerformance.fix_pvptype |> RolePerformance.fix_ranking
       |> fix_attrs
@@ -400,6 +421,10 @@ defmodule Model do
     end
 
     @permitted ~w(replay)a
+
+    def subquery(match_type) do
+      Ecto.Query.subquery(__MODULE__, prefix: Match.prefix(match_type))
+    end
 
     def changeset(log, change \\ :empty) do
       change = change
@@ -461,18 +486,19 @@ defmodule Model do
       Repo.get(Role, id)
     end
 
-    def get_roles do
+    def get_roles(limit \\ 5000) do
       Repo.all(
         from(
           r in Role,
           left_join: s in RolePerformance,
           on: r.global_id == s.role_id,
           where: s.pvp_type == 3,
-          order_by: [desc: s.score],
+          order_by: [fragment("? DESC NULLS LAST", s.score)],
+          limit: ^limit,
           select: {r, s}))
     end
 
-    def update_performance(%{role_id: id, pvp_type: _} = perf) do
+    def update_performance(%{role_id: id} = perf) do
       %{pvp_type: pt} = RolePerformance.fix_pvptype(perf)
       p = case Repo.get_by(RolePerformance, [role_id: id, pvp_type: pt]) do
         nil -> %RolePerformance{role_id: id, pvp_type: pt}
@@ -486,14 +512,14 @@ defmodule Model do
       p
     end
 
-    def insert_match(%{match_id: id, roles: roles} = match) do
-      case Repo.get(Match, id) do
+    def insert_match(%{match_type: match_type, match_id: id, roles: roles} = match) do
+      case Repo.get(Match, id, prefix: Match.prefix(match_type)) do
         nil ->
           multi = Ecto.Multi.new
-          |> Ecto.Multi.insert(:match, %Match{match_id: id} |> Match.changeset(match))
+          |> Ecto.Multi.insert(:match, %Match{match_id: id} |> Match.changeset(match), prefix: Match.prefix(match_type))
           {:ok, r} = Enum.reduce(roles, multi, fn r, multi ->
             role_id = Map.get(r, :global_id)
-            multi |> Ecto.Multi.insert("role_#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r))
+            multi |> Ecto.Multi.insert("role_#{role_id}", %MatchRole{match_id: id, role_id: role_id} |> MatchRole.changeset(r), prefix: Match.prefix(match_type))
           end)
           |> Repo.transaction
           {:ok, %{Map.get(r, :match) | roles: Enum.map(roles, fn i ->
@@ -504,21 +530,21 @@ defmodule Model do
       end
     end
 
-    def get_match(id) do
-      Repo.get(Match, id)
+    def get_match(match_type, id) do
+      Repo.get(Match, id, prefix: Match.prefix(match_type))
     end
 
-    def get_matches do
-      Repo.all(from m in Match, order_by: :match_id)
+    def get_matches(match_type) do
+      Repo.all(from(m in Match, order_by: :match_id), prefix: Match.prefix(match_type))
     end
 
-    def get_matches_by_role(id) do
-      Repo.all(from r in MatchRole, left_join: m in Match, on: r.match_id == m.match_id, where: r.role_id == ^id, order_by: m.start_time, select: m)
+    def get_matches_by_role(match_type, id) do
+      Repo.all(from(r in MatchRole, left_join: m in Match, on: r.match_id == m.match_id, where: r.role_id == ^id, order_by: m.start_time, select: m), prefix: Match.prefix(match_type))
     end
 
-    def insert_match_log(%{"match_id" => id} = log) do
-      case Repo.get(MatchLog, id) do
-        nil -> %MatchLog{match_id: id} |> MatchLog.changeset(%{replay: log}) |> Repo.insert_or_update
+    def insert_match_log(%{"match_type" => type, "match_id" => id} = log) do
+      case Repo.get(MatchLog, id, prefix: Match.prefix(type)) do
+        nil -> %MatchLog{match_id: id} |> MatchLog.changeset(%{replay: log}) |> Repo.insert_or_update(prefix: Match.prefix(type))
         log -> log
       end
     end
