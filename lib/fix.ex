@@ -105,6 +105,14 @@ defmodule Model.Fix do
 
   def fix_person_roles do
     Repo.all(Model.Person)
-    |> Enum.map(&Crawler.person/1)
+    |> Enum.map(fn p ->
+      Logger.info("renew person #{p.person_id} #{p.name}")
+      try do
+        Crawler.person(p)
+      catch
+        :exit, e when e != :stop -> Logger.error "Fix (exit): " <> Exception.format(:error, e, __STACKTRACE__)
+          :error
+      end
+    end)
   end
 end

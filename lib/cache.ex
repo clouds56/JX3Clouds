@@ -436,7 +436,7 @@ defmodule Cache do
   end
 
   def count_query(:matches) do
-    Repo.aggregate(from(m in Match), :count, :match_id)
+    Repo.aggregate(from(m in Match.subquery("3c")), :count, :match_id)
   end
 
   def count_query(:fetched) do
@@ -444,7 +444,7 @@ defmodule Cache do
   end
 
   def count_query({:role_matches, role_id}) do
-    Repo.aggregate(from(r in subquery(MatchRole, prefix: Model.Match.prefix("3c")), where: r.role_id == ^role_id), :count, :match_id)
+    Repo.aggregate(from(r in MatchRole.subquery("3c"), where: r.role_id == ^role_id), :count, :match_id)
   end
 
   def show_all do

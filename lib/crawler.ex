@@ -91,7 +91,13 @@ defmodule Crawler do
 
   def person(%{person_id: person_id}) do
     if person_id != "" and person_id != nil do
-      GenServer.call(Jx3APP, {:person_roles, person_id}) |> Enum.map(&save_role/1)
+      GenServer.call(Jx3APP, {:person_roles, person_id}) |> Enum.map(fn r ->
+        case r[:role_info][:level] do
+          "95" -> save_role(r)
+          95 -> save_role(r)
+          _ -> r[:role_info]
+        end |> unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
+      end)
     end
   end
 
