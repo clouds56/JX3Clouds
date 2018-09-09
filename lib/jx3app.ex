@@ -172,8 +172,8 @@ defmodule Jx3APP do
   def handle(tag, {nil}, _) when tag in @not_nil_tags, do: nil
   def handle(tag, {""}, _) when tag in @not_nil_tags, do: nil
 
-  def handle(:top200, {}, _token) do
-    {:ok, d} = post("https://m.pvp.xoyo.com/3c/mine/arena/top200", %{})
+  def handle(:top200, {match_type}, _token) do
+    {:ok, d} = post("https://m.pvp.xoyo.com/#{match_type}/mine/arena/top200", %{})
     d |> Enum.map(fn p ->
       r = Map.get(p, "personInfo")
       %{
@@ -239,8 +239,8 @@ defmodule Jx3APP do
     post("https://m.pvp.xoyo.com/mine/match/person-history", %{personId: person_id, cursor: cursor, size: size}, token)
   end
 
-  def handle(:role_info, {global_id}, _token) do
-    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/3c/mine/arena/find-role-gid", %{globalId: global_id})
+  def handle(:role_info, {match_type, global_id}, _token) do
+    {:ok, %{} = d} = post("https://m.pvp.xoyo.com/#{match_type}/mine/arena/find-role-gid", %{globalId: global_id})
     p = d |> Map.get("personInfo")
     %{
       role_info: %{

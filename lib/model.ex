@@ -228,10 +228,15 @@ defmodule Model do
     end
 
     def changeset(role, change \\ :empty) do
+      pre_seen = case role do
+        %RoleLog{} -> role.seen
+        %Ecto.Changeset{} -> role.data.seen
+        _ -> Map.get(role, :seen)
+      end
       change = change
       |> Enum.filter(fn {_, v} -> v != nil end)
       |> Enum.into(%{})
-      |> Map.put(:seen, insert_seen(change[:seen], role.seen))
+      |> Map.put(:seen, insert_seen(change[:seen], pre_seen))
       case role do
         %RoleLog{} -> cast(role, change, @permitted)
         _ -> cast(role, change, [:seen])
@@ -477,7 +482,7 @@ defmodule Model do
       |> Keyword.put(:role_id, Map.get(role, :role_id) || 0)
 
       case Repo.get_by(RoleLog, query) do
-        nil -> %RoleLog{}
+        nil -> %RoleLog{} |> RoleLog.changeset(query)
         role -> role
       end |> RoleLog.changeset(role) |> Repo.insert_or_update
     end

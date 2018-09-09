@@ -55,8 +55,8 @@ defmodule Crawler do
     Map.put(o, :person_id, nil) |> Model.Query.update_role |> unwrap
   end
 
-  def top200 do
-    top = GenServer.call(Jx3APP, {:top200})
+  def top200(match_type \\ "3c") do
+    top = GenServer.call(Jx3APP, {:top200, match_type})
     if top do
       top |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
         save_role(a)
@@ -68,6 +68,7 @@ defmodule Crawler do
   def role_seen(%{global_id: id} = r, seen) do
     r_now = Model.Query.get_role(id) || new_role(r)
     r |> filter_into(r_now) |> Map.put(:seen, seen) |> Model.Query.insert_role_log
+    r_now
   end
 
   def new_role(%{global_id: _} = r) do
@@ -75,14 +76,23 @@ defmodule Crawler do
     if Map.get(r, :person_id) do
       person(r)
     end
+    r
   end
 
   def update_role(r) do
     indicator(role(r))
   end
 
-  def role(%{global_id: global_id} = r) do
-    GenServer.call(Jx3APP, {:role_info, global_id}) |> save_role(r)
+  def role(match_type \\ nil, %{global_id: global_id} = r) do
+    match_type = case {match_type, Map.get(r, :zone)} do
+      {nil, nil} -> "3c"
+      {nil, z} -> case Jx3APP.get_zone_suffix(z) do
+        "" -> "3c"
+        s -> "3" <> s
+      end
+      {x, _} -> x
+    end
+    GenServer.call(Jx3APP, {:role_info, match_type, global_id}) |> save_role(r)
   end
 
   def indicator(%{role_id: role_id, zone: zone, server: server} = r) do

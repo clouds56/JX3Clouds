@@ -3,6 +3,6 @@ defmodule Jx3replayTest do
   doctest Jx3replay
 
   test "top200" do
-    GenServer.call(Jx3APP.lookup(), {:top200})
+    GenServer.call(Jx3APP.lookup(), {:top200, "3d"})
   end
 end
