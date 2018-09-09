@@ -17,6 +17,7 @@ defmodule Model.Repo.Migrations.CreateMatches do
 
       timestamps(updated_at: false)
     end
+    #create index(:matches, :start_time)
 
     create table(:match_roles, primary_key: false) do
       add :match_id, references(:matches, column: :match_id, type: :bigint), primary_key: true
@@ -37,7 +38,6 @@ defmodule Model.Repo.Migrations.CreateMatches do
 
       timestamps(updated_at: false)
     end
-
     create index(:match_roles, :role_id)
 
     create table(:match_logs, primary_key: false) do

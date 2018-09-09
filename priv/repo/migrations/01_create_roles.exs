@@ -23,7 +23,7 @@ defmodule Model.Repo.Migrations.CreateRoles do
       add :person_id, references(:persons, column: :person_id, type: :string)
       timestamps()
     end
-
     create index(:roles, [:role_id, :zone, :server])
+    #create index(:roles, :person_id)
   end
 end

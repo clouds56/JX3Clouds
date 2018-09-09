@@ -192,17 +192,7 @@ defmodule Crawler do
     new_perf |> Model.Query.update_performance |> unwrap
   end
 
-  def fetch(%{zone: zone} = role, %{pvp_type: pvp_type, ranking: ranking, fetch_at: last} = perf) do
-    pvp_type = case pvp_type do
-      nil -> 3
-      0 -> 3
-      x -> x
-    end
-    match_type = Integer.to_string(pvp_type) <> case zone do
-      nil -> "c"
-      "" -> "c"
-      x -> Jx3APP.get_zone_suffix(x)
-    end
+  def fetch(role, %{match_type: match_type, ranking: ranking, fetch_at: last} = perf) do
     cond do
       ranking >= -3 and last == nil -> do_fetch(role, match_type, %{ranking: ranking}, limit: 100)
       last == nil -> do_fetch(role, match_type, %{ranking: ranking}, limit: 20)

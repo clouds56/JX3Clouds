@@ -222,7 +222,7 @@ defmodule Cache do
       result = Repo.all(from r in Role,
         left_join: s in RolePerformance,
         on: r.global_id == s.role_id,
-        where: s.pvp_type == 3,
+        where: s.match_type == "3c",
         order_by: [desc: s.score],
         limit: ^limit,
         select: {r, s}
@@ -343,7 +343,7 @@ defmodule Cache do
       body_type: r.body_type,
       person_name: person_name,
       scores: r.performances |> Enum.map(fn s ->
-        [s.pvp_type, s.score, s.ranking, s.total_count, Float.round(s.win_count/s.total_count, 3)] end)
+        [s.match_type, s.score, s.ranking, s.total_count, Float.round(s.win_count/s.total_count, 3)] end)
       |> Enum.sort |> Poison.encode!,
     }
   end
