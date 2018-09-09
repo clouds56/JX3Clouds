@@ -31,8 +31,9 @@ defmodule Crawler do
   def save_performance(_, nil), do: []
   def save_performance(%Model.Role{} = r, perf) do
     perf |> Enum.map(fn i ->
+      match_type = i[:match_type]
       with %{} = i <- Map.get(i, :performance),
-        i <- i |> Map.put(:match_type, i[:match_type]) |> Map.put(:role_id, Map.get(r,:global_id)),
+        i <- i |> Map.put(:match_type, match_type) |> Map.put(:role_id, Map.get(r,:global_id)),
         true <- i[:score] != nil,
         {:ok, i} <- i |> Model.Query.update_performance
       do
@@ -174,6 +175,7 @@ defmodule Crawler do
     end
     history = matches(match_type, role, limit) || []
     save_role(indicators, role)
+    save_performance(role, indicators[:indicator])
     new_perf = %{role_id: global_id, match_type: match_type, fetch_at: NaiveDateTime.utc_now}
     new_perf =
       case history |> Enum.drop_while(fn %Model.Match{} -> false; _ -> true end) do
@@ -204,7 +206,7 @@ defmodule Crawler do
   end
 
   def run do
-    Model.Query.get_roles |> Enum.map(fn {r, p} ->
+    Model.Query.get_roles(:all) |> Enum.map(fn {r, p} ->
       try do
         Crawler.fetch(r, p)
       catch

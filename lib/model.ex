@@ -492,15 +492,19 @@ defmodule Model do
     end
 
     def get_roles(limit \\ 5000) do
-      Repo.all(
-        from(
-          r in Role,
-          left_join: s in RolePerformance,
-          on: r.global_id == s.role_id,
-          where: s.match_type == "3c",
-          order_by: [fragment("? DESC NULLS LAST", s.score)],
-          limit: ^limit,
-          select: {r, s}))
+      query = from(
+        r in Role,
+        left_join: s in RolePerformance,
+        on: r.global_id == s.role_id,
+        where: s.match_type == "3c",
+        order_by: [fragment("? DESC NULLS LAST", s.score)],
+        select: {r, s})
+      case limit do
+        :all -> query
+        -1 -> query
+        _ -> query |> limit(^limit)
+      end
+      Repo.all(query)
     end
 
     def update_performance(%{role_id: id, match_type: mt} = perf) do
