@@ -153,10 +153,10 @@ defmodule Model do
     import Ecto.Changeset
     schema "role_logs" do
       belongs_to :role, Role, type: :string, references: :global_id, foreign_key: :global_id
-      field :role_id, :id
-      field :name, :string
-      field :zone, :string
-      field :server, :string
+      field :role_id, :id, default: 0
+      field :name, :string, default: ""
+      field :zone, :string, default: ""
+      field :server, :string, default: ""
       field :seen, {:array, DateRangeType}
       timestamps()
     end

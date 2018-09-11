@@ -115,4 +115,50 @@ defmodule Model.Fix do
       end
     end)
   end
+
+  def get_score_from_match(role_id) do
+    Logger.debug("get #{role_id} performance from matches")
+    case GenServer.call(Jx3APP, {:role_history, "3c", role_id, 0, 1}) do
+      [%{match_id: match_id, match_type: match_type} = m | _] ->
+        detail = GenServer.call(Jx3APP, {:match_detail, match_type, match_id})
+        if detail do
+          result = detail |> Map.get(:roles) |> Enum.filter(fn r -> r[:global_id] == role_id end)
+          |> Enum.map(fn perf ->
+            perf |> Map.put(:role_id, role_id) |> Map.put(:match_type, match_type) |> Model.Query.update_performance
+          end)
+          Crawler.save_match(detail, m)
+          result
+        end
+      _ -> nil
+    end
+  end
+
+  def fix_role_scores(offset \\ 0, limit \\ 100, index \\ 0) do
+    Logger.info("fix_role_scores #{index}: #{offset} +#{limit}")
+    roles = Repo.all(from(r in Model.Role,
+      left_join: s in Model.RolePerformance,
+      on: r.global_id == s.role_id,
+      inner_join: m in ^Model.MatchRole.subquery("3c"),
+      on: r.global_id == m.role_id,
+      where: is_nil(s.role_id),
+      group_by: r.global_id,
+      order_by: r.global_id,
+      offset: ^offset,
+      limit: ^limit))
+    failed = roles |> Enum.map(fn r ->
+      Logger.debug("update role #{r.global_id} #{r.zone} #{r.name}")
+      r1 = Crawler.update_role(r) |> Model.Repo.preload([:performances])
+      if r1.performances == [] do
+        case get_score_from_match(r.global_id) do
+          [_ | _] -> 0
+          e -> Logger.error("update role 3#{Jx3APP.get_zone_suffix(r.zone)} #{r.global_id} failed\n" <> inspect(e)); 1
+        end
+      else
+        0
+      end
+    end) |> Enum.sum
+    if length(roles) >= limit do
+      fix_role_scores(offset + failed, limit, index + 1)
+    end
+  end
 end

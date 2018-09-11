@@ -408,7 +408,7 @@ defmodule Cache do
   end
 
   def count do
-    [roles: 60, persons: 60, matches: 30, fetched: 300]
+    [roles: 60, unknown_roles: 60, persons: 60, matches: 30, fetched: 300]
     |> Enum.map(fn {k, e} -> {k, count(k, expire_time: e)} end)
     |> Enum.into(%{})
   end
@@ -429,6 +429,13 @@ defmodule Cache do
 
   def count_query(:roles) do
     Repo.aggregate(from(r in Role), :count, :global_id)
+  end
+
+  def count_query(:unknown_roles) do
+    Repo.aggregate(from(r in Role,
+      left_join: s in RolePerformance,
+      on: r.global_id == s.role_id,
+      where: is_nil(s.role_id)), :count, :global_id)
   end
 
   def count_query(:persons) do
