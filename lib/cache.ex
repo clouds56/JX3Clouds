@@ -1,24 +1,25 @@
-defmodule Cache do
+defmodule Jx3App.Cache do
   use GenServer
   require Logger
   import Ecto.Query
+  alias Jx3App.{Model, Utils}
   alias Model.{Repo, Item, Person, Role, RoleLog, RolePerformance, Match, MatchRole}
 
   def call(req) do
-    :poolboy.transaction(Cache, fn pid ->
+    :poolboy.transaction(Jx3App.Cache, fn pid ->
       GenServer.call(pid, req)
     end)
   end
 
   defmodule Store do
     def exec(command) do
-      :poolboy.transaction(Redix, fn pid ->
+      :poolboy.transaction(Jx3App.Cache.Redix, fn pid ->
         Redix.command(pid, command)
       end)
     end
 
     def multi(commands) do
-      :poolboy.transaction(Redix, fn pid ->
+      :poolboy.transaction(Jx3App.Cache.Redix, fn pid ->
         Redix.pipeline(pid, commands)
       end)
     end
@@ -116,7 +117,7 @@ defmodule Cache do
       {:ok, time} = Store.exec(["GET", time_key])
       value =
         with {:ok, time} <- NaiveDateTime.from_iso8601(time || ""),
-            true <- expire_time > 0 and Crawler.time_in?(time, expire_time),
+            true <- expire_time > 0 and Utils.time_in?(time, expire_time),
             {:ok, value} <- get(value_key, value_type, opts[:get_opts] || []),
             {:ok, value} <- fun_get.(value)
         do
@@ -160,10 +161,6 @@ defmodule Cache do
     |> Enum.into(%{})
   end
 
-  def count_word(l) do
-    Enum.reduce(l, %{}, fn i, acc -> Map.update(acc, i, 1, &(&1 + 1)) end)
-  end
-
   def start_link(opts) do
     GenServer.start_link(__MODULE__, [], opts)
   end
@@ -182,7 +179,7 @@ defmodule Cache do
         "Cache: " <> Exception.format(:error, e, __STACKTRACE__) <> "\n" <>
         "Last message: " <> inspect(req) <> "\n" <>
         "State: " <> inspect(state) <> "\n" <>
-        API.format_client(from)
+        Utils.format_client(from)
       )
       {:reply, nil, state}
     end
@@ -309,7 +306,7 @@ defmodule Cache do
         order_by: [desc: m.start_time],
         limit: 100,
         select: t.kungfu
-      ) |> count_word |> Enum.map(fn {k, v} -> {v, get_item(:kungfu, k)} end)
+      ) |> Utils.count_word |> Enum.map(fn {k, v} -> {v, get_item(:kungfu, k)} end)
       |> Enum.sort
       {:ok, kungfu}
     end

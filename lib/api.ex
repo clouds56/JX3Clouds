@@ -1,10 +1,11 @@
-defmodule API do
+defmodule Jx3App.API do
   @moduledoc """
   Documentation for Crawler.
   """
 
   use GenServer
   require Logger
+  alias Jx3App.{Const, Utils}
 
   def start_link(cred, opts) do
     GenServer.start_link(__MODULE__, cred, opts)
@@ -12,53 +13,6 @@ defmodule API do
 
   def lookup do
     GenServer.whereis(__MODULE__)
-  end
-
-  def pad_int(d, i) do
-    d
-    |> Integer.to_string
-    |> String.pad_leading(i, "0")
-  end
-
-  def empty_nil(s) do
-    case s do
-      "" -> nil
-      s -> s
-    end
-  end
-
-  @doc """
-  sign data
-  """
-  def timestamp do
-    %DateTime{year: y, month: m, day: d, hour: hh, minute: mm, second: ss, microsecond: {ms, _}} = DateTime.utc_now
-    "#{pad_int(y, 4)}#{pad_int(m, 2)}#{pad_int(d, 2)}#{pad_int(hh, 2)}#{pad_int(mm, 2)}#{pad_int(ss, 2)}#{pad_int(ms, 6) |> String.slice(0..2)}"
-  end
-
-  def icon_url_trim(url) do
-    r = Regex.run(~r|https://dl\.pvp\.xoyo\.com/prod/icons/([^?]*)\??.*|, url)
-    if r do
-      [_, r] = r
-      r
-    else
-      url
-    end
-  end
-
-  def get_percent_name(%{"name" => name, "value" => value}) when is_binary(value) do
-    {_, y} = Float.parse(value)
-    name <> y
-  end
-  def get_percent_name(%{"name" => name}), do: name
-
-  def get_zone_suffix(zone) do
-    case zone do
-      nil -> ""
-      "" -> ""
-      "\u7535\u4FE1" <> _ -> "c"
-      "\u53CC\u7EBF" <> _ -> "d"
-      _ -> "m"
-    end
   end
 
   def secret_key do
@@ -71,7 +25,7 @@ defmodule API do
   def sign_data(d) do
     d = case d do
       %{ts: _} -> d
-      %{} -> Map.put(d, :ts, timestamp())
+      %{} -> Map.put(d, :ts, Utils.timestamp())
     end
     s = d |> Enum.sort
     |> Enum.map(fn({a, b}) -> "#{a}=#{b}" end)
@@ -137,16 +91,6 @@ defmodule API do
     end
   end
 
-  def format_client({pid, _ref}) do
-    "Client " <> inspect(pid) <> " is " <>
-    case Process.alive?(pid) do
-      true ->
-        {_, st} = Process.info(pid, :current_stacktrace)
-        "alive\n" <> Exception.format_stacktrace(st)
-      _ -> "not alive"
-    end
-  end
-
   @impl true
   def handle_call(req, from, %{token: token, last: last, sleep: sleep} = state) do
     :timer.sleep(max(0, sleep - NaiveDateTime.diff(NaiveDateTime.utc_now, last, :millisecond)))
@@ -157,7 +101,7 @@ defmodule API do
         "JX3APP: " <> Exception.format(:error, e, __STACKTRACE__) <> "\n" <>
         "Last message: " <> inspect(req) <> "\n" <>
         "State: " <> inspect(state) <> "\n" <>
-        format_client(from)
+        Utils.format_client(from)
       )
       {:reply, nil, %{state | last: NaiveDateTime.add(NaiveDateTime.utc_now, 3)}}
     end
@@ -178,24 +122,24 @@ defmodule API do
       r = Map.get(p, "personInfo")
       %{
         role_info: %{
-          passport_id: Map.get(p, "passportId") |> empty_nil,
-          global_id: Map.get(p, "globalId") |> empty_nil, # assert == Map.get(r, gameGlobalRoleId)
+          passport_id: Map.get(p, "passportId") |> Utils.empty_nil,
+          global_id: Map.get(p, "globalId") |> Utils.empty_nil, # assert == Map.get(r, gameGlobalRoleId)
           role_id: case Map.get(r, "gameRoleId") do
             "" -> nil
             i -> i |> String.to_integer
           end,
-          name: Map.get(r, "roleName") |> empty_nil,
-          server: Map.get(r, "server") |> empty_nil,
-          zone: Map.get(r, "zone") |> empty_nil,
-          force: Map.get(r, "force") |> empty_nil,
-          body_type: Map.get(r, "bodyType") |> empty_nil,
+          name: Map.get(r, "roleName") |> Utils.empty_nil,
+          server: Map.get(r, "server") |> Utils.empty_nil,
+          zone: Map.get(r, "zone") |> Utils.empty_nil,
+          force: Map.get(r, "force") |> Utils.empty_nil,
+          body_type: Map.get(r, "bodyType") |> Utils.empty_nil,
           camp: nil,
         },
         person_info: %{
-          person_id: Map.get(p, "personId") |> empty_nil,
-          name: Map.get(r, "person") |> Map.get("nickName") |> empty_nil,
-          avatar: Map.get(r, "person") |> Map.get("avatarUrl") |> empty_nil,
-          signature: Map.get(r, "person") |> Map.get("signature") |> empty_nil,
+          person_id: Map.get(p, "personId") |> Utils.empty_nil,
+          name: Map.get(r, "person") |> Map.get("nickName") |> Utils.empty_nil,
+          avatar: Map.get(r, "person") |> Map.get("avatarUrl") |> Utils.empty_nil,
+          signature: Map.get(r, "person") |> Map.get("signature") |> Utils.empty_nil,
         }
       }
     end)
@@ -210,25 +154,25 @@ defmodule API do
     d |> Enum.map(fn r ->
       %{
         role_info: %{
-          global_id: Map.get(r, "gameGlobalRoleId") |> empty_nil,
+          global_id: Map.get(r, "gameGlobalRoleId") |> Utils.empty_nil,
           role_id: case Map.get(r, "gameRoleId") do
             "" -> nil
             i -> i |> String.to_integer
           end,
-          passport_id: Map.get(r, "passport_id") |> empty_nil,
-          name: Map.get(r, "name") |> empty_nil,
-          server: Map.get(r, "server") |> empty_nil,
-          zone: Map.get(r, "zone") |> empty_nil,
-          force: Map.get(r, "force") |> empty_nil,
-          body_type: Map.get(r, "bodily") |> empty_nil, # nil
+          passport_id: Map.get(r, "passport_id") |> Utils.empty_nil,
+          name: Map.get(r, "name") |> Utils.empty_nil,
+          server: Map.get(r, "server") |> Utils.empty_nil,
+          zone: Map.get(r, "zone") |> Utils.empty_nil,
+          force: Map.get(r, "force") |> Utils.empty_nil,
+          body_type: Map.get(r, "bodily") |> Utils.empty_nil, # nil
           camp: nil,
           level: Map.get(r, "level"),
           valid: Map.get(r, "valid"),
         },
         person_info: %{
-          person_id: Map.get(r, "person_id") |> empty_nil,
-          name: Map.get(r, "person_name") |> empty_nil,
-          avatar: Map.get(r, "person_avatar") |> empty_nil,
+          person_id: Map.get(r, "person_id") |> Utils.empty_nil,
+          name: Map.get(r, "person_name") |> Utils.empty_nil,
+          avatar: Map.get(r, "person_avatar") |> Utils.empty_nil,
           signature: nil,
         },
       }
@@ -245,23 +189,23 @@ defmodule API do
     if p do
       %{
         role_info: %{
-          global_id: Map.get(p, "gameGlobalRoleId") |> empty_nil,
+          global_id: Map.get(p, "gameGlobalRoleId") |> Utils.empty_nil,
           role_id: case Map.get(p, "gameRoleId") do
             "" -> nil
             i -> i |> String.to_integer
           end,
-          passport_id: Map.get(d, "passportId") |> empty_nil,
-          name: Map.get(p, "roleName") |> empty_nil,
-          server: Map.get(p, "server") |> empty_nil,
-          zone: Map.get(p, "zone") |> empty_nil,
-          force: Map.get(p, "force") |> empty_nil,
-          body_type: Map.get(p, "bodyType") |> empty_nil, # nil
+          passport_id: Map.get(d, "passportId") |> Utils.empty_nil,
+          name: Map.get(p, "roleName") |> Utils.empty_nil,
+          server: Map.get(p, "server") |> Utils.empty_nil,
+          zone: Map.get(p, "zone") |> Utils.empty_nil,
+          force: Map.get(p, "force") |> Utils.empty_nil,
+          body_type: Map.get(p, "bodyType") |> Utils.empty_nil, # nil
           camp: nil,
         },
         person_info: %{
-          person_id: Map.get(d, "personId") |> empty_nil,
-          name: Map.get(p, "person") |> Map.get("nickName") |> empty_nil,
-          avatar: Map.get(p, "person") |> Map.get("avatarUrl") |> empty_nil,
+          person_id: Map.get(d, "personId") |> Utils.empty_nil,
+          name: Map.get(p, "person") |> Map.get("nickName") |> Utils.empty_nil,
+          avatar: Map.get(p, "person") |> Map.get("avatarUrl") |> Utils.empty_nil,
           signature: nil,
         },
       }
@@ -278,19 +222,19 @@ defmodule API do
       %{
         role_info: %{
           passport_id: nil,
-          global_id: Map.get(r, "global_role_id") |> empty_nil,
+          global_id: Map.get(r, "global_role_id") |> Utils.empty_nil,
           role_id: Map.get(r, "role_id") |> String.to_integer,
-          name: Map.get(r, "name") |> empty_nil,
-          server: Map.get(r, "server") |> empty_nil,
-          zone: Map.get(r, "zone") |> empty_nil,
-          force: Map.get(r, "force") |> empty_nil,
-          body_type: Map.get(r, "body_type") |> empty_nil,
-          camp: Map.get(r, "camp") |> empty_nil,
+          name: Map.get(r, "name") |> Utils.empty_nil,
+          server: Map.get(r, "server") |> Utils.empty_nil,
+          zone: Map.get(r, "zone") |> Utils.empty_nil,
+          force: Map.get(r, "force") |> Utils.empty_nil,
+          body_type: Map.get(r, "body_type") |> Utils.empty_nil,
+          camp: Map.get(r, "camp") |> Utils.empty_nil,
         },
         person_info: %{
-          person_id: Map.get(p, "person_id") |> empty_nil,
-          name: Map.get(p, "person_name") |> empty_nil,
-          avatar: Map.get(r, "person_avatar") |> empty_nil,
+          person_id: Map.get(p, "person_id") |> Utils.empty_nil,
+          name: Map.get(p, "person_name") |> Utils.empty_nil,
+          avatar: Map.get(r, "person_avatar") |> Utils.empty_nil,
           signature: nil,
         },
         indicator: t |> Enum.map(fn i ->
@@ -347,7 +291,7 @@ defmodule API do
     d |> Enum.map(fn m ->
       %{
         match_id: m |> Map.get("match_id"),
-        match_type: (m |> Map.get("pvp_type") |> Integer.to_string) <> get_zone_suffix(m |> Map.get("zone")),
+        match_type: (m |> Map.get("pvp_type") |> Integer.to_string) <> Utils.get_zone_suffix(m |> Map.get("zone")),
         global_id: m |> Map.get("global_role_id"),
         avg_grade: m |> Map.get("avg_grade"),
         start_time: m |> Map.get("start_time"),
@@ -374,9 +318,9 @@ defmodule API do
       kungfu = Map.get(pi, "kungfu_id")
       Const.push(:kungfu, kungfu, Map.get(pi, "kungfu"))
       metrics_version = Const.find_version(:metric_names,
-        pi |> Map.get("metrics") |> Enum.map(&get_percent_name/1))
+        pi |> Map.get("metrics") |> Enum.map(&Utils.get_percent_name/1))
       attrs_version = Const.find_version(:attr_names,
-        pi |> Map.get("body_qualities") |> Enum.map(&get_percent_name/1))
+        pi |> Map.get("body_qualities") |> Enum.map(&Utils.get_percent_name/1))
       %{
         team: i,
         global_id: pi |> Map.get("global_role_id"),
@@ -399,13 +343,13 @@ defmodule API do
         metrics: pi |> Map.get("metrics") |> Enum.map(fn m -> m |> Map.get("value") end),
         equips: pi |> Map.get("armors") |> Enum.map(fn e ->
           id = e |> Map.get("ui_id") |> String.to_integer
-          value = %{Map.drop(e, ["strength_evel", "strength_level", "permanent_enchant", "temporary_enchant", "mount1", "mount2", "mount3", "mount4", "mount5", "pos"]) | "icon" => Map.get(e, "icon") |> icon_url_trim}
+          value = %{Map.drop(e, ["strength_evel", "strength_level", "permanent_enchant", "temporary_enchant", "mount1", "mount2", "mount3", "mount4", "mount5", "pos"]) | "icon" => Map.get(e, "icon") |> Utils.icon_url_trim}
           Const.push(:equip, id, value, :insert_only)
           id
         end),
         talents: pi |> Map.get("talents") |> Enum.map(fn t ->
           id = t |> Map.get("id") |> String.to_integer
-          Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> icon_url_trim}, :insert_only)
+          Const.push(:talent, id, %{Map.drop(t, ["level"]) | "icon" => Map.get(t, "icon") |> Utils.icon_url_trim}, :insert_only)
           id
         end),
         attrs_version: attrs_version,

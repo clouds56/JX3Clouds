@@ -1,5 +1,7 @@
-defmodule Const do
+defmodule Jx3App.Const do
   @name __MODULE__
+
+  alias Jx3App.Model
 
   def start_link() do
     Agent.start_link(fn -> load() end, name: @name)

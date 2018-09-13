@@ -1,5 +1,6 @@
-defmodule Server do
+defmodule Jx3App.Server do
   use Plug.Router
+  alias Jx3App.Cache
 
   plug :match
   plug :dispatch

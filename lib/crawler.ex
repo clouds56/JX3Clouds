@@ -1,31 +1,9 @@
-defmodule Crawler do
+defmodule Jx3App.Crawler do
   require Logger
+  alias Jx3App.{Model, API, Utils}
 
   def start_link do
     {:ok, spawn_link(&run/0)}
-  end
-
-  def time_in?(t, d, u \\ :second) do
-    d = d * case u do
-      :second -> 1
-      :minute -> 60
-      :hour -> 3600
-      :day -> 24 * 3600
-      :week -> 7 * 24 * 3600
-    end
-    case t do
-      nil -> false
-      _ -> NaiveDateTime.diff(NaiveDateTime.utc_now, t) <= d
-    end
-  end
-
-  def unwrap({:ok, result}), do: result
-  def unwrap(_), do: nil
-  def unstruct(%_{} = o), do: Map.from_struct(o)
-  def unstruct(%{} = o), do: o
-  def unstruct(_), do: %{}
-  def filter_into(a, b \\ %{}) do
-    a |> Enum.filter(fn {_, v} -> v != nil end) |> Enum.into(b |> unstruct)
   end
 
   def save_performance(_, nil), do: []
@@ -48,25 +26,25 @@ defmodule Crawler do
   def save_role(%{person_info: p, role_info: r}, o) do
     person_id = Map.get(p, :person_id)
     if person_id do p |> Model.Query.update_person end
-    r = r |> filter_into(o)
-    Map.put(r, :person_id, person_id) |> Model.Query.update_role |> unwrap
+    r = r |> Utils.filter_into(o)
+    Map.put(r, :person_id, person_id) |> Model.Query.update_role |> Utils.unwrap
   end
   def save_role(nil, o) do
-    o = unstruct(o)
-    Map.put(o, :person_id, nil) |> Model.Query.update_role |> unwrap
+    o = Utils.unstruct(o)
+    Map.put(o, :person_id, nil) |> Model.Query.update_role |> Utils.unwrap
   end
 
   def save_match(nil, _), do: nil
   def save_match(detail, m) do
     detail |> Map.get(:roles) |> Enum.map(fn r ->
-      role_seen(r, DateTime.from_unix(detail[:start_time]) |> unwrap)
+      role_seen(r, DateTime.from_unix(detail[:start_time]) |> Utils.unwrap)
     end)
     avg_grade = case Map.get(detail, :grade, nil) do
       nil -> Map.get(m, :avg_grade, nil)
       0 -> Map.get(m, :avg_grade, nil)
       x -> x
     end
-    (detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match |> unwrap) || detail
+    (detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match |> Utils.unwrap) || detail
   end
 
   def api(req) do
@@ -84,12 +62,12 @@ defmodule Crawler do
   end
 
   def role_seen(%Model.Role{} = r, seen) do
-    r |> unstruct |> Map.put(:seen, seen) |> Model.Query.insert_role_log
+    r |> Utils.unstruct |> Map.put(:seen, seen) |> Model.Query.insert_role_log
     r
   end
   def role_seen(%{global_id: id} = r, seen) do
     r_now = Model.Query.get_role(id) || new_role(r)
-    r |> filter_into(r_now) |> Map.put(:seen, seen) |> Model.Query.insert_role_log
+    r |> Utils.filter_into(r_now) |> Map.put(:seen, seen) |> Model.Query.insert_role_log
     r_now
   end
 
@@ -103,7 +81,7 @@ defmodule Crawler do
 
   def update_role(r) do
     result = indicator(role(r))
-    result |> unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
+    result |> Utils.unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
     result
   end
 
@@ -124,7 +102,7 @@ defmodule Crawler do
   def role(match_type \\ nil, %{global_id: global_id} = r) do
     match_type = case {match_type, Map.get(r, :zone)} do
       {nil, nil} -> "3c"
-      {nil, z} -> case API.get_zone_suffix(z) do
+      {nil, z} -> case Utils.get_zone_suffix(z) do
         "" -> "3c"
         s -> "3" <> s
       end
@@ -146,7 +124,7 @@ defmodule Crawler do
           "95" -> save_role(r) |> check_role
           95 -> save_role(r) |> check_role
           _ -> r[:role_info]
-        end |> unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
+        end |> Utils.unstruct |> Map.put(:seen, Date.utc_today) |> Model.Query.insert_role_log
       end)
     end
   end
@@ -219,16 +197,16 @@ defmodule Crawler do
           Logger.info("No match fetched for #{global_id}")
           new_perf
       end
-    new_perf |> Model.Query.update_performance |> unwrap
+    new_perf |> Model.Query.update_performance |> Utils.unwrap
   end
 
   def fetch(role, %{match_type: match_type, ranking: ranking, fetch_at: last} = perf) do
     cond do
       ranking >= -3 and last == nil -> do_fetch(role, match_type, %{ranking: ranking}, limit: 100)
       last == nil -> do_fetch(role, match_type, %{ranking: ranking}, limit: 20)
-      ranking in [-1, -2, -3] and not time_in?(last, 6, :day) -> do_fetch(role, match_type, perf, limit: 100)
-      ranking > 0 and not time_in?(last, 18, :hour) -> do_fetch(role, match_type, perf)
-      not time_in?(last, 7, :day) -> do_fetch(role, match_type, perf, limit: 10)
+      ranking in [-1, -2, -3] and not Utils.time_in?(last, 6, :day) -> do_fetch(role, match_type, perf, limit: 100)
+      ranking > 0 and not Utils.time_in?(last, 18, :hour) -> do_fetch(role, match_type, perf)
+      not Utils.time_in?(last, 7, :day) -> do_fetch(role, match_type, perf, limit: 10)
       true -> nil
     end
   end
@@ -236,7 +214,7 @@ defmodule Crawler do
   def run do
     Model.Query.get_roles(:all) |> Enum.map(fn {r, p} ->
       try do
-        Crawler.fetch(r, p)
+        fetch(r, p)
       catch
         :exit, e when e != :stop -> Logger.error "Crawler (exit): " <> Exception.format(:error, e, __STACKTRACE__)
           :error

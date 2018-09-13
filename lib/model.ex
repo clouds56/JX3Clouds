@@ -1,4 +1,4 @@
-defmodule Model do
+defmodule Jx3App.Model do
   defmodule Repo do
     use Ecto.Repo, otp_app: :jx3app
 
@@ -106,7 +106,7 @@ defmodule Model do
       field :name, :string
       field :avatar, :string
       field :signature, :string
-      has_many :roles, Model.Role, foreign_key: :person_id
+      has_many :roles, Jx3App.Model.Role, foreign_key: :person_id
       timestamps()
 
       @permitted ~w(name avatar signature)a
@@ -134,7 +134,7 @@ defmodule Model do
       field :zone, :string
       field :server, :string
       belongs_to :person, Person, type: :string, references: :person_id
-      has_many :performances, Model.RolePerformance, foreign_key: :role_id
+      has_many :performances, Jx3App.Model.RolePerformance, foreign_key: :role_id
       timestamps()
 
       @permitted ~w(role_id passport_id name force body_type camp zone server person_id)a
@@ -326,7 +326,7 @@ defmodule Model do
       field :team1, {:array, :integer}
       field :team2, {:array, :integer}
       field :winner, :integer
-      has_many :roles, Model.MatchRole, foreign_key: :match_id
+      has_many :roles, Jx3App.Model.MatchRole, foreign_key: :match_id
 
       timestamps(updated_at: false)
     end

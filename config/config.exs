@@ -37,21 +37,21 @@ config :logger, :error_log,
   level: :error,
   path: "log/elixir.log"
 
-config :jx3app, Model.Repo,
+config :jx3app, Jx3App.Model.Repo,
   adapter: Ecto.Adapters.Postgres,
-  loggers: [{Model.Repo.LogEntry, :log, []}]
+  loggers: [{Jx3App.Model.Repo.LogEntry, :log, []}]
 
 config :jx3app,
-  ecto_repos: [Model.Repo]
+  ecto_repos: [Jx3App.Model.Repo]
 
-config :jx3app, Cache,
+config :jx3app, Jx3App.Cache,
   redis: []
 
-config :jx3app, API,
+config :jx3app, Jx3App.API,
   username: "",
   password: ""
 
-config :jx3app, Server,
+config :jx3app, Jx3App.Server,
   cowboy: []
 
 try do

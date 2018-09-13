@@ -1,7 +1,7 @@
-defmodule Model.Fix do
+defmodule Jx3App.Model.Fix do
   import Ecto.Query
   require Logger
-  alias Model.Repo
+  alias Jx3App.{Crawler, Model, Utils}
 
   def fix_match_array_order do
     # TODO not only 3c
@@ -13,7 +13,7 @@ defmodule Model.Fix do
   end
 
   def get_roles_of_match_grade_null do
-    Repo.all(
+    Model.Repo.all(
       from m in Model.Match,
       left_join: r in Model.MatchRole,
       on: m.match_id == r.match_id,
@@ -91,7 +91,7 @@ defmodule Model.Fix do
   end
 
   def fix_role_logs do
-    Repo.all(Model.RoleLog)
+    Model.Repo.all(Model.RoleLog)
     |> Enum.filter(fn r -> length(r.seen) > 1 end)
     |> Enum.map(fn r ->
       fix_seen = fix_date_range(r.seen)
@@ -103,7 +103,7 @@ defmodule Model.Fix do
   end
 
   def fix_person_roles do
-    Repo.all(Model.Person)
+    Model.Repo.all(Model.Person)
     |> Enum.map(fn p ->
       Logger.info("renew person #{p.person_id} #{p.name}")
       try do
@@ -134,7 +134,7 @@ defmodule Model.Fix do
 
   def fix_role_scores(offset \\ 0, limit \\ 100, index \\ 0) do
     Logger.info("fix_role_scores #{index}: #{offset} +#{limit}")
-    roles = Repo.all(from(r in Model.Role,
+    roles = Model.Repo.all(from(r in Model.Role,
       left_join: s in Model.RolePerformance,
       on: r.global_id == s.role_id,
       inner_join: m in ^Model.MatchRole.subquery("3c"),
@@ -150,7 +150,7 @@ defmodule Model.Fix do
       if r1.performances == [] do
         case get_score_from_match(r.global_id) do
           [_ | _] -> 0
-          e -> Logger.error("update role 3#{API.get_zone_suffix(r.zone)} #{r.global_id} failed\n" <> inspect(e)); 1
+          e -> Logger.error("update role 3#{Utils.get_zone_suffix(r.zone)} #{r.global_id} failed\n" <> inspect(e)); 1
         end
       else
         0
