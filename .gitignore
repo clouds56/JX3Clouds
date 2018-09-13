@@ -27,6 +27,7 @@ db/*
 db/cache/*
 !db/cache/redis.conf
 config/secret.exs
+rel/secret.cookie
 log
 priv/repo/migrations/*_fix.exs
 *.flows

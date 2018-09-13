@@ -31,13 +31,13 @@ environment :dev do
   # dev mode.
   set dev_mode: true
   set include_erts: false
-  set cookie: :"f8`H8)$(QF[biO,]T>G^TA}/5a6DUJf>jILEZi]AK1_!QY|8)Jo$WAH>ld60^)Y."
+  set cookie: :jx3app_dev
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
-  set cookie: :"dRWy{l=kjb/YtTKz[bz!!B>C[|z,&hbHT^GU!fPfJ<Uqt]@Wz(3tTl3uC:^LkiA?"
+  set cookie: Jx3App.Release.GenCookie.get()
 end
 
 # You may define one or more releases in this file.
