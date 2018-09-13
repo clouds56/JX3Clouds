@@ -1,6 +1,6 @@
 defmodule Jx3App.Crawler do
-  require Logger
   alias Jx3App.{Model, API, Utils}
+  require Logger
 
   def start_link do
     {:ok, spawn_link(&run/0)}

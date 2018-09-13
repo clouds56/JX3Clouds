@@ -4,8 +4,8 @@ defmodule Jx3App.API do
   """
 
   use GenServer
-  require Logger
   alias Jx3App.{Const, Utils}
+  require Logger
 
   def start_link(cred, opts) do
     GenServer.start_link(__MODULE__, cred, opts)

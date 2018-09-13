@@ -1,9 +1,9 @@
 defmodule Jx3App.Cache do
   use GenServer
-  require Logger
   import Ecto.Query
   alias Jx3App.{Model, Utils}
   alias Model.{Repo, Item, Person, Role, RoleLog, RolePerformance, Match, MatchRole}
+  require Logger
 
   def call(req) do
     :poolboy.transaction(Jx3App.Cache, fn pid ->

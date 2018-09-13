@@ -1,7 +1,7 @@
 defmodule Jx3App.Model.Fix do
   import Ecto.Query
-  require Logger
   alias Jx3App.{Crawler, Model, Utils}
+  require Logger
 
   def fix_match_array_order do
     # TODO not only 3c
