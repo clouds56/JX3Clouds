@@ -1,6 +1,11 @@
 defmodule Jx3App.Server do
   use Plug.Router
-  alias Jx3App.Cache
+  alias Jx3App.{Cache, GraphQL}
+
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
+    pass: ["*/*"],
+    json_decoder: Poison
 
   plug :match
   plug :dispatch
@@ -94,6 +99,12 @@ defmodule Jx3App.Server do
       |> format_html
     send_resp(conn, 200, resp)
   end
+
+  forward "/graphiql", to: Absinthe.Plug.GraphiQL,
+    init_opts: [schema: GraphQL.Schema]
+
+  forward "/graphql", to: Absinthe.Plug,
+    init_opts: [schema: GraphQL.Schema]
 
   match _ do
     not_found(conn)

@@ -35,6 +35,8 @@ defmodule Jx3App.MixProject do
       {:redix, "~> 0.7.1"},
       {:cowboy, "~> 2.4"},
       {:plug, "~> 1.6"},
+      {:absinthe, "~> 1.4"},
+      {:absinthe_plug, "~> 1.4"},
     ]
   end
 end
