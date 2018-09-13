@@ -1,4 +1,4 @@
-defmodule Jx3Const do
+defmodule Const do
   @name __MODULE__
 
   def start_link() do

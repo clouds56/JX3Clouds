@@ -182,7 +182,7 @@ defmodule Cache do
         "Cache: " <> Exception.format(:error, e, __STACKTRACE__) <> "\n" <>
         "Last message: " <> inspect(req) <> "\n" <>
         "State: " <> inspect(state) <> "\n" <>
-        Jx3APP.format_client(from)
+        API.format_client(from)
       )
       {:reply, nil, state}
     end

@@ -24,12 +24,11 @@ defmodule Model.Fix do
   end
 
   def fix_match_grade_for_roles(roles) do
-    client = Jx3APP.lookup()
     roles |> Enum.each(fn r ->
       size = Model.Query.get_matches_by_role("3c", r) |> Enum.count
       size = trunc(size * 1.1)
       Logger.info("fetching matches of #{r} of size #{size}")
-      history = GenServer.call(client, {:role_history, r, 0, size})
+      history = Crawler.api({:role_history, r, 0, size})
       if size != Enum.count(history) do
         Logger.error("size != history.count (#{size} != #{Enum.count(history)}) [with global_id = #{r}]")
       end
@@ -118,9 +117,9 @@ defmodule Model.Fix do
 
   def get_score_from_match(role_id) do
     Logger.debug("get #{role_id} performance from matches")
-    case GenServer.call(Jx3APP, {:role_history, "3c", role_id, 0, 1}) do
+    case Crawler.api({:role_history, "3c", role_id, 0, 1}) do
       [%{match_id: match_id, match_type: match_type} = m | _] ->
-        detail = GenServer.call(Jx3APP, {:match_detail, match_type, match_id})
+        detail = Crawler.api({:match_detail, match_type, match_id})
         if detail do
           result = detail |> Map.get(:roles) |> Enum.filter(fn r -> r[:global_id] == role_id end)
           |> Enum.map(fn perf ->
@@ -151,7 +150,7 @@ defmodule Model.Fix do
       if r1.performances == [] do
         case get_score_from_match(r.global_id) do
           [_ | _] -> 0
-          e -> Logger.error("update role 3#{Jx3APP.get_zone_suffix(r.zone)} #{r.global_id} failed\n" <> inspect(e)); 1
+          e -> Logger.error("update role 3#{API.get_zone_suffix(r.zone)} #{r.global_id} failed\n" <> inspect(e)); 1
         end
       else
         0

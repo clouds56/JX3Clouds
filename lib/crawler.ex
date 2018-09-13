@@ -69,8 +69,12 @@ defmodule Crawler do
     (detail |> Map.put(:grade, avg_grade) |> Model.Query.insert_match |> unwrap) || detail
   end
 
+  def api(req) do
+    GenServer.call(API, req)
+  end
+
   def top200(match_type \\ "3c") do
-    top = GenServer.call(Jx3APP, {:top200, match_type})
+    top = api({:top200, match_type})
     if top do
       top |> Enum.map(fn %{person_info: _p, role_info: r} = a ->
         save_role(a) |> new_role
@@ -120,24 +124,24 @@ defmodule Crawler do
   def role(match_type \\ nil, %{global_id: global_id} = r) do
     match_type = case {match_type, Map.get(r, :zone)} do
       {nil, nil} -> "3c"
-      {nil, z} -> case Jx3APP.get_zone_suffix(z) do
+      {nil, z} -> case API.get_zone_suffix(z) do
         "" -> "3c"
         s -> "3" <> s
       end
       {x, _} -> x
     end
-    GenServer.call(Jx3APP, {:role_info, match_type, global_id}) |> save_role(r)
+    api({:role_info, match_type, global_id}) |> save_role(r)
   end
 
   def indicator(%{role_id: role_id, zone: zone, server: server} = r) do
-    r1 = GenServer.call(Jx3APP, {:role_info, role_id, zone, server})
+    r1 = api({:role_info, role_id, zone, server})
     result = save_role(r1, r)
     Map.put(result, :performances, save_performance(result, r1[:indicator]))
   end
 
   def person(%{person_id: person_id}) do
     if person_id != "" and person_id != nil do
-      GenServer.call(Jx3APP, {:person_roles, person_id}) |> Enum.map(fn r ->
+      api({:person_roles, person_id}) |> Enum.map(fn r ->
         case r[:role_info][:level] do
           "95" -> save_role(r) |> check_role
           95 -> save_role(r) |> check_role
@@ -148,7 +152,7 @@ defmodule Crawler do
   end
 
   def matches(match_type \\ "3c", %{global_id: global_id}, size \\ 100) do
-    history = GenServer.call(Jx3APP, {:role_history, match_type, global_id, 0, size || 100})
+    history = api({:role_history, match_type, global_id, 0, size || 100})
     if history do
       history |> Enum.map(fn %{match_id: id, match_type: match_type} = m ->
         Model.Query.get_match(match_type, id) || match(m) || m
@@ -157,8 +161,8 @@ defmodule Crawler do
   end
 
   def match(%{match_id: match_id, match_type: match_type} = m) do
-    detail = GenServer.call(Jx3APP, {:match_detail, match_type, match_id}) |> save_match(m)
-    replay = GenServer.call(Jx3APP, {:match_replay, match_type, match_id})
+    detail = api({:match_detail, match_type, match_id}) |> save_match(m)
+    replay = api({:match_replay, match_type, match_id})
     if replay do replay |> Model.Query.insert_match_log end
     detail
   end
@@ -166,7 +170,7 @@ defmodule Crawler do
   def do_fetch(role, match_type, perf, opts \\ []) do
     global_id = Map.get(role, :global_id)
     indicators = case role do
-      %{role_id: role_id, zone: zone, server: server} -> GenServer.call(Jx3APP, {:role_info, role_id, zone, server})
+      %{role_id: role_id, zone: zone, server: server} -> api({:role_info, role_id, zone, server})
       _ -> nil
     end
     performances = indicators[:indicator] || []

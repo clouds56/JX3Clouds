@@ -1,6 +1,6 @@
 defmodule Model do
   defmodule Repo do
-    use Ecto.Repo, otp_app: :jx3replay
+    use Ecto.Repo, otp_app: :jx3app
 
     defmodule LogEntry do
       def log(%{query: query} = entry) do

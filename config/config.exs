@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :jx3replay, key: :value
+#     config :jx3app, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:jx3replay, :key)
+#     Application.get_env(:jx3app, :key)
 #
 # You can also configure a 3rd-party app:
 #
@@ -37,21 +37,21 @@ config :logger, :error_log,
   level: :error,
   path: "log/elixir.log"
 
-config :jx3replay, Model.Repo,
+config :jx3app, Model.Repo,
   adapter: Ecto.Adapters.Postgres,
   loggers: [{Model.Repo.LogEntry, :log, []}]
 
-config :jx3replay,
+config :jx3app,
   ecto_repos: [Model.Repo]
 
-config :jx3replay, Cache,
+config :jx3app, Cache,
   redis: []
 
-config :jx3replay, Jx3APP,
+config :jx3app, API,
   username: "",
   password: ""
 
-config :jx3replay, Server,
+config :jx3app, Server,
   cowboy: []
 
 try do
