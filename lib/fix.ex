@@ -160,4 +160,63 @@ defmodule Jx3App.Model.Fix do
       fix_role_scores(offset + failed, limit, index + 1)
     end
   end
+
+  def decide_team_from_inserted_at(match) do
+    roles = match.roles |> Enum.sort_by(& &1.inserted_at, fn a, b -> NaiveDateTime.compare(a, b) != :gt end)
+    team1_len = length(match.team1_kungfu)
+    team2_len = length(match.team2_kungfu)
+    if team1_len + team2_len != length(roles) do
+      Logger.error("match #{match.match_id} role number mismatch #{team1_len} + #{team2_len} != #{length(roles)}")
+    else
+      team1 = roles |> Enum.take(team1_len)
+      team2 = roles |> Enum.drop(team1_len)
+      team1_kungfu = team1 |> Enum.map(& &1.kungfu) |> Enum.sort
+      team2_kungfu = team2 |> Enum.map(& &1.kungfu) |> Enum.sort
+      team1_score = team1 |> Enum.map(& &1.score2) |> Enum.sum
+      team2_score = team2 |> Enum.map(& &1.score2) |> Enum.sum
+      cond do
+        team1_kungfu != match.team1_kungfu or team2_kungfu != match.team2_kungfu ->
+          Logger.error("match #{match.match_id} team kungfu #{inspect(team1_kungfu)} != #{inspect(match.team1_kungfu)} or #{inspect(team2_kungfu)} != #{inspect(match.team2_kungfu)}")
+          Logger.info(roles |> Enum.map(& &1.inserted_at) |> inspect)
+        team1_score != match.team1_score or team2_score != match.team2_score ->
+          Logger.error("match #{match.match_id} team scores {#{team1_score}, #{team2_score}} != {#{match.team1_score}, #{match.team2_score}}")
+        true ->
+          role_ids = roles |> Enum.map(& &1.role_id)
+          Model.Match.changeset(match, %{role_ids: role_ids}) |> Model.Repo.update!
+          :fixed
+      end
+    end == :fixed && 1 || 0
+  end
+
+  def fix_match_team(match_type \\ "3c") do
+    fun = fn o, l, i -> fix_match_team(match_type, o, l, i) end
+    pool_run(fun)
+  end
+  def fix_match_team(match_type, offset, limit \\ 5000, index \\ 0) do
+    Logger.info("fix_match_team #{index}: #{offset} +#{limit}")
+    Model.Repo.all(from(m in Model.Match,
+      offset: ^offset,
+      limit: ^limit,
+      order_by: m.match_id,
+      preload: [:roles]),
+    prefix: Model.Match.prefix(match_type))
+    |> Enum.map(&decide_team_from_inserted_at/1) |> Enum.sum
+  end
+
+  def pool_run(n \\ 5, fun, limit \\ 5000) do
+    {:ok, pid} = Agent.start_link(fn -> 0 end)
+    idx = fn -> Agent.get_and_update(pid, &{&1, &1+1}) end
+    run = fn run ->
+      i = idx.()
+      if fun.(i*limit, limit, i) >= limit do
+        run.(run)
+      else
+        Logger.info("done")
+      end
+    end
+    1..n |> Enum.map(fn _ ->
+      Task.async(fn -> run.(run) end)
+    end) |> Enum.map(&Task.await(&1, :infinity))
+    Agent.stop(pid)
+  end
 end

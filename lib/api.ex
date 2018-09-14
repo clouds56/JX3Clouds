@@ -364,12 +364,12 @@ defmodule Jx3App.API do
       pvp_type: d |> Map.get("basic_info") |> Map.get("type"),
       match_type: match_type,
       grade: d |> Map.get("basic_info") |> Map.get("grade"),
-      total_score1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
-      total_score2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
-      team1: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi ->
+      team1_score: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
+      team2_score: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi -> pi |> Map.get("score") end) |> Enum.sum,
+      team1_kungfu: d |> Map.get("team1") |> Map.get("players_info") |> Enum.map(fn pi ->
         pi |> Map.get("kungfu_id")
       end) |> Enum.sort,
-      team2: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi ->
+      team2_kungfu: d |> Map.get("team2") |> Map.get("players_info") |> Enum.map(fn pi ->
         pi |> Map.get("kungfu_id")
       end) |> Enum.sort,
       winner: d |> Map.get("team1") |> Map.get("won") && 1 || 2,

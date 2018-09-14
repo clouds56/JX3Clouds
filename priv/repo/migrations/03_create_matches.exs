@@ -9,10 +9,11 @@ defmodule Model.Repo.Migrations.CreateMatches do
       add :pvp_type, :integer
       add :map, :integer
       add :grade, :integer
-      add :total_score1, :integer
-      add :total_score2, :integer
-      add :team1, {:array, :integer}
-      add :team2, {:array, :integer}
+      add :total_score1, :integer #add :team1_score2, {:array, :integer}
+      add :total_score2, :integer #add :team2_score2, {:array, :integer}
+      add :team1, {:array, :integer} #add :team1_kungfu, {:array, :integer}
+      add :team2, {:array, :integer} #add :team2_kungfu, {:array, :integer}
+      #add :role_ids, {:array, :string}
       add :winner, :integer
 
       timestamps(updated_at: false)

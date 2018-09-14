@@ -10,17 +10,23 @@ defmodule Jx3App.Model.Match do
     field :pvp_type, :integer
     field :map, :integer
     field :grade, :integer
-    field :total_score1, :integer
-    field :total_score2, :integer
-    field :team1, {:array, :integer}
-    field :team2, {:array, :integer}
+    field :team1_score, :integer
+    field :team2_score, :integer
+    field :team1_kungfu, {:array, :integer}
+    field :team2_kungfu, {:array, :integer}
+    field :role_ids, {:array, :string}
     field :winner, :integer
     has_many :roles, MatchRole, foreign_key: :match_id
 
     timestamps(updated_at: false)
   end
 
-  @permitted ~w(start_time duration pvp_type map grade total_score1 total_score2 team1 team2 winner)a
+  @permitted ~w(start_time duration pvp_type map grade team1_score team2_score team1_kungfu team2_kungfu role_ids winner)a
+
+  def fix_role_ids(%{role_ids: _} = match), do: match
+  def fix_role_ids(%{roles: roles} = match) do
+    Map.put(match, :role_ids, roles |> Enum.map(fn %{global_id: id} -> id end))
+  end
 
   def fix_pvptype(%{match_type: t} = change) do
     pvp_type = cond do
@@ -50,7 +56,9 @@ defmodule Jx3App.Model.Match do
   end
 
   def changeset(match, change \\ :empty) do
-    change = change |> fix_pvptype
+    change = change
+    |> fix_pvptype
+    |> fix_role_ids
     |> Enum.filter(fn {_, v} -> v != nil end)
     |> Enum.into(%{})
     cast(match, change, @permitted)
