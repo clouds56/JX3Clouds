@@ -11,6 +11,10 @@ defmodule Jx3App.GraphQL do
       %{o | __meta__: %{meta | source: {prefix, q}}}
     end
 
+    def complexity(%{limit: limit}, child_complexity) do
+      limit * child_complexity
+    end
+
     def dataloader(source, ord \\ :one, opts \\ [])
     def dataloader(source, ord, opts) when ord in [:one, :many] do
       dataloader(source, {ord, nil}, opts)
@@ -104,6 +108,7 @@ defmodule Jx3App.GraphQL do
       field :matches, list_of(:match_role) do
         arg :limit, :integer, default_value: 200
         arg :offset, :integer, default_value: 0
+        complexity &Resolvers.complexity/2
         resolve &Resolvers.match_roles/3
       end
     end
@@ -119,11 +124,12 @@ defmodule Jx3App.GraphQL do
       field :pvp_type, :integer
       field :map, :integer
       field :grade, :integer
-      field :total_score1, :integer
-      field :total_score2, :integer
-      field :team1, list_of(:integer)
-      field :team2, list_of(:integer)
+      field :team1_score, :integer
+      field :team2_score, :integer
+      field :team1_kungfu, list_of(:integer)
+      field :team2_kungfu, list_of(:integer)
       field :winner, :integer
+      field :role_ids, list_of(:string)
       field :roles, list_of(:match_role), resolve: Resolvers.dataloader(:db, {:many, :roles})
     end
 
@@ -167,18 +173,15 @@ defmodule Jx3App.GraphQL do
       field :roles, list_of(:role) do
         arg :limit, :integer, default_value: 200
         arg :offset, :integer, default_value: 0
-        complexity fn %{limit: limit}, child_complexity ->
-          limit * child_complexity
-        end
+        complexity &Resolvers.complexity/2
         resolve &Resolvers.roles/3
       end
 
+      @desc "Get all matches"
       field :matches, list_of(:match) do
         arg :limit, :integer, default_value: 20
         arg :offset, :integer, default_value: 0
-        complexity fn %{limit: limit}, child_complexity ->
-          limit * child_complexity
-        end
+        complexity &Resolvers.complexity/2
         resolve &Resolvers.matches/3
       end
     end

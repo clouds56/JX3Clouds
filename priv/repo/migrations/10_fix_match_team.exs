@@ -35,14 +35,16 @@ defmodule Model.Repo.Migrations.FixMatchTeam do
   def reference_name(table, column), do: ~s|"#{table}_#{column}_fkey"|
 
   def fix_reference(prefix) do
+    create index(:matches, :start_time, prefix: prefix)
+
     alter table(:match_roles, prefix: prefix) do
       modify :match_id, references(:matches, column: :match_id, type: :bigint), from: :bigint
       # modify :role_id, references(:roles, column: :global_id, type: :string, prefix: :public), from: :string
     end
-
     execute ~s|alter table #{quote_table(prefix, :match_roles)} add constraint #{reference_name(:match_roles, :role_id)}
                 foreign key (#{:role_id}) REFERENCES #{quote_table(:roles)}(#{:global_id})|,
             ~s|alter table #{quote_table(prefix, :match_roles)} drop constraint #{reference_name(:match_roles, :role_id)}|
+    create index(:match_roles, :role_id, prefix: prefix)
 
     alter table(:match_logs, prefix: prefix) do
       modify :match_id, references(:matches, column: :match_id, type: :bigint), from: :bigint
